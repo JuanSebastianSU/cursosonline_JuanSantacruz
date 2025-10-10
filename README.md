@@ -511,19 +511,21 @@ CORS: ajusta allowedOriginPatterns al dominio del front de producción.
 
 Decimal128: evita convertir montos a double; usa siempre BigDecimal.
 
-11) Matriz de permisos (resumen)
-Recurso/Acción	Dueño (estudiante)	Instructor del curso	ADMIN
-Ver pagos de una inscripción	✔️ (suya)	✔️	✔️
-Crear/editar/eliminar borrador de pago	✔️	❌	✔️ (vía admin si procede)
-Aceptar pago (checkout)	✔️	❌	✔️
-Aprobar/Capturar pago	❌	✔️	✔️
-Ver/emitir/revocar certificado	Dueño: ver	✔️ (emitir/revocar/ver)	✔️
-Crear/editar curso	N/A	✔️ (si curso no PUBLICADO)	✔️
-Publicar/archivar módulo/lección/evaluación	❌	✔️	✔️
-Intentos (crear/editar en progreso, entregar)	✔️ (si inscrito y visible)	❌	✔️ (operaciones administrativas)
-Calificar intento	❌	✔️ (bloquea si cadena archivada)	✔️
-Usuarios (listar/editar/estado/eliminar)	❌	❌	✔️
-Cambiar propia contraseña	✔️ (@seguridadUtil.esMismoUsuario)	✔️ (si aplica)	✔️
+## 🔒 11) Matriz de permisos (resumen)
+
+| Recurso / Acción                                  | Dueño (Estudiante)                              | Instructor del Curso                          | ADMIN |
+|---------------------------------------------------|-------------------------------------------------|-----------------------------------------------|--------|
+| Ver pagos de una inscripción                      | ✔️ (suya)                                       | ✔️                                            | ✔️     |
+| Crear / editar / eliminar borrador de pago        | ✔️                                              | ❌                                            | ✔️ (vía admin si procede) |
+| Aceptar pago (checkout)                           | ✔️                                              | ❌                                            | ✔️     |
+| Aprobar / Capturar pago                           | ❌                                              | ✔️                                            | ✔️     |
+| Ver / emitir / revocar certificado                | Dueño: ver                                      | ✔️ (emitir / revocar / ver)                   | ✔️     |
+| Crear / editar curso                              | N/A                                             | ✔️ (si curso no PUBLICADO)                    | ✔️     |
+| Publicar / archivar módulo, lección o evaluación  | ❌                                              | ✔️                                            | ✔️     |
+| Intentos (crear / editar en progreso, entregar)   | ✔️ (si inscrito y visible)                      | ❌                                            | ✔️ (operaciones administrativas) |
+| Calificar intento                                 | ❌                                              | ✔️ (bloquea si cadena archivada)              | ✔️     |
+| Usuarios (listar / editar / estado / eliminar)    | ❌                                              | ❌                                            | ✔️     |
+| Cambiar propia contraseña                         | ✔️ (@seguridadUtil.esMismoUsuario)              | ✔️ (si aplica)                                | ✔️     |
 
 La visibilidad para alumnos depende de: Curso ≠ ARCHIVADO, Módulo ≠ ARCHIVADO, Lección ≠ ARCHIVADA y Evaluación = PUBLICADA; además, el alumno debe estar inscrito con acceso (ACTIVA).
 
