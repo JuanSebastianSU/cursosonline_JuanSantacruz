@@ -104,7 +104,7 @@ public class IntentoControlador {
     }
 
     @PutMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> actualizar(@PathVariable String idEvaluacion,
                                         @PathVariable String idIntento,
                                         @Valid @RequestBody ActualizarIntentoRequest body) {
@@ -123,7 +123,7 @@ public class IntentoControlador {
     }
 
     @PatchMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> patch(@PathVariable String idEvaluacion,
                                    @PathVariable String idIntento,
                                    @RequestBody PatchIntentoRequest body) {
@@ -144,7 +144,7 @@ public class IntentoControlador {
     }
 
     @DeleteMapping("/{idIntento}")
-    @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> eliminar(@PathVariable String idEvaluacion,
                                       @PathVariable String idIntento) {
         String idEstudiante = intentoServicio.obtenerIdEstudianteActual().orElse(null);
