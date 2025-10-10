@@ -33,7 +33,6 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String p = request.getServletPath();
-        // No filtrar endpoints públicos de auth (y opcional: preflight CORS)
         return p.startsWith("/api/auth/") || "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
@@ -51,7 +50,7 @@ public class JwtFilter extends OncePerRequestFilter {
         final String token = auth.substring(7);
 
         try {
-            final String username = jwtService.extractSubject(token); // debe ser el email
+            final String username = jwtService.extractSubject(token);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails ud = userDetailsService.loadUserByUsername(username);
                 if (jwtService.validarToken(token, ud.getUsername())) {
@@ -61,9 +60,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (io.jsonwebtoken.JwtException e) {
-            // Token inválido/expirado: seguimos sin autenticar
         } catch (UsernameNotFoundException e) {
-            // Usuario del token no existe: seguimos sin autenticar
         }
 
         chain.doFilter(req, res);

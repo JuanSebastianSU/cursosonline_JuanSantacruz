@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Entidades/Curso.java
 package com.cursosonline.cursosonlinejs.Entidades;
 
 import java.math.BigDecimal;
@@ -26,13 +25,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "cursos")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
-    // Evita duplicar curso con mismo título por instructor
     @CompoundIndex(name = "instructor_titulo_uq", def = "{'idInstructor': 1, 'titulo': 1}", unique = true, sparse = true),
-    // Accesos rápidos por estado/categoría y orden por publicación
     @CompoundIndex(name = "estado_categoria_pub_idx", def = "{'estado': 1, 'categoria': 1, 'publishedAt': -1}"),
-    // Slug único para URLs
     @CompoundIndex(name = "slug_uq", def = "{'slug': 1}", unique = true, sparse = true)
 })
 public class Curso {
@@ -40,101 +37,91 @@ public class Curso {
     @Id
     private String id;
 
-    /** Identidad / SEO */
     @NotBlank
     @Size(min = 3, max = 200)
     @TextIndexed
     private String titulo;
 
     @Indexed
-    private String slug; // p.ej. "java-desde-cero"
+    private String slug;
 
     @Size(max = 5000)
     @TextIndexed
     private String descripcion;
 
     @TextIndexed
-    private List<String> etiquetas; // tags (búsqueda/filtros)
+    private List<String> etiquetas;
 
-    /** Clasificación */
     @NotBlank
     private String categoria;
 
     @NotNull
-    private Nivel nivel = Nivel.PRINCIPIANTE; // BASICO, INTERMEDIO, AVANZADO
+    private Nivel nivel = Nivel.PRINCIPIANTE;
 
     @NotBlank
     @Pattern(regexp = "^[a-z]{2}(-[A-Z]{2})?$", message = "Idioma debe ser ISO (p.ej., es o es-EC)")
-    private String idioma; // "es", "es-EC", "en"
+    private String idioma;
 
     public enum Nivel { PRINCIPIANTE, INTERMEDIO, AVANZADO }
 
-    /** Precio (DECIMAL128 para precisión) */
     @Field(targetType = FieldType.DECIMAL128)
     @PositiveOrZero
-    private BigDecimal precio;              // precio vigente
+    private BigDecimal precio;
 
     @Field(targetType = FieldType.DECIMAL128)
     @PositiveOrZero
-    private BigDecimal precioLista;         // precio “tachado”/original (opcional)
+    private BigDecimal precioLista;
 
     @Pattern(regexp = "^[A-Z]{3}$", message = "Moneda ISO-4217 en mayúsculas, p.ej. USD")
     private String moneda = "USD";
 
-    private Boolean gratuito;               // atajo útil para UX
+    private Boolean gratuito;
 
-    /** Publicación */
     @NotNull
-    private EstadoCurso estado = EstadoCurso.BORRADOR; // BORRADOR, PUBLICADO, OCULTO, ARCHIVADO
+    private EstadoCurso estado = EstadoCurso.BORRADOR;
 
     public enum EstadoCurso { BORRADOR, PUBLICADO, OCULTO, ARCHIVADO }
 
     @Indexed
     private Instant publishedAt;
 
-    private Boolean destacado;              // featured en el catálogo
+    private Boolean destacado;
 
-    /** Relaciones */
     @Indexed
     @NotBlank
-    private String idInstructor;            // usuario instructor
-
-    /** Contenido (cache y navegación) */
-    @PositiveOrZero
-    private Integer duracionTotalMinutos = 0;   // suma de lecciones (cache)
+    private String idInstructor;
 
     @PositiveOrZero
-    private Integer modulosCount = 0;           // cache rápido
+    private Integer duracionTotalMinutos = 0;
 
     @PositiveOrZero
-    private Integer leccionesCount = 0;  // <-- evita null
+    private Integer modulosCount = 0;
 
-    private List<String> modulos;           // si mantienes lista de IDs
+    @PositiveOrZero
+    private Integer leccionesCount = 0;
 
-    /** Portada / media */
+    private List<String> modulos;
+
     private String imagenPortadaUrl;
     private String promoVideoUrl;
 
-    /** Métricas (para ordenar por ranking) */
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal ratingAvg;           // 0..5
+    private BigDecimal ratingAvg;
 
     @PositiveOrZero
     private Long ratingCount;
 
     @PositiveOrZero
-    private Long inscritosCount = 0L;       // <-- inicializado para evitar null
+    private Long inscritosCount = 0L;
 
-    /** Acceso / matrícula */
     private Boolean accesoVitalicio = true;
     @PositiveOrZero
-    private Integer accessDays;             // si no es vitalicio
+    private Integer accessDays;
     private Instant enrollmentOpenAt;
     private Instant enrollmentCloseAt;
     @PositiveOrZero
     private Integer cupoMaximo;
 
-    /** Auditoría / concurrencia */
     @CreatedDate
     private Instant createdAt;
 

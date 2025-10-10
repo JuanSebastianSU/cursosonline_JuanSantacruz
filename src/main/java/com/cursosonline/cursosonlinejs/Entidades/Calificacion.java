@@ -22,77 +22,76 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "calificaciones")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
-  @CompoundIndex(name = "eval_estudiante_fecha_idx",
-                 def = "{'idEvaluacion': 1, 'idEstudiante': 1, 'createdAt': -1}")
+    @CompoundIndex(name = "eval_estudiante_fecha_idx",
+            def = "{'idEvaluacion': 1, 'idEstudiante': 1, 'createdAt': -1}")
 })
 public class Calificacion {
 
-  @Id
-  private String id;
+    @Id
+    private String id;
 
-  /** Relaciones principales */
-  @Indexed(unique = true)       // 1 calificación por intento
-  @NotBlank
-  private String idIntento;
+    @Indexed(unique = true)
+    @NotBlank
+    private String idIntento;
 
-  @Indexed
-  private String idEvaluacion;  // snapshot para consultas rápidas
+    @Indexed
+    private String idEvaluacion;
 
-  @Indexed
-  private String idEstudiante;  // alumno calificado
+    @Indexed
+    private String idEstudiante;
 
-  /** Estado y tiempos */
-  @NotNull
-  private EstadoCalificacion estado = EstadoCalificacion.PENDIENTE;
-  public enum EstadoCalificacion { PENDIENTE, EN_REVISION, PUBLICADA, ANULADA }
+    @NotNull
+    private EstadoCalificacion estado = EstadoCalificacion.PENDIENTE;
 
-  private Instant calificadoAt; // momento en que se publica/finaliza
+    public enum EstadoCalificacion {
+        PENDIENTE, EN_REVISION, PUBLICADA, ANULADA
+    }
 
-  /** Puntuaciones (precisas) */
-  @Field(targetType = FieldType.DECIMAL128)
-  @PositiveOrZero
-  private BigDecimal puntaje;         // obtenido
+    private Instant calificadoAt;
 
-  @Field(targetType = FieldType.DECIMAL128)
-  @PositiveOrZero
-  private BigDecimal puntajeMaximo;   // snapshot de la evaluación
-
-  @Field(targetType = FieldType.DECIMAL128)
-  private BigDecimal porcentaje;      // (puntaje/puntajeMaximo)*100
-
-  @Field(targetType = FieldType.DECIMAL128)
-  private BigDecimal notaCorte;       // snapshot (p. ej. 60/100)
-
-  private Boolean aprobado;           // true si puntaje >= notaCorte
-
-  /** Feedback */
-  private String feedback;            // comentario general
-
-  /** Calificador */
-  @Indexed
-  private String calificadoPor;       // id de usuario (instructor/TA)
-
-  /** Rúbrica (opcional) */
-  private List<ItemRubrica> rubrica;
-  @Getter @Setter
-  public static class ItemRubrica {
-    private String criterio;                        // p.ej., “Contenido”, “Claridad”
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal maximo;                      // puntaje máximo del criterio
+    @PositiveOrZero
+    private BigDecimal puntaje;
+
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal puntaje;                     // otorgado en el criterio
-    private String comentario;                      // feedback específico
-  }
+    @PositiveOrZero
+    private BigDecimal puntajeMaximo;
 
-  /** Auditoría */
-  @CreatedDate
-  private Instant createdAt;
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal porcentaje;
 
-  @LastModifiedDate
-  private Instant updatedAt;
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal notaCorte;
 
-  @Version
-  private Long version;
+    private Boolean aprobado;
+
+    private String feedback;
+
+    @Indexed
+    private String calificadoPor;
+
+    private List<ItemRubrica> rubrica;
+
+    @Getter
+    @Setter
+    public static class ItemRubrica {
+        private String criterio;
+        @Field(targetType = FieldType.DECIMAL128)
+        private BigDecimal maximo;
+        @Field(targetType = FieldType.DECIMAL128)
+        private BigDecimal puntaje;
+        private String comentario;
+    }
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+
+    @Version
+    private Long version;
 }

@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/ModuloControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -37,7 +36,6 @@ public class ModuloControlador {
         this.usuarioRepo = usuarioRepo;
     }
 
-    /* ===== helpers de rol/propiedad ===== */
     private static boolean isAdmin() {
         Authentication a = SecurityContextHolder.getContext().getAuthentication();
         if (a == null) return false;
@@ -53,7 +51,6 @@ public class ModuloControlador {
         return curso != null && userOpt.get().getId().equals(curso.getIdInstructor());
     }
 
-    /** Crear (ADMIN o INSTRUCTOR dueño). */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> crearModulo(@PathVariable String idCurso, @Valid @RequestBody Modulo body) {
@@ -75,7 +72,6 @@ public class ModuloControlador {
         return ResponseEntity.created(location).body(creado);
     }
 
-    /** Listar (PÚBLICO con filtro): alumnos/visitantes ven solo PUBLICADOS y se bloquean si el curso está ARCHIVADO. */
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> listarModulos(@PathVariable String idCurso) {
         var curso = cursoRepo.findById(idCurso).orElse(null);
@@ -88,19 +84,16 @@ public class ModuloControlador {
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
             }
-            // solo PUBLICADOS para alumnos/visitantes
             List<Modulo> publicados = moduloServicio.listarPorCurso(idCurso).stream()
                     .filter(m -> m.getEstado() == Modulo.EstadoModulo.PUBLICADO)
                     .collect(Collectors.toList());
             return publicados.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(publicados);
         }
 
-        // admin/instructor: ven todo
         List<Modulo> todos = moduloServicio.listarPorCurso(idCurso);
         return todos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(todos);
     }
 
-    /** Obtener uno (PÚBLICO con filtro): alumnos/visitantes bloqueados si ARCHIVADO y 404 si no PUBLICADO. */
     @GetMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> obtenerModulo(@PathVariable String idCurso,
                                            @PathVariable String id) {
@@ -129,7 +122,6 @@ public class ModuloControlador {
         return ResponseEntity.ok(modulo);
     }
 
-    /** Actualizar (ADMIN o INSTRUCTOR dueño). */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> actualizarModulo(@PathVariable String idCurso,
@@ -158,7 +150,6 @@ public class ModuloControlador {
         return ResponseEntity.ok(actualizado);
     }
 
-    /** Eliminar (ADMIN o INSTRUCTOR dueño). */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> eliminarModulo(@PathVariable String idCurso, @PathVariable String id) {
@@ -171,9 +162,6 @@ public class ModuloControlador {
         return ResponseEntity.noContent().build();
     }
 
-    /* ===================== NUEVOS PATCH ===================== */
-
-    /** PATCH 1: Cambiar orden directo (swap si hay conflicto). */
     @PatchMapping(value = "/{id}/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> cambiarOrden(@PathVariable String idCurso,
@@ -192,7 +180,6 @@ public class ModuloControlador {
         }
     }
 
-    /** PATCH 2: Mover arriba/abajo (delta = +1 o -1). */
     @PatchMapping(value = "/{id}/mover", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> mover(@PathVariable String idCurso,
@@ -221,7 +208,6 @@ public class ModuloControlador {
         }
     }
 
-    /** PATCH 3: Reordenar masivo (1..n) según lista de ids. */
     @PatchMapping(value = "/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> reordenar(@PathVariable String idCurso,
@@ -263,7 +249,6 @@ public class ModuloControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===== DTOs de PATCH ===== */
     public static record CambiarOrdenRequest(@Min(1) Integer orden) {}
     public static record MoverRequest(Integer delta, String direccion) {}
     public static record ReordenarRequest(List<@NotBlank String> ids) {}

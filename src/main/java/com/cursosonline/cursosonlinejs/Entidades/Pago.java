@@ -23,10 +23,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "pagos")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
     @CompoundIndex(name = "inscripcion_estado_fecha_idx", def = "{'idInscripcion': 1, 'estado': 1, 'createdAt': -1}"),
-    // Evita duplicados por reintentos (idempotencia). Sparse para permitir null:
     @CompoundIndex(name = "idempotency_key_unique", def = "{'idempotencyKey': 1}", unique = true, sparse = true)
 })
 public class Pago {
@@ -34,74 +34,64 @@ public class Pago {
     @Id
     private String id;
 
-    /** Relaciones */
     @Indexed
-    private String idInscripcion;  // referencia a la inscripción
+    private String idInscripcion;
     @Indexed
-    private String userId;         // quién pagó (opcional pero muy útil)
+    private String userId;
 
-    /** Importes: usa Decimal128 en Mongo (precisión) */
     @NotNull
     @Positive
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal monto;      // total cobrado
+    private BigDecimal monto;
 
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal subtotal;   // opcional: antes de impuestos/fees
+    private BigDecimal subtotal;
 
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal impuestos;  // IVA/IGV, etc. (opcional)
+    private BigDecimal impuestos;
 
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal comisiones; // fees de pasarela (opcional)
+    private BigDecimal comisiones;
 
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal descuento;  // cupones/promos (opcional)
+    private BigDecimal descuento;
 
-    /** Moneda ISO-4217 (USD, EUR, MXN, etc.) */
     @NotBlank
     @Pattern(regexp = "^[A-Z]{3}$", message = "Moneda debe ser código ISO-4217 en mayúsculas (p.ej., USD)")
     private String moneda;
 
-    /** Método y estado */
     @NotNull
-    private MetodoPago metodo;     // TARJETA, TRANSFERENCIA, PAYPAL, etc.
+    private MetodoPago metodo;
 
     @NotNull
-    private EstadoPago estado;     // PENDIENTE, AUTORIZADO, APROBADO, FALLIDO, REEMBOLSADO, CANCELADO
+    private EstadoPago estado;
 
-    /** Trazabilidad / referencias */
-    private String referencia;         // tu referencia interna / nro comprobante
+    private String referencia;
     @Indexed(unique = true, sparse = true)
-    private String idempotencyKey;     // para evitar pagos duplicados por reintento
-    private String cupon;              // si aplicó algún cupón
+    private String idempotencyKey;
+    private String cupon;
 
-    /** Campos de pasarela (usa solo los que necesites) */
-    private String gateway;            // stripe, paypal, mercadopago...
-    private String gatewayPaymentId;   // ID de pago en la pasarela
-    private String authorizationCode;  // código de autorización (si aplica)
-    private String reciboUrl;          // URL de recibo/boleta en la pasarela
-    private MetodoDetalle metodoDetalle; // datos sensibles NO críticos (últimos 4, marca, banco...)
+    private String gateway;
+    private String gatewayPaymentId;
+    private String authorizationCode;
+    private String reciboUrl;
+    private MetodoDetalle metodoDetalle;
 
-    /** Auditoría / tiempos */
     @CreatedDate
     private Instant createdAt;
 
     @LastModifiedDate
     private Instant updatedAt;
 
-    private Instant autorizadoAt;  // si hubo hold/authorization
-    private Instant pagadoAt;      // cuando se capturó/aprobó
-    private Instant fallidoAt;     // cuando falló
-    private Instant reembolsadoAt; // cuando se reembolsó (si corresponde)
+    private Instant autorizadoAt;
+    private Instant pagadoAt;
+    private Instant fallidoAt;
+    private Instant reembolsadoAt;
 
     @Version
-    private Long version;          // optimistic locking para evitar pisadas
+    private Long version;
 
-    /** Metadata libre para extensiones (clave/valor) */
     private Map<String, String> metadata;
-
-    /* ====== Tipos auxiliares ====== */
 
     public enum MetodoPago {
         TARJETA, TRANSFERENCIA, PAYPAL, STRIPE, EFECTIVO, MERCADOPAGO
@@ -111,13 +101,13 @@ public class Pago {
         PENDIENTE, AUTORIZADO, APROBADO, CAPTURADO, FALLIDO, REEMBOLSADO, CANCELADO
     }
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class MetodoDetalle {
-        private String cardBrand;    // VISA/MASTERCARD
-        private String cardLast4;    // últimos 4
-        private Integer installments; // cuotas, si corresponde
-        private String bank;          // para transferencia
-        private String accountType;   // CA/CC
+        private String cardBrand;
+        private String cardLast4;
+        private Integer installments;
+        private String bank;
+        private String accountType;
     }
-    
 }

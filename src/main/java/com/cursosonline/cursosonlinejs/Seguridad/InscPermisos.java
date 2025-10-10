@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/InscPermisos.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Repositorios.CursoRepositorio;
@@ -22,7 +21,6 @@ public class InscPermisos {
         this.inscripcionRepo = inscripcionRepo;
     }
 
-    /** ¿El autenticado es el instructor dueño del curso? */
     public boolean esInstructorDelCurso(String idCurso) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;
@@ -35,7 +33,6 @@ public class InscPermisos {
                 .orElse(false);
     }
 
-    /** ¿La inscripción pertenece al usuario autenticado? */
     public boolean esInscripcionPropia(String idInscripcion) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;

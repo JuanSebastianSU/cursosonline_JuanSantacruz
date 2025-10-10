@@ -20,25 +20,23 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "lecciones")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
     @CompoundIndex(name = "modulo_titulo_uq", def = "{'idModulo': 1, 'titulo': 1}", unique = true, sparse = true),
-    @CompoundIndex(name = "modulo_orden_uq",  def = "{'idModulo': 1, 'orden': 1}",  unique = true, sparse = true)
+    @CompoundIndex(name = "modulo_orden_uq", def = "{'idModulo': 1, 'orden': 1}", unique = true, sparse = true)
 })
 public class Leccion {
 
     @Id
     private String id;
 
-    /** Derivado automáticamente del módulo al guardar/actualizar */
     @Indexed
     private String idCurso;
 
-    /** Referencia al módulo (viene por path y se fuerza) */
     @Indexed
     private String idModulo;
 
-    /** Título y metadatos */
     @NotBlank(message = "El título es obligatorio")
     @Size(min = 3, max = 200)
     private String titulo;
@@ -46,32 +44,26 @@ public class Leccion {
     @Indexed
     private String slug;
 
-    /** Tipo de lección */
     @NotNull
-    private TipoLeccion tipo; // VIDEO, ARTICULO, QUIZ
+    private TipoLeccion tipo;
 
-    /** Contenido */
     private String urlContenido;
     private String contenidoTexto;
     private VideoMeta video;
     private List<Recurso> recursos;
 
-    /** Duración y orden */
     @PositiveOrZero
-    private Integer duracion; // en segundos (o en la unidad que decidas)
+    private Integer duracion;
     @PositiveOrZero
     private Integer orden;
 
-    /** Publicación */
-    private EstadoPublicacion estado = EstadoPublicacion.BORRADOR; // BORRADOR, PUBLICADO, ARCHIVADO
+    private EstadoPublicacion estado = EstadoPublicacion.BORRADOR;
     @Indexed
     private Instant publishedAt;
     private boolean preview;
 
-    /** Evaluaciones relacionadas (IDs) — las rellenaremos desde EvaluaciónServicio */
     private List<String> evaluaciones;
 
-    /** Auditoría */
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -82,7 +74,8 @@ public class Leccion {
     public enum TipoLeccion { VIDEO, ARTICULO, QUIZ }
     public enum EstadoPublicacion { BORRADOR, PUBLICADO, ARCHIVADO }
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class VideoMeta {
         private String proveedor;
         private String videoId;
@@ -91,10 +84,13 @@ public class Leccion {
         private Integer resolucionMax;
     }
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class Recurso {
-        @NotBlank private String tipo;
-        @NotBlank private String titulo;
+        @NotBlank
+        private String tipo;
+        @NotBlank
+        private String titulo;
         private String url;
     }
 }

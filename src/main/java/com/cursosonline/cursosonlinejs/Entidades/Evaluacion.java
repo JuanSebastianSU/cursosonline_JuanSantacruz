@@ -23,13 +23,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "evaluaciones")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
-    // Un título no se repite dentro de la misma lección
     @CompoundIndex(name = "leccion_titulo_uq", def = "{'idLeccion': 1, 'titulo': 1}", unique = true, sparse = true),
-    // Consultas típicas: por lección, estado y fecha de creación
     @CompoundIndex(name = "leccion_estado_fecha_idx", def = "{'idLeccion': 1, 'estado': 1, 'createdAt': -1}"),
-    // Para encontrar evaluaciones que cierran o expiran pronto
     @CompoundIndex(name = "disponible_hasta_idx", def = "{'disponibleHasta': 1}")
 })
 public class Evaluacion {
@@ -37,15 +35,13 @@ public class Evaluacion {
     @Id
     private String id;
 
-    /** Relación con lección (y opcionalmente curso/módulo para acelerar consultas) */
     @Indexed
     private String idLeccion;
     @Indexed
-    private String idModulo;   // opcional (desnormalización útil)
+    private String idModulo;
     @Indexed
-    private String idCurso;    // opcional (desnormalización útil)
+    private String idCurso;
 
-    /** Título y metadatos */
     @NotBlank(message = "El título es obligatorio")
     @Size(min = 3, max = 200)
     private String titulo;
@@ -53,65 +49,58 @@ public class Evaluacion {
     @Size(max = 2000)
     private String descripcion;
 
-    /** Tipo y publicación */
     @NotNull
-    private TipoEvaluacion tipo = TipoEvaluacion.QUIZ; // QUIZ, TAREA, EXAMEN
+    private TipoEvaluacion tipo = TipoEvaluacion.QUIZ;
     public enum TipoEvaluacion { QUIZ, TAREA, EXAMEN }
 
     @NotNull
-    private EstadoPublicacion estado = EstadoPublicacion.BORRADOR; // BORRADOR, PUBLICADA, ARCHIVADA
+    private EstadoPublicacion estado = EstadoPublicacion.BORRADOR;
     public enum EstadoPublicacion { BORRADOR, PUBLICADA, ARCHIVADA }
 
     @Indexed
-    private Instant publishedAt; // cuándo se publica
+    private Instant publishedAt;
 
-    /** Puntuación (usa DECIMAL128 para evitar problemas de precisión) */
     @Field(targetType = FieldType.DECIMAL128)
     @Positive
     private BigDecimal puntajeMaximo;
 
     @Field(targetType = FieldType.DECIMAL128)
     @Positive
-    private BigDecimal notaAprobatoria; // punto de corte (ej. 60/100)
-
-    /** Intentos y tiempo */
-    @PositiveOrZero
-    private Integer maxIntentos;            // null = sin límite
-    @PositiveOrZero
-    private Integer minSegundosEntreIntentos; // anti-spam
+    private BigDecimal notaAprobatoria;
 
     @PositiveOrZero
-    private Integer timeLimitSeconds;       // 0/null = sin límite
+    private Integer maxIntentos;
+    @PositiveOrZero
+    private Integer minSegundosEntreIntentos;
 
-    /** Ventana de disponibilidad */
-    private Instant disponibleDesde;        // null = desde ya
-    private Instant disponibleHasta;        // null = sin cierre
-    private Instant dueAt;                  // fecha de entrega (para TAREA)
-    private Boolean permitirEntregaTardia;  // si se permite entrega tardía
+    @PositiveOrZero
+    private Integer timeLimitSeconds;
+
+    private Instant disponibleDesde;
+    private Instant disponibleHasta;
+    private Instant dueAt;
+    private Boolean permitirEntregaTardia;
     @Field(targetType = FieldType.DECIMAL128)
-    private BigDecimal penalizacionTardiaPct; // 0..100
+    private BigDecimal penalizacionTardiaPct;
 
-    /** Aleatorización / banco de preguntas (si aplicas) */
-    private String bancoPreguntasId;        // colección/banco externo
+    private String bancoPreguntasId;
     @PositiveOrZero
-    private Integer totalPreguntas;         // cuántas seleccionar del banco
+    private Integer totalPreguntas;
     private Boolean barajarPreguntas;
     private Boolean barajarOpciones;
 
-    /** Política de resultados para estudiante */
     @NotNull
     private PoliticaResultado politicaResultado = PoliticaResultado.SOLO_PUNTAJE;
     public enum PoliticaResultado {
-        NUNCA,               // no muestra nada
-        SOLO_PUNTAJE,        // muestra score sin soluciones
-        PUNTAJE_Y_RESPUESTAS,// muestra score + cuáles acertó/falló
-        DESPUES_DE_CIERRE    // lo anterior pero solo tras dueAt/disponibleHasta
+        NUNCA,
+        SOLO_PUNTAJE,
+        PUNTAJE_Y_RESPUESTAS,
+        DESPUES_DE_CIERRE
     }
 
-    private Boolean autoCalificable;        // true si todo es auto-corrección
-    private Boolean requiereRevisionManual; // true si hay abiertas
+    private Boolean autoCalificable;
+    private Boolean requiereRevisionManual;
 
-    /** Auditoría / concurrencia */
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

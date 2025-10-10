@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/EvaluacionPermisos.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Entidades.Inscripcion;
@@ -18,7 +17,6 @@ public class EvaluacionPermisos {
     private final CursoRepositorio cursoRepo;
     private final InscripcionRepositorio inscripcionRepo;
 
-    // Estados que consideras con acceso a contenidos
     private static final List<Inscripcion.EstadoInscripcion> ESTADOS_CON_ACCESO =
             List.of(Inscripcion.EstadoInscripcion.ACTIVA);
 
@@ -34,7 +32,6 @@ public class EvaluacionPermisos {
         this.inscripcionRepo = inscripcionRepo;
     }
 
-    /** ¿El autenticado es el instructor dueño del curso al que pertenece la lección? */
     public boolean esInstructorDeLeccion(String idLeccion) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;
@@ -53,7 +50,6 @@ public class EvaluacionPermisos {
         return optCurso.map(c -> user.getId().equals(c.getIdInstructor())).orElse(false);
     }
 
-    /** ¿El autenticado está inscrito (con acceso) en el curso de la lección? */
     public boolean estaInscritoEnCursoDeLeccion(String idLeccion) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;

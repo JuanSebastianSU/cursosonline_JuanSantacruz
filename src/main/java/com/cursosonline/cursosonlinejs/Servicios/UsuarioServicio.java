@@ -1,7 +1,6 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/UsuarioServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
-import java.time.Instant; // <-- NUEVO
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,31 +18,30 @@ public class UsuarioServicio {
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final PasswordEncoder passwordEncoder;
-    private final CursoRepositorio cursoRepositorio; // <-- NUEVO
+    private final CursoRepositorio cursoRepositorio;
 
     public UsuarioServicio(UsuarioRepositorio usuarioRepositorio,
                            PasswordEncoder passwordEncoder,
-                           CursoRepositorio cursoRepositorio) { // <-- NUEVO
+                           CursoRepositorio cursoRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.passwordEncoder = passwordEncoder;
-        this.cursoRepositorio = cursoRepositorio; // <-- NUEVO
+        this.cursoRepositorio = cursoRepositorio;
     }
 
     public Usuario guardar(Usuario usuario) {
         if (usuario.getEstado() == null || usuario.getEstado().isBlank()) {
             usuario.setEstado("ACTIVO");
         }
-        // Si también quieres setear passwordUpdatedAt en el alta inicial cuando venga password:
-        // if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
-        //     usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        //     usuario.setPasswordUpdatedAt(Instant.now());
-        // }
         return usuarioRepositorio.save(usuario);
     }
 
-    public List<Usuario> listarTodos() { return usuarioRepositorio.findAll(); }
+    public List<Usuario> listarTodos() { 
+        return usuarioRepositorio.findAll(); 
+    }
 
-    public Optional<Usuario> obtenerPorId(String id) { return usuarioRepositorio.findById(id); }
+    public Optional<Usuario> obtenerPorId(String id) { 
+        return usuarioRepositorio.findById(id); 
+    }
 
     public Optional<Usuario> actualizar(String id, Usuario cambios) {
         if (cambios.getRol() != null) throw new IllegalArgumentException("ROL_UPDATE_NOT_ALLOWED");
@@ -56,7 +54,7 @@ public class UsuarioServicio {
             }
             if (cambios.getPassword() != null && !cambios.getPassword().isBlank()) {
                 actual.setPassword(passwordEncoder.encode(cambios.getPassword()));
-                actual.setPasswordUpdatedAt(Instant.now()); // <-- NUEVO
+                actual.setPasswordUpdatedAt(Instant.now());
             }
             if (actual.getEstado() == null || actual.getEstado().isBlank()) {
                 actual.setEstado("ACTIVO");
@@ -77,7 +75,7 @@ public class UsuarioServicio {
             }
             if (cambios.getPassword() != null && !cambios.getPassword().isBlank()) {
                 actual.setPassword(passwordEncoder.encode(cambios.getPassword()));
-                actual.setPasswordUpdatedAt(Instant.now()); // <-- NUEVO
+                actual.setPasswordUpdatedAt(Instant.now());
             }
             if (actual.getEstado() == null || actual.getEstado().isBlank()) {
                 actual.setEstado("ACTIVO");
@@ -105,7 +103,7 @@ public class UsuarioServicio {
         }
         return usuarioRepositorio.findById(id).map(u -> {
             u.setPassword(passwordEncoder.encode(plainPassword));
-            u.setPasswordUpdatedAt(Instant.now()); // <-- NUEVO
+            u.setPasswordUpdatedAt(Instant.now());
             usuarioRepositorio.save(u);
             return true;
         }).orElse(false);
@@ -117,9 +115,6 @@ public class UsuarioServicio {
         return true;
     }
 
-    /* ======================= NUEVO: sync cursos ======================= */
-
-    /** Reconstruye la lista {id, titulo} de cursos creados por el usuario. */
     public void syncCursosDelInstructor(String userId) {
         var cursos = cursoRepositorio.findByIdInstructorOrderByCreatedAtAsc(userId);
         var resumen = cursos.stream().map(this::toResumen).collect(Collectors.toList());
@@ -129,7 +124,6 @@ public class UsuarioServicio {
         });
     }
 
-    /** Útil si cambiaste el título de un curso: actualiza solo ese ítem. */
     public void reflejarCambioTituloCurso(String cursoId) {
         cursoRepositorio.findById(cursoId).ifPresent(curso -> {
             var ownerId = curso.getIdInstructor();
@@ -149,7 +143,6 @@ public class UsuarioServicio {
         });
     }
 
-    /** Útil al eliminar un curso: lo quita del arreglo del instructor. */
     public void reflejarEliminacionCurso(String cursoId) {
         cursoRepositorio.findById(cursoId).ifPresent(curso -> {
             var ownerId = curso.getIdInstructor();

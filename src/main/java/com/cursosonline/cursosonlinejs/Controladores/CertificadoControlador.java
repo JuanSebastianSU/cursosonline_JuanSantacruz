@@ -25,8 +25,6 @@ public class CertificadoControlador {
         this.certificadoServicio = certificadoServicio;
     }
 
-    /* ===================== EMITIR ===================== */
-    // Solo ADMIN o INSTRUCTOR dueño del curso
     @PostMapping("/cursos/{idCurso}/certificados")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> emitir(@PathVariable String idCurso,
@@ -43,8 +41,6 @@ public class CertificadoControlador {
         }
     }
 
-    /* ===================== OBTENER POR ID ===================== */
-    // Admin, Instructor dueño del curso o Estudiante dueño
     @GetMapping("/certificados/{id}")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.puedeVerCertificado(#id)")
     public ResponseEntity<?> obtener(@PathVariable String id) {
@@ -53,8 +49,6 @@ public class CertificadoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== VERIFICAR (PÚBLICO) ===================== */
-    // Público: no requiere token (recuerda permitirlo en SecurityConfig)
     @GetMapping("/certificados/verificar/{codigo}")
     public ResponseEntity<?> verificar(@PathVariable String codigo) {
         return certificadoServicio.buscarPorCodigo(codigo)
@@ -62,8 +56,6 @@ public class CertificadoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== LISTAR POR CURSO ===================== */
-    // Admin o Instructor dueño del curso
     @GetMapping("/cursos/{idCurso}/certificados")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> listarPorCurso(@PathVariable String idCurso) {
@@ -71,8 +63,6 @@ public class CertificadoControlador {
         return lista.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(lista);
     }
 
-    /* ===================== LISTAR POR ESTUDIANTE ===================== */
-    // Admin o el propio estudiante
     @GetMapping("/estudiantes/{idEstudiante}/certificados")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esMismoEstudiante(#idEstudiante)")
     public ResponseEntity<?> listarPorEstudiante(@PathVariable String idEstudiante) {
@@ -80,8 +70,6 @@ public class CertificadoControlador {
         return lista.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(lista);
     }
 
-    /* ===================== REVOCAR ===================== */
-    // Admin o Instructor dueño del curso al que pertenece el certificado
     @PatchMapping("/certificados/{id}/revocar")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDeCertificado(#id)")
     public ResponseEntity<?> revocar(@PathVariable String id) {
@@ -93,8 +81,6 @@ public class CertificadoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== ELIMINAR ===================== */
-    // Admin o Instructor dueño del curso al que pertenece el certificado
     @DeleteMapping("/certificados/{id}")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDeCertificado(#id)")
     public ResponseEntity<?> eliminar(@PathVariable String id) {
@@ -104,7 +90,6 @@ public class CertificadoControlador {
         return ResponseEntity.noContent().build();
     }
 
-    /* ===== DTO ===== */
     public static class EmitirCertificadoRequest {
         @NotBlank
         private String idEstudiante;

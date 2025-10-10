@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/IntentoControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Intento;
@@ -27,8 +26,6 @@ public class IntentoControlador {
         this.intentoServicio = intentoServicio;
     }
 
-    /* ============ POST: iniciar intento ============ */
-    // Estudiante solo si la evaluación (y su cadena) es visible; Admin/Instructor siempre.
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion) " +
@@ -51,8 +48,6 @@ public class IntentoControlador {
         return ResponseEntity.created(location).body(creado);
     }
 
-    /* ============ POST: entregar ============ */
-    // Estudiante dueño SOLO si la cadena es visible; Admin/Instructor siempre.
     @PostMapping(value = "/{idIntento}/entregar", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeIntento(#idIntento) " +
@@ -72,7 +67,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(entregado);
     }
 
-    /* ============ ADMIN/INSTRUCTOR: ver todos de la evaluación ============ */
     @GetMapping(value = "/todos", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion)")
     public ResponseEntity<?> listarTodos(@PathVariable String idEvaluacion,
@@ -82,8 +76,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(lista);
     }
 
-    /* ============ GET: listar mis intentos en esa evaluación ============ */
-    // Estudiante solo si la cadena es visible; Admin/Instructor siempre.
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion) " +
@@ -95,8 +87,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(intentos);
     }
 
-    /* ============ GET: obtener un intento (propio o instructor/admin) ============ */
-    // Dueño solo con visibilidad; Admin/Instructor siempre.
     @GetMapping(value = "/{idIntento}", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeIntento(#idIntento) " +
@@ -113,7 +103,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(intento);
     }
 
-    /* ============ PUT: actualizar completo (solo dueño y EN_PROGRESO + visibilidad) ============ */
     @PutMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> actualizar(@PathVariable String idEvaluacion,
@@ -133,7 +122,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(resp);
     }
 
-    /* ============ PATCH: actualizar parcial (solo dueño y EN_PROGRESO + visibilidad) ============ */
     @PatchMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> patch(@PathVariable String idEvaluacion,
@@ -155,7 +143,6 @@ public class IntentoControlador {
         return ResponseEntity.ok(resp);
     }
 
-    /* ============ DELETE: eliminar (solo dueño y EN_PROGRESO + visibilidad) ============ */
     @DeleteMapping("/{idIntento}")
     @PreAuthorize("@intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> eliminar(@PathVariable String idEvaluacion,
@@ -176,7 +163,6 @@ public class IntentoControlador {
         }
     }
 
-    /* ===== DTOs simples ===== */
     public static record IniciarIntentoRequest(
             @PositiveOrZero Integer timeLimitSeconds,
             BigDecimal puntajeMaximo

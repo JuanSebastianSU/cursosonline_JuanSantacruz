@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/UsuarioControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Usuario;
@@ -52,8 +51,6 @@ public class UsuarioControlador {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ---- PATCHs específicos ----
-
     @PatchMapping("/{id}/estado")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> cambiarEstado(@PathVariable String id, @RequestBody EstadoRequest body) {
@@ -62,8 +59,6 @@ public class UsuarioControlador {
                 : ResponseEntity.notFound().build();
     }
 
-    // Nota: `principal` por defecto es UserDetails (username = email), no tiene `id`.
-    // Usamos un bean helper para permitir que el propio usuario cambie su contraseña.
     @PatchMapping("/{id}/password")
     @PreAuthorize("hasRole('ADMIN') or @seguridadUtil.esMismoUsuario(#id)")
     public ResponseEntity<?> cambiarPassword(@PathVariable String id, @RequestBody PasswordRequest body) {

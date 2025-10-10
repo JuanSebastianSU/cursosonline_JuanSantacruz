@@ -48,15 +48,15 @@ public class CustomUserDetailServicio implements UserDetailsService {
     private Collection<? extends GrantedAuthority> mapearAuthorities(Usuario u) {
         Set<String> roles = new java.util.HashSet<>();
         if (u.getRol() != null && !u.getRol().isBlank()) {
-            roles.add(u.getRol()); // guardas "Usuario", "Instructor" o "ADMIN"
+            roles.add(u.getRol());
         }
 
-        if (roles.isEmpty()) roles.add("Usuario"); // fallback seguro
+        if (roles.isEmpty()) roles.add("Usuario");
 
         return roles.stream()
                 .filter(r -> r != null && !r.isBlank())
-                .map(r -> r.trim().toUpperCase().replace(' ', '_')) // "Mi Tipo" -> "MI_TIPO"
-                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)   // ROLE_MI_TIPO
+                .map(r -> r.trim().toUpperCase().replace(' ', '_'))
+                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                 .distinct()
                 .map(SimpleGrantedAuthority::new)
                 .toList();

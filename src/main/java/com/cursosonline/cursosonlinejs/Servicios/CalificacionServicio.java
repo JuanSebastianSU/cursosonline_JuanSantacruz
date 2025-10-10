@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/CalificacionServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Calificacion;
@@ -9,7 +8,6 @@ import com.cursosonline.cursosonlinejs.Entidades.Intento.EstadoIntento;
 import com.cursosonline.cursosonlinejs.Entidades.Leccion;
 import com.cursosonline.cursosonlinejs.Entidades.Modulo;
 import com.cursosonline.cursosonlinejs.Repositorios.*;
-
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,8 +22,6 @@ public class CalificacionServicio {
 
     private final CalificacionRepositorio calificacionRepositorio;
     private final IntentoRepositorio intentoRepositorio;
-
-    // NUEVO: para validar “no interactuar si está archivado”
     private final EvaluacionRepositorio evaluacionRepositorio;
     private final LeccionRepositorio leccionRepositorio;
     private final ModuloRepositorio moduloRepositorio;
@@ -45,7 +41,6 @@ public class CalificacionServicio {
         this.cursoRepositorio = cursoRepositorio;
     }
 
-    /** Crear (una sola por intento). */
     public Optional<Calificacion> calificar(String idIntento,
                                             BigDecimal puntaje,
                                             String feedback,
@@ -55,8 +50,6 @@ public class CalificacionServicio {
         if (calificacionRepositorio.existsByIdIntento(idIntento)) return Optional.empty();
 
         Intento intento = intentoOpt.get();
-
-        // *** BLOQUEO si eval/lección/módulo/curso están ARCHIVADOS ***
         assertNoArchivado(intento.getIdEvaluacion());
 
         BigDecimal maximo = (intento.getPuntajeMaximo() != null) ? intento.getPuntajeMaximo() : BigDecimal.TEN;
@@ -77,13 +70,12 @@ public class CalificacionServicio {
                 ? BigDecimal.ZERO
                 : puntaje.multiply(BigDecimal.valueOf(100)).divide(maximo, 2, RoundingMode.HALF_UP));
         c.setFeedback(feedback);
-        c.setCalificadoPor(calificadoPor); // solo id, sin nombre
+        c.setCalificadoPor(calificadoPor);
         c.setEstado(Calificacion.EstadoCalificacion.PENDIENTE);
-        c.setCalificadoAt(null); // se marca al publicar
+        c.setCalificadoAt(null);
 
         Calificacion creada = calificacionRepositorio.save(c);
 
-        // Reflejar en intento
         intento.setPuntaje(puntaje);
         intento.setEstado(EstadoIntento.CALIFICADO);
         intento.setCalificadoAt(Instant.now());
@@ -92,11 +84,18 @@ public class CalificacionServicio {
         return Optional.of(creada);
     }
 
-    public Optional<Calificacion> buscarPorId(String id) { return calificacionRepositorio.findById(id); }
-    public Optional<Calificacion> buscarPorIntento(String idIntento) { return calificacionRepositorio.findByIdIntento(idIntento); }
-    public List<Calificacion> listarPorEvaluacion(String idEvaluacion) { return calificacionRepositorio.findByIdEvaluacionOrderByCreatedAtDesc(idEvaluacion); }
+    public Optional<Calificacion> buscarPorId(String id) { 
+        return calificacionRepositorio.findById(id); 
+    }
 
-    /** Actualizar (parcial). */
+    public Optional<Calificacion> buscarPorIntento(String idIntento) { 
+        return calificacionRepositorio.findByIdIntento(idIntento); 
+    }
+
+    public List<Calificacion> listarPorEvaluacion(String idEvaluacion) { 
+        return calificacionRepositorio.findByIdEvaluacionOrderByCreatedAtDesc(idEvaluacion); 
+    }
+
     public Optional<Calificacion> actualizarParcial(String id, BigDecimal puntaje, String feedback) {
         return calificacionRepositorio.findById(id).map(c -> {
             if (puntaje != null) {
@@ -116,12 +115,8 @@ public class CalificacionServicio {
         });
     }
 
-    /** Publicar (marca fecha). */
     public Optional<Calificacion> publicar(String id) {
         return calificacionRepositorio.findById(id).map(c -> {
-            // (Opcional) puedes bloquear publicar si la evaluación está archivada:
-            // assertNoArchivado(c.getIdEvaluacion());
-
             c.setEstado(Calificacion.EstadoCalificacion.PUBLICADA);
             c.setCalificadoAt(Instant.now());
             return calificacionRepositorio.save(c);
@@ -135,32 +130,25 @@ public class CalificacionServicio {
         }).orElse(false);
     }
 
-    /* ===================== Helpers ===================== */
-
-    /** Lanza IllegalStateException si curso/módulo/lección/evaluación están ARCHIVADOS. */
     private void assertNoArchivado(String idEvaluacion) {
         Evaluacion eval = evaluacionRepositorio.findById(idEvaluacion)
                 .orElseThrow(() -> new NoSuchElementException("Evaluación no encontrada"));
-        if (eval.getEstado() == Evaluacion.EstadoPublicacion.ARCHIVADA) {
+        if (eval.getEstado() == Evaluacion.EstadoPublicacion.ARCHIVADA)
             throw new IllegalStateException("No se puede calificar: la evaluación está ARCHIVADA.");
-        }
 
         Leccion lec = leccionRepositorio.findById(eval.getIdLeccion())
                 .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
-        if (lec.getEstado() == Leccion.EstadoPublicacion.ARCHIVADO) {
+        if (lec.getEstado() == Leccion.EstadoPublicacion.ARCHIVADO)
             throw new IllegalStateException("No se puede calificar: la lección está ARCHIVADA.");
-        }
 
         Modulo mod = moduloRepositorio.findById(lec.getIdModulo())
                 .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
-        if (mod.getEstado() == Modulo.EstadoModulo.ARCHIVADO) {
+        if (mod.getEstado() == Modulo.EstadoModulo.ARCHIVADO)
             throw new IllegalStateException("No se puede calificar: el módulo está ARCHIVADO.");
-        }
 
         Curso cur = cursoRepositorio.findById(mod.getIdCurso())
                 .orElseThrow(() -> new NoSuchElementException("Curso no encontrado"));
-        if (cur.getEstado() == Curso.EstadoCurso.ARCHIVADO) {
+        if (cur.getEstado() == Curso.EstadoCurso.ARCHIVADO)
             throw new IllegalStateException("No se puede calificar: el curso está ARCHIVADO.");
-        }
     }
 }

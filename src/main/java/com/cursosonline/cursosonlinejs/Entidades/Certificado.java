@@ -22,76 +22,68 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "certificados")
-@Getter @Setter
+@Getter
+@Setter
 @CompoundIndexes({
-  // Evita emitir más de un certificado por curso y estudiante
-  @CompoundIndex(name = "curso_estudiante_uq", def = "{'idCurso': 1, 'idEstudiante': 1}", unique = true, sparse = true),
-  // Búsqueda/validación por código
-  @CompoundIndex(name = "codigo_uq", def = "{'codigoVerificacion': 1}", unique = true, sparse = true)
+    @CompoundIndex(name = "curso_estudiante_uq", def = "{'idCurso': 1, 'idEstudiante': 1}", unique = true, sparse = true),
+    @CompoundIndex(name = "codigo_uq", def = "{'codigoVerificacion': 1}", unique = true, sparse = true)
 })
 public class Certificado {
 
-  @Id
-  private String id;
+    @Id
+    private String id;
 
-  /** Relaciones */
-  @Indexed @NotBlank
-  private String idCurso;
+    @Indexed
+    @NotBlank
+    private String idCurso;
 
-  @Indexed @NotBlank
-  private String idEstudiante;
+    @Indexed
+    @NotBlank
+    private String idEstudiante;
 
-  /** Estado */
-  private Estado estado = Estado.EMITIDO; // EMITIDO, REVOCADO
-  public enum Estado { EMITIDO, REVOCADO }
+    private Estado estado = Estado.EMITIDO;
+    public enum Estado { EMITIDO, REVOCADO }
 
-  /** Fechas */
-  private Instant emitidoEn;         // antes: emitidoEn (String)
-  private Instant revocadoAt;
+    private Instant emitidoEn;
+    private Instant revocadoAt;
 
-  /** Verificación pública */
-  @NotBlank
-  @Indexed(unique = true)
-  private String codigoVerificacion; // ej: base62 de 10-16 chars
+    @NotBlank
+    @Indexed(unique = true)
+    private String codigoVerificacion;
 
-  // Opcional: almacenar solo hash y mostrar el código una vez al crear
-  private String codigoHash;         // SHA-256/… si no guardas el plano
+    private String codigoHash;
+    private String publicUrl;
+    private String qrData;
 
-  private String publicUrl;          // URL pública p/validación QR
-  private String qrData;             // datos para generar QR (si lo usas)
+    @NotBlank
+    private String cursoTitulo;
+    private String instructorNombre;
+    @NotBlank
+    private String estudianteNombre;
 
-  /** Snapshots (para que no cambien si curso/usuario cambian) */
-  @NotBlank
-  private String cursoTitulo;
-  private String instructorNombre;
-  @NotBlank
-  private String estudianteNombre;
+    @Pattern(regexp = "^[A-Z]{3}$")
+    private String moneda;
 
-  @Pattern(regexp = "^[A-Z]{3}$")
-  private String moneda;             // si muestras precio/valor (opcional)
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal notaFinal;
 
-  @Field(targetType = FieldType.DECIMAL128)
-  private BigDecimal notaFinal;      // si el curso tiene nota
+    @PositiveOrZero
+    private Integer horas;
 
-  @PositiveOrZero
-  private Integer horas;             // horas totales del curso
+    private String templateId;
+    private String pdfUrl;
+    private String backgroundUrl;
+    private String firmaUrl;
+    private String selloUrl;
 
-  /** Plantilla/render */
-  private String templateId;         // ID de plantilla usada
-  private String pdfUrl;             // URL del PDF generado (S3, etc.)
-  private String backgroundUrl;      // imagen de fondo (opcional)
-  private String firmaUrl;           // firma digital/imagen (opcional)
-  private String selloUrl;           // sello/logo (opcional)
+    @CreatedDate
+    private Instant createdAt;
 
-  /** Auditoría / extras */
-  @CreatedDate
-  private Instant createdAt;
+    @LastModifiedDate
+    private Instant updatedAt;
 
-  @LastModifiedDate
-  private Instant updatedAt;
+    private Map<String, String> metadata;
 
-  private Map<String, String> metadata;
-
-  @Version
-  private Long version;
+    @Version
+    private Long version;
 }

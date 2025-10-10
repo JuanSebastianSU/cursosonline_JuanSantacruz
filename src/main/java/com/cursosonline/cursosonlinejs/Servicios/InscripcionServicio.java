@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/InscripcionServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -22,7 +21,6 @@ public class InscripcionServicio {
     private static final Set<EstadoInscripcion> ESTADOS_VALIDOS =
             EnumSet.allOf(EstadoInscripcion.class);
 
-    // Para evitar duplicados "activos" (acceso o reserva de asiento)
     private static final List<EstadoInscripcion> ESTADOS_ACTIVOS =
             List.of(EstadoInscripcion.ACTIVA, EstadoInscripcion.PENDIENTE_PAGO);
 
@@ -34,7 +32,6 @@ public class InscripcionServicio {
         this.cursoRepositorio = cursoRepositorio;
     }
 
-    /** ¿Se puede inscribir en el curso? (estado, ventana, cupo) */
     public boolean puedeInscribirse(String idCurso) {
         var c = cursoRepositorio.findById(idCurso).orElse(null);
         if (c == null) return false;
@@ -63,7 +60,6 @@ public class InscripcionServicio {
         return estado != null && ESTADOS_VALIDOS.contains(estado);
     }
 
-    /** ¿Ya hay una inscripción “activa” para ese curso/estudiante? */
     public boolean existeActiva(String idCurso, String idEstudiante) {
         return inscripcionRepositorio.existsByIdCursoAndIdEstudianteAndEstadoIn(
                 idCurso, idEstudiante, ESTADOS_ACTIVOS
@@ -77,7 +73,6 @@ public class InscripcionServicio {
         return inscripcionRepositorio.save(inscripcion);
     }
 
-    /** Pasa la inscripción a ACTIVA si aún está PENDIENTE_PAGO; devuelve idCurso si hubo cambio. */
     public String activarSiPendientePago(String idInscripcion) {
         return inscripcionRepositorio.findById(idInscripcion).map(insc -> {
             if (insc.getEstado() == EstadoInscripcion.PENDIENTE_PAGO) {
@@ -108,27 +103,40 @@ public class InscripcionServicio {
         return inscripcionRepositorio.save(insc);
     }
 
-    public List<Inscripcion> listaAll() { return inscripcionRepositorio.findAll(); }
-    public Inscripcion listaInscripcion(String id) { return inscripcionRepositorio.findById(id).orElse(null); }
-    public void eliminar(String id) { inscripcionRepositorio.deleteById(id); }
+    public List<Inscripcion> listaAll() {
+        return inscripcionRepositorio.findAll();
+    }
 
-    /* -------- Helpers -------- */
+    public Inscripcion listaInscripcion(String id) {
+        return inscripcionRepositorio.findById(id).orElse(null);
+    }
+
+    public void eliminar(String id) {
+        inscripcionRepositorio.deleteById(id);
+    }
+
     private EstadoInscripcion parseEstado(String raw) {
         if (raw == null) throw new IllegalArgumentException("El estado es obligatorio");
         switch (raw.trim().toLowerCase()) {
-            case "pendiente_pago": return EstadoInscripcion.PENDIENTE_PAGO;
-            case "activa":         return EstadoInscripcion.ACTIVA;
-            case "suspendida":     return EstadoInscripcion.SUSPENDIDA;
-            case "completada":     return EstadoInscripcion.COMPLETADA;
-            case "cancelada":      return EstadoInscripcion.CANCELADA;
-            case "expirada":       return EstadoInscripcion.EXPIRADA;
-            case "pagada":         return EstadoInscripcion.ACTIVA; // compat
+            case "pendiente_pago":
+                return EstadoInscripcion.PENDIENTE_PAGO;
+            case "activa":
+                return EstadoInscripcion.ACTIVA;
+            case "suspendida":
+                return EstadoInscripcion.SUSPENDIDA;
+            case "completada":
+                return EstadoInscripcion.COMPLETADA;
+            case "cancelada":
+                return EstadoInscripcion.CANCELADA;
+            case "expirada":
+                return EstadoInscripcion.EXPIRADA;
+            case "pagada":
+                return EstadoInscripcion.ACTIVA;
             default:
                 throw new IllegalArgumentException("Estado inválido: " + raw);
         }
     }
 
-    /** Contador público alineado con snapshot (solo ACTIVA). */
     public long contarActivasPorCurso(String idCurso) {
         return inscripcionRepositorio.countByIdCursoAndEstado(idCurso, EstadoInscripcion.ACTIVA);
     }

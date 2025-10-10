@@ -37,9 +37,6 @@ public class CalificacionPermisos {
         return usuarioRepo.findByEmail(auth.getName()).map(u -> u.getId()).orElse(null);
     }
 
-    /* ===== Intento ===== */
-
-    /** Dueño (estudiante) del intento */
     public boolean esDuenoDeIntento(String idIntento) {
         var uid = getUserIdOrNull();
         if (uid == null) return false;
@@ -47,16 +44,12 @@ public class CalificacionPermisos {
         return intento != null && uid.equals(intento.getIdEstudiante());
     }
 
-    /** Instructor dueño del curso de ese intento */
     public boolean esInstructorDeIntento(String idIntento) {
         var intento = intentoRepo.findById(idIntento).orElse(null);
         if (intento == null) return false;
         return esInstructorDeEvaluacion(intento.getIdEvaluacion());
     }
 
-    /* ===== Evaluación ===== */
-
-    /** Instructor dueño del curso de esa evaluación */
     public boolean esInstructorDeEvaluacion(String idEvaluacion) {
         var uid = getUserIdOrNull();
         if (uid == null) return false;
@@ -73,9 +66,6 @@ public class CalificacionPermisos {
         return curso != null && uid.equals(curso.getIdInstructor());
     }
 
-    /* ===== Calificación ===== */
-
-    /** Dueño (estudiante) de la calificación (por intento) */
     public boolean esDuenoDeCalificacion(String idCalificacion) {
         var uid = getUserIdOrNull();
         if (uid == null) return false;
@@ -85,7 +75,6 @@ public class CalificacionPermisos {
         return intento != null && uid.equals(intento.getIdEstudiante());
     }
 
-    /** Instructor dueño del curso de la calificación */
     public boolean esInstructorDeCalificacion(String idCalificacion) {
         var cal = calificacionRepo.findById(idCalificacion).orElse(null);
         if (cal == null) return false;

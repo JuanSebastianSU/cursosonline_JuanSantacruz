@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/CertificadoServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Certificado;
@@ -24,7 +23,7 @@ public class CertificadoServicio {
     private final InscripcionRepositorio inscRepo;
     private final CursoRepositorio cursoRepo;
     private final UsuarioRepositorio usuarioRepo;
-    private final InscripcionServicio inscripcionServicio; // <-- NUEVO
+    private final InscripcionServicio inscripcionServicio;
 
     private final SecureRandom rnd = new SecureRandom();
     private final HexFormat hex = HexFormat.of().withUpperCase();
@@ -33,16 +32,14 @@ public class CertificadoServicio {
                                InscripcionRepositorio inscRepo,
                                CursoRepositorio cursoRepo,
                                UsuarioRepositorio usuarioRepo,
-                               InscripcionServicio inscripcionServicio) { // <-- NUEVO
+                               InscripcionServicio inscripcionServicio) {
         this.repo = repo;
         this.inscRepo = inscRepo;
         this.cursoRepo = cursoRepo;
         this.usuarioRepo = usuarioRepo;
-        this.inscripcionServicio = inscripcionServicio; // <-- NUEVO
+        this.inscripcionServicio = inscripcionServicio;
     }
-    
 
-    /** Elegible: inscripción COMPLETADA o aprobadoFinal = true */
     public boolean esElegible(String idCurso, String idEstudiante) {
         return inscRepo.findByIdCursoAndIdEstudiante(idCurso, idEstudiante)
                 .map(i -> i.getEstado() == Inscripcion.EstadoInscripcion.COMPLETADA
@@ -50,7 +47,6 @@ public class CertificadoServicio {
                 .orElse(false);
     }
 
-   /** Emite certificado con snapshots y enlaza en la inscripción. */
     public Optional<Certificado> emitir(String idCurso, String idEstudiante) {
         if (!esElegible(idCurso, idEstudiante)) {
             throw new IllegalStateException("El estudiante no es elegible para certificado en este curso.");
@@ -77,15 +73,17 @@ public class CertificadoServicio {
                 .ifPresent(est -> c.setEstudianteNombre(obtenerNombreVisible(est)));
 
         Certificado guardado = repo.save(c);
-
-        // === enlace en inscripción ===
         inscripcionServicio.vincularCertificado(idCurso, idEstudiante, guardado.getId());
-
         return Optional.of(guardado);
     }
 
-    public Optional<Certificado> buscarPorId(String id) { return repo.findById(id); }
-    public Optional<Certificado> buscarPorCodigo(String codigo) { return repo.findByCodigoVerificacion(codigo); }
+    public Optional<Certificado> buscarPorId(String id) { 
+        return repo.findById(id); 
+    }
+
+    public Optional<Certificado> buscarPorCodigo(String codigo) { 
+        return repo.findByCodigoVerificacion(codigo); 
+    }
 
     public List<Certificado> listarPorCurso(String idCurso) {
         return repo.findByIdCursoOrderByCreatedAtDesc(idCurso);
@@ -103,7 +101,9 @@ public class CertificadoServicio {
         });
     }
 
-    public void eliminar(String id) { repo.deleteById(id); }
+    public void eliminar(String id) { 
+        repo.deleteById(id); 
+    }
 
     private String generarCodigoUnico() {
         for (int i = 0; i < 5; i++) {
@@ -115,10 +115,8 @@ public class CertificadoServicio {
         return hex.formatHex((Instant.now().toString() + rnd.nextLong()).getBytes());
     }
 
-    /** Helper para formatear nombre visible (prioriza nombre completo) */
     private String obtenerNombreVisible(Usuario u) {
         if (u == null) return null;
-        if (u.getNombre() != null && !u.getNombre().isBlank()) return u.getNombre().trim();
         if (u.getNombre() != null && !u.getNombre().isBlank()) return u.getNombre().trim();
         if (u.getEmail() != null && !u.getEmail().isBlank()) return u.getEmail().trim();
         return "Usuario " + u.getId();

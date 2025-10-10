@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Entidades/Usuario.java
 package com.cursosonline.cursosonlinejs.Entidades;
 
 import java.time.Instant;
@@ -24,7 +23,8 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Document(collection = "usuarios")
-@Getter @Setter
+@Getter
+@Setter
 @ToString(exclude = "password")
 @CompoundIndexes({
     @CompoundIndex(name = "estado_rol_fecha_idx", def = "{'estado': 1, 'rol': 1, 'fechaRegistro': -1}")
@@ -34,10 +34,12 @@ public class Usuario {
     @Id
     private String id;
 
-    @NotBlank @Size(min = 3, max = 200)
+    @NotBlank
+    @Size(min = 3, max = 200)
     private String nombre;
 
-    @Email @NotBlank
+    @Email
+    @NotBlank
     @Indexed(unique = true)
     private String email;
 
@@ -67,10 +69,10 @@ public class Usuario {
     @Version
     private Long version;
 
-    /** Cursos creados por este usuario (instructor): pares {id, titulo}. */
     private List<CursoResumen> cursos;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class CursoResumen {
         private String id;
         private String titulo;

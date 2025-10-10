@@ -23,7 +23,6 @@ public class TipoUsuarioServicio {
         return s == null ? null : s.trim();
     }
 
-    /* =================== Crear =================== */
     public TipoUsuario guardar(TipoUsuario t) {
         t.setNombre(norm(t.getNombre()));
         if (t.getNombre() == null || t.getNombre().isBlank()) {
@@ -33,13 +32,11 @@ public class TipoUsuarioServicio {
             throw new IllegalArgumentException("Ya existe un TipoUsuario con ese nombre.");
         }
 
-        // ADMIN siempre system=true y nunca default
         if ("ADMIN".equalsIgnoreCase(t.getNombre())) {
             t.setSystem(true);
             t.setDefault(false);
         }
 
-        // si se marca como default, quitar default del anterior
         if (t.isDefault()) {
             repo.findFirstByIsDefaultTrueOrderByNombreAsc().ifPresent(prev -> {
                 prev.setDefault(false);
@@ -50,7 +47,6 @@ public class TipoUsuarioServicio {
         return repo.save(t);
     }
 
-    /* =================== Listar/Buscar =================== */
     public Page<TipoUsuario> listar(Pageable pageable) {
         return repo.findAll(pageable);
     }
@@ -64,7 +60,6 @@ public class TipoUsuarioServicio {
         return repo.findById(id);
     }
 
-    /* =================== Actualizar =================== */
     public Optional<TipoUsuario> actualizar(String id, String nombre, String descripcion, boolean isDefault) {
         final String nombreNorm = norm(nombre);
 
@@ -73,7 +68,6 @@ public class TipoUsuarioServicio {
         }
 
         return repo.findById(id).map(actual -> {
-            // No permitir renombrar/eliminar ADMIN ni marcarlo default
             if (actual.isSystem() && "ADMIN".equalsIgnoreCase(actual.getNombre())) {
                 if (!actual.getNombre().equalsIgnoreCase(nombreNorm)) {
                     throw new IllegalStateException("No se puede renombrar ADMIN.");
@@ -100,7 +94,6 @@ public class TipoUsuarioServicio {
         });
     }
 
-    /* =================== Eliminar =================== */
     public boolean eliminar(String id) {
         return repo.findById(id).map(t -> {
             if (t.isSystem()) {
@@ -111,7 +104,6 @@ public class TipoUsuarioServicio {
         }).orElse(false);
     }
 
-    /* =================== Utilidades =================== */
     public Optional<TipoUsuario> getDefault() {
         return repo.findFirstByIsDefaultTrueOrderByNombreAsc();
     }

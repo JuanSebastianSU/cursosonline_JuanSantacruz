@@ -14,78 +14,73 @@ public class LeccionServicio {
 
     private final LeccionRepositorio leccionRepositorio;
     private final ModuloRepositorio moduloRepositorio;
-    private final CursoServicio cursoServicio; // <<< NUEVO
+    private final CursoServicio cursoServicio;
 
     public LeccionServicio(LeccionRepositorio leccionRepositorio,
                            ModuloRepositorio moduloRepositorio,
-                           CursoServicio cursoServicio) { // <<< NUEVO
+                           CursoServicio cursoServicio) {
         this.leccionRepositorio = leccionRepositorio;
         this.moduloRepositorio = moduloRepositorio;
-        this.cursoServicio = cursoServicio; // <<< NUEVO
+        this.cursoServicio = cursoServicio;
     }
-
-    /* ===================== CRUD ===================== */
 
     public Leccion guardar(Leccion leccion) {
-    if (leccion.getTitulo() != null) leccion.setTitulo(leccion.getTitulo().trim());
-    if (leccion.getUrlContenido() != null) leccion.setUrlContenido(leccion.getUrlContenido().trim());
+        if (leccion.getTitulo() != null) leccion.setTitulo(leccion.getTitulo().trim());
+        if (leccion.getUrlContenido() != null) leccion.setUrlContenido(leccion.getUrlContenido().trim());
 
-    final boolean esNueva = (leccion.getId() == null);
+        final boolean esNueva = (leccion.getId() == null);
 
-    if (esNueva) {
-        // creación: igual que ya tienes (no se bloquea)
-        String idModulo = leccion.getIdModulo();
-        if (idModulo == null || idModulo.isBlank())
-            throw new IllegalArgumentException("idModulo es obligatorio para crear la lección.");
-        Modulo m = moduloRepositorio.findById(idModulo)
-                .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
-        leccion.setIdCurso(m.getIdCurso());
-    } else {
-        // actualización: validar editabilidad
-        Leccion actual = leccionRepositorio.findById(leccion.getId())
-                .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
-        if (actual.getEstado() == Leccion.EstadoPublicacion.PUBLICADO) {
-            throw new IllegalStateException("No se puede editar una lección en estado PUBLICADO. Archívala primero.");
+        if (esNueva) {
+            String idModulo = leccion.getIdModulo();
+            if (idModulo == null || idModulo.isBlank())
+                throw new IllegalArgumentException("idModulo es obligatorio para crear la lección.");
+            Modulo m = moduloRepositorio.findById(idModulo)
+                    .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
+            leccion.setIdCurso(m.getIdCurso());
+        } else {
+            Leccion actual = leccionRepositorio.findById(leccion.getId())
+                    .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
+            if (actual.getEstado() == Leccion.EstadoPublicacion.PUBLICADO) {
+                throw new IllegalStateException("No se puede editar una lección en estado PUBLICADO. Archívala primero.");
+            }
+            if (!Objects.equals(actual.getIdModulo(), leccion.getIdModulo())) {
+                throw new IllegalArgumentException("No se permite cambiar la lección de módulo.");
+            }
+            leccion.setIdCurso(actual.getIdCurso());
         }
-        // congelar idModulo/idCurso
-        if (!Objects.equals(actual.getIdModulo(), leccion.getIdModulo())) {
-            throw new IllegalArgumentException("No se permite cambiar la lección de módulo.");
+
+        Leccion guardada = leccionRepositorio.save(leccion);
+
+        if (esNueva) {
+            anexarLeccionAlModulo(guardada.getIdModulo(), guardada.getId());
         }
-        leccion.setIdCurso(actual.getIdCurso());
+
+        return guardada;
     }
 
-    Leccion guardada = leccionRepositorio.save(leccion);
-
-    if (esNueva) {
-        anexarLeccionAlModulo(guardada.getIdModulo(), guardada.getId());
+    public List<Leccion> listaAll() {
+        return leccionRepositorio.findAll();
     }
 
-    return guardada;
-}
-
-
-    public List<Leccion> listaAll() { return leccionRepositorio.findAll(); }
-
-    public Leccion listaLeccion(String id) { return leccionRepositorio.findById(id).orElse(null); }
+    public Leccion listaLeccion(String id) {
+        return leccionRepositorio.findById(id).orElse(null);
+    }
 
     public void eliminar(String id) {
-        // Quitar el id de la lección del módulo antes de borrar
         Leccion l = leccionRepositorio.findById(id).orElse(null);
         if (l != null) {
-            String idCurso = l.getIdCurso(); // lo guardamos para refrescar después
+            String idCurso = l.getIdCurso();
             quitarLeccionDeModulo(l.getIdModulo(), l.getId());
             leccionRepositorio.deleteById(id);
-
-            // <<< NUEVO: refrescar el contador de lecciones del curso
             if (idCurso != null) {
                 cursoServicio.onLeccionChanged(idCurso);
             }
         }
     }
 
-    /* ===================== Soporte controlador ===================== */
-
-    public Leccion obtener(String id) { return leccionRepositorio.findById(id).orElse(null); }
+    public Leccion obtener(String id) {
+        return leccionRepositorio.findById(id).orElse(null);
+    }
 
     public List<Leccion> listarPorModulo(String idModulo) {
         return leccionRepositorio.findByIdModuloOrderByOrdenAsc(idModulo);
@@ -105,16 +100,14 @@ public class LeccionServicio {
                 .orElse(1);
     }
 
-    /* ===================== Reordenamientos (sin mover de módulo) ===================== */
-
     public Leccion cambiarOrden(String idModulo, String idLeccion, int nuevoOrden) {
         if (nuevoOrden < 1) nuevoOrden = 1;
 
         Leccion actual = leccionRepositorio.findById(idLeccion)
                 .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
         if (actual.getEstado() == Leccion.EstadoPublicacion.PUBLICADO) {
-        throw new IllegalStateException("No se puede reordenar una lección PUBLICADA. Archívala primero.");
-    }
+            throw new IllegalStateException("No se puede reordenar una lección PUBLICADA. Archívala primero.");
+        }
         if (!idModulo.equals(actual.getIdModulo()))
             throw new IllegalArgumentException("La lección no pertenece al módulo");
 
@@ -135,19 +128,18 @@ public class LeccionServicio {
     }
 
     public Leccion moverPorDelta(String idModulo, String idLeccion, int delta) {
-    Leccion actual = leccionRepositorio.findById(idLeccion)
-            .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
+        Leccion actual = leccionRepositorio.findById(idLeccion)
+                .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
 
-    if (actual.getEstado() == Leccion.EstadoPublicacion.PUBLICADO) {
-        throw new IllegalStateException("No se puede reordenar una lección PUBLICADA. Archívala primero.");
+        if (actual.getEstado() == Leccion.EstadoPublicacion.PUBLICADO) {
+            throw new IllegalStateException("No se puede reordenar una lección PUBLICADA. Archívala primero.");
+        }
+        if (!idModulo.equals(actual.getIdModulo()))
+            throw new IllegalArgumentException("La lección no pertenece al módulo");
+
+        int nuevoOrden = Math.max(1, actual.getOrden() + delta);
+        return cambiarOrden(idModulo, idLeccion, nuevoOrden);
     }
-    if (!idModulo.equals(actual.getIdModulo()))
-        throw new IllegalArgumentException("La lección no pertenece al módulo");
-
-    int nuevoOrden = Math.max(1, actual.getOrden() + delta);
-    return cambiarOrden(idModulo, idLeccion, nuevoOrden);
-}
-
 
     public List<Leccion> reordenarSecuencial(String idModulo, List<String> idsEnOrden) {
         if (idsEnOrden == null || idsEnOrden.isEmpty())
@@ -174,15 +166,12 @@ public class LeccionServicio {
         }
         return leccionRepositorio.saveAll(lecciones);
     }
-    // En src/main/java/com/cursosonline/cursosonlinejs/Servicios/LeccionServicio.java
 
     public List<Leccion> listarPublicadasPorModulo(String idModulo) {
         return leccionRepositorio.findByIdModuloAndEstadoOrderByOrdenAsc(
                 idModulo, Leccion.EstadoPublicacion.PUBLICADO
         );
     }
-
-    /* ===================== Patch parcial ===================== */
 
     public Leccion patchParcial(Leccion actual, String titulo, Leccion.TipoLeccion tipo,
                                 String urlContenido, Integer duracion) {
@@ -192,18 +181,15 @@ public class LeccionServicio {
         if (urlContenido != null) actual.setUrlContenido(urlContenido.trim());
         if (duracion != null && duracion >= 0) actual.setDuracion(duracion);
 
-        // NO tocamos idModulo / idCurso aquí
         return leccionRepositorio.save(actual);
     }
-
-    /* ===================== Helpers de sincronización ===================== */
 
     private void anexarLeccionAlModulo(String idModulo, String idLeccion) {
         Modulo m = moduloRepositorio.findById(idModulo)
                 .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
         List<String> ids = (m.getLecciones() == null) ? new ArrayList<>() : new ArrayList<>(m.getLecciones());
         if (!ids.contains(idLeccion)) {
-            ids.add(idLeccion); // la dejamos al final; el orden “real” lo maneja Leccion.orden
+            ids.add(idLeccion);
             m.setLecciones(ids);
             moduloRepositorio.save(m);
         }
@@ -219,26 +205,27 @@ public class LeccionServicio {
             moduloRepositorio.save(m);
         }
     }
-    public Optional<Leccion> publicar(String id) {
-    return leccionRepositorio.findById(id).map(l -> {
-        if (l.getEstado() != Leccion.EstadoPublicacion.PUBLICADO) {
-            l.setEstado(Leccion.EstadoPublicacion.PUBLICADO);
-            l.setPublishedAt(Instant.now());
-            l = leccionRepositorio.save(l);
-            if (l.getIdCurso() != null) cursoServicio.onLeccionChanged(l.getIdCurso());
-        }
-        return l;
-    });
-}
 
-public Optional<Leccion> archivar(String id) {
-    return leccionRepositorio.findById(id).map(l -> {
-        if (l.getEstado() != Leccion.EstadoPublicacion.ARCHIVADO) {
-            l.setEstado(Leccion.EstadoPublicacion.ARCHIVADO);
-            l = leccionRepositorio.save(l);
-            if (l.getIdCurso() != null) cursoServicio.onLeccionChanged(l.getIdCurso());
-        }
-        return l;
-    });
-}
+    public Optional<Leccion> publicar(String id) {
+        return leccionRepositorio.findById(id).map(l -> {
+            if (l.getEstado() != Leccion.EstadoPublicacion.PUBLICADO) {
+                l.setEstado(Leccion.EstadoPublicacion.PUBLICADO);
+                l.setPublishedAt(Instant.now());
+                l = leccionRepositorio.save(l);
+                if (l.getIdCurso() != null) cursoServicio.onLeccionChanged(l.getIdCurso());
+            }
+            return l;
+        });
+    }
+
+    public Optional<Leccion> archivar(String id) {
+        return leccionRepositorio.findById(id).map(l -> {
+            if (l.getEstado() != Leccion.EstadoPublicacion.ARCHIVADO) {
+                l.setEstado(Leccion.EstadoPublicacion.ARCHIVADO);
+                l = leccionRepositorio.save(l);
+                if (l.getIdCurso() != null) cursoServicio.onLeccionChanged(l.getIdCurso());
+            }
+            return l;
+        });
+    }
 }

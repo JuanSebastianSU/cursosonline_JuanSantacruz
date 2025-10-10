@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/EvaluacionServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Evaluacion;
@@ -27,40 +26,33 @@ public class EvaluacionServicio {
         this.leccionRepositorio = leccionRepositorio;
     }
 
-    /** Crear o actualizar. En creación: copio idModulo/idCurso desde la Lección. */
     public Evaluacion guardar(Evaluacion e) {
         if (e.getTitulo() != null) e.setTitulo(e.getTitulo().trim());
         if (e.getTipo() == null) throw new IllegalArgumentException("El tipo de evaluación es obligatorio");
         if (e.getPuntajeMaximo() == null) e.setPuntajeMaximo(BigDecimal.ZERO);
 
         final boolean esNueva = (e.getId() == null);
-
-        // Siempre necesitamos saber a qué lección pertenece
         String idLeccion = e.getIdLeccion();
         if (idLeccion == null || idLeccion.isBlank()) {
             throw new IllegalArgumentException("idLeccion es obligatorio.");
         }
 
         if (esNueva) {
-            // Tomar idModulo e idCurso desde la lección
             Leccion l = leccionRepositorio.findById(idLeccion)
                     .orElseThrow(() -> new NoSuchElementException("Lección no encontrada"));
             e.setIdModulo(l.getIdModulo());
             e.setIdCurso(l.getIdCurso());
         } else {
-            // Blindaje: no permitir mover la evaluación de lección
             Evaluacion actual = evaluacionRepositorio.findById(e.getId())
                     .orElseThrow(() -> new NoSuchElementException("Evaluación no encontrada"));
             if (!Objects.equals(actual.getIdLeccion(), e.getIdLeccion())) {
                 throw new IllegalArgumentException("No se permite cambiar la evaluación de lección.");
             }
-            // Congelar idCurso/idModulo
             e.setIdModulo(actual.getIdModulo());
             e.setIdCurso(actual.getIdCurso());
         }
 
         Evaluacion saved = evaluacionRepositorio.save(e);
-        // Sincroniza la lista de evaluaciones PUBLICADAS en la lección
         syncEvaluacionesPublicadasEnLeccion(saved.getIdLeccion());
         return saved;
     }
@@ -69,7 +61,6 @@ public class EvaluacionServicio {
         return evaluacionRepositorio.findByIdLeccionOrderByTituloAsc(idLeccion);
     }
 
-    /** Solo PUBLICADAS de la lección (para alumnos/visitantes) */
     public List<Evaluacion> listarPublicadasPorLeccion(String idLeccion) {
         return evaluacionRepositorio.findByIdLeccionAndEstadoOrderByTituloAsc(
                 idLeccion, Evaluacion.EstadoPublicacion.PUBLICADA
@@ -80,7 +71,6 @@ public class EvaluacionServicio {
         return evaluacionRepositorio.findByIdAndIdLeccion(id, idLeccion);
     }
 
-    /** PUT completo (sin permitir cambiar de lección) */
     public Optional<Evaluacion> actualizar(String idEval,
                                            String idLeccion,
                                            String titulo,
@@ -99,7 +89,6 @@ public class EvaluacionServicio {
         });
     }
 
-    /** PATCH parcial (sin permitir cambiar de lección) */
     public Optional<Evaluacion> patchParcial(String idEval,
                                              String idLeccion,
                                              String titulo,
@@ -128,8 +117,6 @@ public class EvaluacionServicio {
                 .orElse(false);
     }
 
-    /* ====== Publicar / Archivar ====== */
-
     public Optional<Evaluacion> publicar(String idEval, String idLeccion) {
         return evaluacionRepositorio.findByIdAndIdLeccion(idEval, idLeccion).map(e -> {
             if (e.getEstado() != Evaluacion.EstadoPublicacion.PUBLICADA) {
@@ -153,9 +140,6 @@ public class EvaluacionServicio {
         });
     }
 
-    /* ===== Helpers ===== */
-
-    /** Mantiene leccion.evaluaciones con SOLO las PUBLICADAS (ids ordenados por título). */
     private void syncEvaluacionesPublicadasEnLeccion(String idLeccion) {
         Leccion leccion = leccionRepositorio.findById(idLeccion).orElse(null);
         if (leccion == null) return;
@@ -170,7 +154,6 @@ public class EvaluacionServicio {
         leccionRepositorio.save(leccion);
     }
 
-    /* ===== Helpers sobrecarga String/int (si las usas) ===== */
     public Optional<Evaluacion> actualizar(String idEval, String idLeccion, String titulo, String tipo, int puntajeMaximo) {
         Evaluacion.TipoEvaluacion t = (tipo == null || tipo.isBlank()) ? null : parseTipo(tipo);
         BigDecimal pm = (puntajeMaximo < 0) ? null : BigDecimal.valueOf(puntajeMaximo);

@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/CursoControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -34,7 +33,6 @@ public class CursoControlador {
         this.usuarioRepo = usuarioRepo;
     }
 
-    /* ===== helpers de rol/propiedad ===== */
     private static boolean isAdmin() {
         Authentication a = SecurityContextHolder.getContext().getAuthentication();
         if (a == null) return false;
@@ -50,7 +48,6 @@ public class CursoControlador {
         return curso != null && userOpt.get().getId().equals(curso.getIdInstructor());
     }
 
-    // 1) Crear curso
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> crearCurso(@RequestBody @Valid CrearCursoRequest body) {
         var creado = cursoServicio.crearCursoDesdeDto(body);
@@ -58,7 +55,6 @@ public class CursoControlador {
         return ResponseEntity.created(location).body(creado);
     }
 
-    // 2) Listar cursos (visitantes/alumnos solo PUBLICADOS; admin ve todo)
     @GetMapping(produces = "application/json")
     public ResponseEntity<PageResponse<Curso>> listarCursos(
             @RequestParam(required = false) String categoria,
@@ -69,7 +65,6 @@ public class CursoControlador {
             @RequestParam(defaultValue = "10") @Min(1) int size,
             @RequestParam(defaultValue = "fechaCreacion,desc") String sort
     ) {
-        // Forzamos 'PUBLICADO' para no-admin
         if (!isAdmin()) estado = "PUBLICADO";
 
         var result = cursoServicio.buscar(categoria, nivel, estado, query, page, size, sort);
@@ -79,7 +74,6 @@ public class CursoControlador {
         return ResponseEntity.ok(resp);
     }
 
-    // 3) Obtener un curso por id (público con reglas de visibilidad)
     @GetMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> obtenerCurso(@PathVariable String id) {
         var opt = cursoServicio.obtenerPorId(id);
@@ -100,7 +94,6 @@ public class CursoControlador {
         return ResponseEntity.ok(curso);
     }
 
-    // 4) Actualizar curso (solo dueño si NO está PUBLICADO, o ADMIN)
     @PreAuthorize("@cursoPermisos.cursoEditablePorAutor(#id) or hasRole('ADMIN')")
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> actualizarCurso(@PathVariable("id") @P("id") String id,
@@ -110,7 +103,6 @@ public class CursoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 5) Cambiar estado genérico
     @PreAuthorize("@cursoPermisos.cursoEditablePorAutor(#id) or hasRole('ADMIN')")
     @PatchMapping(value = "/{id}/estado", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> cambiarEstado(@PathVariable("id") @P("id") String id,
@@ -120,7 +112,6 @@ public class CursoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 6) Publicar (dueño o ADMIN)
     @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
     @PatchMapping(value = "/{id}/publicar", produces = "application/json")
     public ResponseEntity<?> publicar(@PathVariable("id") @P("id") String id) {
@@ -129,7 +120,6 @@ public class CursoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 7) Archivar (dueño o ADMIN)
     @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
     @PatchMapping(value = "/{id}/archivar", produces = "application/json")
     public ResponseEntity<?> archivar(@PathVariable("id") @P("id") String id) {
@@ -138,7 +128,6 @@ public class CursoControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 8) Eliminar (dueño o ADMIN)
     @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarCurso(@PathVariable("id") @P("id") String id) {
@@ -147,7 +136,6 @@ public class CursoControlador {
                 : ResponseEntity.notFound().build();
     }
 
-    // 9) Búsqueda avanzada (visitantes/alumnos solo PUBLICADOS; admin ve todo)
     @GetMapping(value = "/buscar", produces = "application/json")
     public ResponseEntity<PageResponse<Curso>> buscarAvanzado(
             @RequestParam(required = false) String id,
@@ -166,7 +154,6 @@ public class CursoControlador {
             @RequestParam(defaultValue = "10") @Min(1) int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
-        // Forzamos 'PUBLICADO' para no-admin
         if (!isAdmin()) estado = "PUBLICADO";
 
         java.util.List<String> tagList = null;
@@ -187,7 +174,6 @@ public class CursoControlador {
         return ResponseEntity.ok(resp);
     }
 
-    // ==== DTOs ====
     public static record CrearCursoRequest(
             @NotBlank String titulo,
             String descripcion,

@@ -33,7 +33,6 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(reg -> reg
-                // Público
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -42,12 +41,9 @@ public class SecurityConfig {
                         "/api/v1/cursos/*/modulos",
                         "/api/v1/cursos/*/modulos/**"
                 ).permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
-
-                // Lo demás autenticado; reglas finas en @PreAuthorize
+                .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
                 .anyRequest().authenticated()
             )
-            // ADMIN puede operar sin token usando Basic (email+password de la BD)
             .httpBasic(Customizer.withDefaults())
             .userDetailsService(userDetailsService);
 

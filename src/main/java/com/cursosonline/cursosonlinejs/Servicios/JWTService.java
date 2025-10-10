@@ -20,38 +20,38 @@ import java.util.function.Function;
 public class JWTService {
 
     @Value("${jwt.secret}")
-    private String secret; // Debe tener 32+ bytes (256 bits) para HS256
+    private String secret;
 
     @Value("${jwt.issuer:cursosonline-api}")
     private String issuer;
 
-    @Value("${jwt.access.ttl.seconds:1800}") // 30 min
+    @Value("${jwt.access.ttl.seconds:1800}")
     private long accessTtlSeconds;
 
-    /* ================== GENERACIÓN ================== */
     public String generateToken(Usuario u) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .setSubject(u.getEmail())                             // sub
-                .setId(UUID.randomUUID().toString())                  // jti
-                .setIssuer(issuer)                                    // iss
-                .setIssuedAt(Date.from(now))                          // iat
-                .setExpiration(Date.from(now.plusSeconds(accessTtlSeconds))) // exp
+                .setSubject(u.getEmail())
+                .setId(UUID.randomUUID().toString())
+                .setIssuer(issuer)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(now.plusSeconds(accessTtlSeconds)))
                 .claim("uid", u.getId())
                 .claim("roles", Collections.singletonList(normalizeRole(u.getRol())))
-                .signWith(signingKey(), SignatureAlgorithm.HS256)     // 0.11.x
+                .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public long getAccessTokenTtlSeconds() { return accessTtlSeconds; }
+    public long getAccessTokenTtlSeconds() {
+        return accessTtlSeconds;
+    }
 
-    /* ================== EXTRACCIÓN / VALIDACIÓN ================== */
     public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
-        Claims claims = Jwts.parserBuilder()             // 0.11.x
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(signingKey())
                 .build()
                 .parseClaimsJws(token)
@@ -61,7 +61,7 @@ public class JWTService {
 
     public boolean validarToken(String token, String expectedEmail) {
         try {
-            Claims c = Jwts.parserBuilder()              // 0.11.x
+            Claims c = Jwts.parserBuilder()
                     .setSigningKey(signingKey())
                     .build()
                     .parseClaimsJws(token)
@@ -77,10 +77,9 @@ public class JWTService {
         }
     }
 
-    /* ================== UTILERÍA ================== */
     private Key signingKey() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes); // HS256 requiere 32+ bytes
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private String normalizeRole(String rol) {

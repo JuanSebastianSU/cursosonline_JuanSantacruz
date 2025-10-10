@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Repositorios/IntentoRepositorio.java
 package com.cursosonline.cursosonlinejs.Repositorios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Intento;
@@ -23,11 +22,7 @@ public interface IntentoRepositorio extends MongoRepository<Intento, String> {
             String idEvaluacion,
             String idEstudiante
     );
-
-    // ==== FALTABA (lo usas en el servicio) ====
     Optional<Intento> findByIdAndIdEstudiante(String id, String idEstudiante);
-
-    // ==== Para listar TODOS los intentos de la evaluación ====
     List<Intento> findByIdEvaluacionOrderByCreatedAtDesc(String idEvaluacion);
 
     List<Intento> findByIdEvaluacionAndEstadoOrderByCreatedAtDesc(

@@ -40,7 +40,6 @@ public class CursoServicio {
     private final LeccionRepositorio leccionRepositorio;
     private final InscripcionRepositorio inscripcionRepositorio;
 
-    // Estados de inscripción que "ocupan" cupo (reservan asiento)
     private static final List<Inscripcion.EstadoInscripcion> ESTADOS_OCUPAN_CUPO =
             List.of(Inscripcion.EstadoInscripcion.PENDIENTE_PAGO,
                     Inscripcion.EstadoInscripcion.ACTIVA);
@@ -63,7 +62,6 @@ public class CursoServicio {
         this.usuarioServicio = usuarioServicio;
     }
 
-    /** ¿El curso acepta inscripciones en este momento? */
     public boolean puedeInscribirse(String idCurso) {
         return cursoRepositorio.findById(idCurso).map(c -> {
             if (c.getEstado() != Curso.EstadoCurso.PUBLICADO) return false;
@@ -74,33 +72,28 @@ public class CursoServicio {
         }).orElse(false);
     }
 
-    /** ¿Queda cupo disponible? */
     public boolean cupoDisponible(String idCurso) {
         return cursoRepositorio.findById(idCurso).map(c -> {
             Integer cupo = c.getCupoMaximo();
-            if (cupo == null || cupo <= 0) return true; // sin límite
+            if (cupo == null || cupo <= 0) return true;
             long ocupados = inscripcionRepositorio.countByIdCursoAndEstadoIn(idCurso, ESTADOS_OCUPAN_CUPO);
             return ocupados < cupo;
         }).orElse(false);
     }
 
-    /* ==================== Snapshots adicionales ==================== */
-
-    /** Recalcula y guarda el total de lecciones del curso. */
     public void reconstruirLeccionesCount(String idCurso) {
-    var cursoOpt = cursoRepositorio.findById(idCurso);
-    if (cursoOpt.isEmpty()) return;
+        var cursoOpt = cursoRepositorio.findById(idCurso);
+        if (cursoOpt.isEmpty()) return;
 
-    long count = leccionRepositorio.countByIdCursoAndEstado(
-            idCurso, Leccion.EstadoPublicacion.PUBLICADO
-    );
+        long count = leccionRepositorio.countByIdCursoAndEstado(
+                idCurso, Leccion.EstadoPublicacion.PUBLICADO
+        );
 
-    var c = cursoOpt.get();
-    c.setLeccionesCount((int) count);
-    cursoRepositorio.save(c);
-}
+        var c = cursoOpt.get();
+        c.setLeccionesCount((int) count);
+        cursoRepositorio.save(c);
+    }
 
-    /** Recalcula y guarda inscritosCount (cuenta solo ACTIVA). */
     public void reconstruirInscritosCount(String idCurso) {
         long total = inscripcionRepositorio.countByIdCursoAndEstado(
                 idCurso, com.cursosonline.cursosonlinejs.Entidades.Inscripcion.EstadoInscripcion.ACTIVA
@@ -111,14 +104,11 @@ public class CursoServicio {
         });
     }
 
-    /** Incremento/decremento atómico del contador de inscritos. */
     public void incInscritosCount(String idCurso, long delta) {
         Query q = new Query(Criteria.where("_id").is(idCurso));
         Update u = new Update().inc("inscritosCount", delta);
         mongoTemplate.updateFirst(q, u, Curso.class, "cursos");
     }
-
-    /* ==================== Transiciones de estado ==================== */
 
     public void validarParaPublicar(Curso c) {
         if (c.getEnrollmentOpenAt() != null && c.getEnrollmentCloseAt() != null) {
@@ -154,16 +144,14 @@ public class CursoServicio {
                 .orElse(false);
     }
 
-    /* ====================== CRUD básico ====================== */
-
     public Curso guardar(Curso curso) {
         normalizarTexto(curso);
         if (curso.getCreatedAt() == null) curso.setCreatedAt(Instant.now());
         if (curso.getEstado() == null) curso.setEstado(EstadoCurso.BORRADOR);
         if (curso.getNivel() == null)  curso.setNivel(Nivel.PRINCIPIANTE);
         if (curso.getPrecio() == null) curso.setPrecio(BigDecimal.ZERO);
-        if (curso.getInscritosCount() == null) curso.setInscritosCount(0L); // evita null en nuevos
-        if (curso.getLeccionesCount() == null) curso.setLeccionesCount(0); // <-- agrega esto
+        if (curso.getInscritosCount() == null) curso.setInscritosCount(0L);
+        if (curso.getLeccionesCount() == null) curso.setLeccionesCount(0);
 
         Curso saved = cursoRepositorio.save(curso);
 
@@ -181,46 +169,35 @@ public class CursoServicio {
         cursoRepositorio.deleteById(id);
     }
 
-    /* ==================== Snapshot de módulos ==================== */
-
-    /** Reconstruye curso.modulos y curso.modulosCount a partir de Modulo. */
     public void reconstruirModulosSnapshot(String idCurso) {
-    var cursoOpt = cursoRepositorio.findById(idCurso);
-    if (cursoOpt.isEmpty()) return;
+        var cursoOpt = cursoRepositorio.findById(idCurso);
+        if (cursoOpt.isEmpty()) return;
 
-    // Si tu repositorio ya tiene un finder por estado, ÚSALO:
-    // List<Modulo> modulos = moduloRepositorio.findByIdCursoAndEstadoOrderByOrdenAsc(idCurso, Modulo.EstadoPublicacion.PUBLICADO);
+        List<Modulo> todos = moduloRepositorio.findByIdCursoOrderByOrdenAsc(idCurso);
+        List<Modulo> modulos = todos.stream()
+                .filter(m -> m.getEstado() == Modulo.EstadoModulo.PUBLICADO)
+                .collect(java.util.stream.Collectors.toList());
 
-    // Si no tienes ese finder aún, trae todos y filtra en memoria:
-    List<Modulo> todos = moduloRepositorio.findByIdCursoOrderByOrdenAsc(idCurso);
-    List<Modulo> modulos = todos.stream()
-            .filter(m -> m.getEstado() == Modulo.EstadoModulo.PUBLICADO) // << solo publicados
-            .collect(java.util.stream.Collectors.toList());
+        List<String> snapshot = modulos.stream()
+                .map(m -> (m.getTitulo() == null ? "" : m.getTitulo().trim()) + " | " + m.getId())
+                .collect(java.util.stream.Collectors.toList());
 
-    List<String> snapshot = modulos.stream()
-            .map(m -> (m.getTitulo() == null ? "" : m.getTitulo().trim()) + " | " + m.getId())
-            .collect(java.util.stream.Collectors.toList());
+        Curso curso = cursoOpt.get();
+        curso.setModulos(snapshot);
+        curso.setModulosCount(modulos.size());
+        cursoRepositorio.save(curso);
 
-    Curso curso = cursoOpt.get();
-    curso.setModulos(snapshot);
-    curso.setModulosCount(modulos.size());
-    cursoRepositorio.save(curso);
-
-    // Recalcula también las lecciones publicadas (por si al quitar/poner módulos cambió el total)
-    reconstruirLeccionesCount(idCurso);
-}
+        reconstruirLeccionesCount(idCurso);
+    }
 
     public void onModuloChanged(String idCurso) {
         reconstruirModulosSnapshot(idCurso);
     }
-    /** Llamado desde LeccionServicio cuando cambian lecciones del curso. */
+
     public void onLeccionChanged(String idCurso) {
         reconstruirLeccionesCount(idCurso);
     }
 
-    /* ==================== Mejoras / nuevos métodos ==================== */
-
-    /** Crea curso desde DTO genérico (tu diseño original). */
     public Curso crearCursoDesdeDto(Object dtoGenerico) {
         Map<String, Object> m = toMap(dtoGenerico);
 
@@ -228,7 +205,7 @@ public class CursoServicio {
         c.setTitulo(reqStr(m, "titulo"));
         c.setDescripcion(optStr(m, "descripcion"));
         c.setCategoria(reqStr(m, "categoria"));
-        c.setNivel(parseNivel(optStr(m, "nivel"))); // default si null
+        c.setNivel(parseNivel(optStr(m, "nivel")));
         c.setIdioma(reqStr(m, "idioma"));
         c.setPrecio(optBigDecimal(m, "precio", BigDecimal.ZERO));
         c.setEstado(EstadoCurso.BORRADOR);
@@ -244,7 +221,6 @@ public class CursoServicio {
         return guardado;
     }
 
-    /** Promueve al autor al tipo "Instructor" si existe en tipos_usuario. */
     private void asegurarRolInstructorPorNombre(String userId) {
         usuarioRepositorio.findById(userId).ifPresent(u -> {
             tipoUsuarioServicio.findByNombreIgnoreCase("Instructor").ifPresent(ti -> {
@@ -285,6 +261,7 @@ public class CursoServicio {
                 org.springframework.data.domain.PageRequest.of(page, size, sortSpec),
                 total);
     }
+
     public Optional<Curso> obtenerPorId(String id) { return cursoRepositorio.findById(id); }
 
     public Optional<Curso> actualizarDesdeDto(String id, Object dtoGenerico) {
@@ -328,8 +305,6 @@ public class CursoServicio {
         }
         return true;
     }
-
-    /* ====================== Helpers ====================== */
 
     private void normalizarTexto(Curso c) {
         if (c.getTitulo() != null)    c.setTitulo(c.getTitulo().trim());
@@ -440,7 +415,6 @@ public class CursoServicio {
         }
     }
 
-    /* ================== buscarAvanzado (tal cual) ================== */
     public Page<Curso> buscarAvanzado(
             String id,
             String idInstructor,

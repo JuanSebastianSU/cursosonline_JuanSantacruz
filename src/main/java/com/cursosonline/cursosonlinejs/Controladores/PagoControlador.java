@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/PagoControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Pago;
@@ -29,8 +28,8 @@ public class PagoControlador {
 
     private final PagoServicio pagoServicio;
     private final UsuarioRepositorio usuarioRepo;
-    private final InscripcionServicio inscripcionServicio; // <-- nuevo
-    private final CursoServicio cursoServicio;             // <-- nuevo
+    private final InscripcionServicio inscripcionServicio;
+    private final CursoServicio cursoServicio;
 
     public PagoControlador(PagoServicio pagoServicio,
                            UsuarioRepositorio usuarioRepo,
@@ -60,7 +59,7 @@ public class PagoControlador {
         Pago pago = pagoServicio.listaPago(id);
         if (pago == null) return ResponseEntity.notFound().build();
         if (!idInscripcion.equals(pago.getIdInscripcion())) {
-            return ResponseEntity.status(404).body(Map.of("message","El pago no pertenece a la inscripción especificada."));
+            return ResponseEntity.status(404).body(Map.of("message", "El pago no pertenece a la inscripción especificada."));
         }
         return ResponseEntity.ok(pago);
     }
@@ -69,7 +68,6 @@ public class PagoControlador {
     @PreAuthorize("@pagoPermisos.esDuenoDeInscripcion(#idInscripcion)")
     public ResponseEntity<?> crearBorrador(@PathVariable String idInscripcion,
                                            @Valid @RequestBody CrearBorradorRequest body) {
-
         if (body.monto() == null || body.monto().compareTo(BigDecimal.ZERO) <= 0) {
             return ResponseEntity.badRequest().body(Map.of("message", "El monto debe ser mayor a 0."));
         }
@@ -81,7 +79,7 @@ public class PagoControlador {
         }
 
         String uid = currentUserId();
-        if (uid == null) return ResponseEntity.status(401).body(Map.of("message","No autenticado."));
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("message", "No autenticado."));
 
         Pago creado = pagoServicio.crearBorrador(
                 idInscripcion, uid,
@@ -96,11 +94,11 @@ public class PagoControlador {
     @PreAuthorize("@pagoPermisos.esDuenoDePago(#id)")
     public ResponseEntity<?> aceptar(@PathVariable String idInscripcion, @PathVariable String id) {
         String uid = currentUserId();
-        if (uid == null) return ResponseEntity.status(401).body(Map.of("message","No autenticado."));
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("message", "No autenticado."));
         var ok = pagoServicio.aceptarPorUsuario(id, uid).orElse(null);
         if (ok == null) return ResponseEntity.notFound().build();
         if (!idInscripcion.equals(ok.getIdInscripcion())) {
-            return ResponseEntity.status(404).body(Map.of("message","El pago no pertenece a la inscripción especificada."));
+            return ResponseEntity.status(404).body(Map.of("message", "El pago no pertenece a la inscripción especificada."));
         }
         return ResponseEntity.ok(ok);
     }
@@ -118,7 +116,7 @@ public class PagoControlador {
 
         if (editado == null) return ResponseEntity.notFound().build();
         if (!idInscripcion.equals(editado.getIdInscripcion())) {
-            return ResponseEntity.status(404).body(Map.of("message","El pago no pertenece a la inscripción especificada."));
+            return ResponseEntity.status(404).body(Map.of("message", "El pago no pertenece a la inscripción especificada."));
         }
         return ResponseEntity.ok(editado);
     }
@@ -128,23 +126,20 @@ public class PagoControlador {
     public ResponseEntity<?> eliminarBorrador(@PathVariable String idInscripcion,
                                               @PathVariable String id) {
         String uid = currentUserId();
-        if (uid == null) return ResponseEntity.status(401).body(Map.of("message","No autenticado."));
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("message", "No autenticado."));
         try {
             boolean ok = pagoServicio.eliminarSiPendiente(id, idInscripcion, uid);
-            return ok ? ResponseEntity.noContent().build()
-                      : ResponseEntity.notFound().build();
+            return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(409).body(Map.of("message", ex.getMessage()));
         }
     }
 
-    // ==================== APROBAR (admin/instructor) ====================
     @PostMapping("/{id}/aprobar")
     @PreAuthorize("hasRole('ADMIN') or @pagoPermisos.esInstructorDeInscripcion(#idInscripcion)")
     public ResponseEntity<?> aprobarPago(@PathVariable String idInscripcion,
                                          @PathVariable String id,
                                          @RequestBody(required = false) Map<String, Object> body) {
-
         String gatewayPaymentId = body != null ? (String) body.get("gatewayPaymentId") : null;
         String authorizationCode = body != null ? (String) body.get("authorizationCode") : null;
         String reciboUrl = body != null ? (String) body.get("reciboUrl") : null;
@@ -153,16 +148,14 @@ public class PagoControlador {
                 .orElse(null);
         if (pago == null) return ResponseEntity.notFound().build();
 
-        // Activar inscripción si estaba pendiente y ajustar snapshot del curso
         String idCurso = inscripcionServicio.activarSiPendientePago(idInscripcion);
         if (idCurso != null) {
-            cursoServicio.incInscritosCount(idCurso, +1); // incremento atómico
+            cursoServicio.incInscritosCount(idCurso, +1);
         }
 
         return ResponseEntity.ok(pago);
     }
 
-    /* ==================== DTOs ==================== */
     public static record CrearBorradorRequest(
             @NotNull @Min(0) BigDecimal monto,
             @NotBlank String moneda,

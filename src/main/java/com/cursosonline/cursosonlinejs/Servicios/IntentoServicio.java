@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/IntentoServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Intento;
@@ -44,7 +43,6 @@ public class IntentoServicio {
                 .orElse(1);
     }
 
-    /* === Crear === */
     public Intento crearEnProgreso(String idEvaluacion, String idEstudiante,
                                    Integer timeLimitSeconds, BigDecimal puntajeMaximo) {
         Intento i = new Intento();
@@ -59,7 +57,6 @@ public class IntentoServicio {
         return intentoRepositorio.save(i);
     }
 
-    /* === Obtener/Listar === */
     public Optional<Intento> obtener(String idIntento) {
         return intentoRepositorio.findById(idIntento);
     }
@@ -68,7 +65,6 @@ public class IntentoServicio {
         return intentoRepositorio.findByIdEvaluacionAndIdEstudianteOrderByEnviadoEnDesc(idEvaluacion, idEstudiante);
     }
 
-    /* === Actualizar (PUT/PATCH) solo EN_PROGRESO === */
     public Optional<Intento> actualizarCompleto(String idIntento, String idEstudiante,
                                                 List<Intento.Respuesta> respuestas,
                                                 Integer usedTimeSeconds) {
@@ -101,7 +97,6 @@ public class IntentoServicio {
         });
     }
 
-    /* === Entregar === */
     public Intento entregar(String idIntento, String idEstudiante,
                             List<Intento.Respuesta> respuestas, Integer tiempoSegundos, Instant ahora) {
         Intento i = intentoRepositorio.findByIdAndIdEstudiante(idIntento, idEstudiante)
@@ -126,7 +121,6 @@ public class IntentoServicio {
         return intentoRepositorio.save(i);
     }
 
-    /* === Delete (propio y EN_PROGRESO) === */
     public boolean eliminarSiPropioYEnProgreso(String idIntento, String idEstudiante) {
         var opt = intentoRepositorio.findByIdAndIdEstudiante(idIntento, idEstudiante);
         if (opt.isEmpty()) return false;
@@ -138,7 +132,6 @@ public class IntentoServicio {
         return true;
     }
 
-        /* === Listar TODOS los intentos de una evaluación (ADMIN/INSTRUCTOR) === */
     public List<Intento> listarTodosPorEvaluacion(String idEvaluacion, String estadoRaw) {
         if (estadoRaw == null || estadoRaw.isBlank()) {
             return intentoRepositorio.findByIdEvaluacionOrderByCreatedAtDesc(idEvaluacion);
@@ -147,18 +140,15 @@ public class IntentoServicio {
         try {
             estado = Intento.EstadoIntento.valueOf(estadoRaw.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
-            // Si mandan un estado inválido, devuelve lista vacía para no romper UX
             return List.of();
         }
         return intentoRepositorio.findByIdEvaluacionAndEstadoOrderByCreatedAtDesc(idEvaluacion, estado);
     }
-    /* === Helpers === */
+
     private void validarTiempo(Intento i) {
         if (i.getTimeLimitSeconds() != null && i.getTimeLimitSeconds() > 0 &&
             i.getUsedTimeSeconds() != null && i.getUsedTimeSeconds() > i.getTimeLimitSeconds()) {
             throw new IllegalArgumentException("El tiempo usado excede el límite configurado.");
         }
     }
-
-    
 }

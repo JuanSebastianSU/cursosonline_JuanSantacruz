@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/CursoPermisos.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -24,7 +23,6 @@ public class CursoPermisos {
         this.leccionRepo = leccionRepo;
     }
 
-    /** ¿El auth es el instructor y el curso NO está PUBLICADO? */
     public boolean cursoEditablePorAutor(String idCurso) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;
@@ -39,7 +37,6 @@ public class CursoPermisos {
                 && c.getEstado() != Curso.EstadoCurso.PUBLICADO;
     }
 
-    /** ¿El auth es el dueño (instructor) del curso? */
     public boolean esDueno(String idCurso) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;
@@ -53,14 +50,12 @@ public class CursoPermisos {
         return u.getId().equals(c.getIdInstructor());
     }
 
-    /** Variante para operaciones que reciben idModulo */
     public boolean cursoEditablePorAutorDesdeModulo(String idModulo) {
         var m = moduloRepo.findById(idModulo).orElse(null);
         if (m == null) return false;
         return cursoEditablePorAutor(m.getIdCurso());
     }
 
-    /** Variante para operaciones que reciben idLeccion */
     public boolean cursoEditablePorAutorDesdeLeccion(String idLeccion) {
         var l = leccionRepo.findById(idLeccion).orElse(null);
         if (l == null) return false;

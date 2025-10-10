@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/PagoPermisos.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Repositorios.*;

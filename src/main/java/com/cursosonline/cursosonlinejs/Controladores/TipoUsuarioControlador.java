@@ -26,7 +26,6 @@ public class TipoUsuarioControlador {
         this.svc = svc;
     }
 
-    // ======= GET PÚBLICOS =======
     @GetMapping(produces = "application/json")
     @PermitAll
     public ResponseEntity<Page<TipoUsuario>> listar(
@@ -46,7 +45,6 @@ public class TipoUsuarioControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ======= SOLO ADMIN =======
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> crear(@Valid @RequestBody TipoUsuario tipoUsuario) {

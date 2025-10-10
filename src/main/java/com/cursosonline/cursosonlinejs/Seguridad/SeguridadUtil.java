@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/SeguridadUtil.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Repositorios.UsuarioRepositorio;
@@ -15,7 +14,6 @@ public class SeguridadUtil {
         this.usuarioRepositorio = usuarioRepositorio;
     }
 
-    /** Retorna true si el usuario autenticado (por email) coincide con el id del path. */
     public boolean esMismoUsuario(String idUsuario) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;

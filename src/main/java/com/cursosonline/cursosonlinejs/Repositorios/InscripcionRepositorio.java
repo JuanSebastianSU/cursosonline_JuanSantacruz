@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Repositorios/InscripcionRepositorio.java
 package com.cursosonline.cursosonlinejs.Repositorios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Inscripcion;
@@ -15,11 +14,7 @@ public interface InscripcionRepositorio extends MongoRepository<Inscripcion, Str
     List<Inscripcion> findByIdCursoOrderByCreatedAtDesc(String idCurso);
     List<Inscripcion> findByIdCursoAndEstadoOrderByCreatedAtDesc(String idCurso, EstadoInscripcion estado);
     Optional<Inscripcion> findByIdAndIdCurso(String id, String idCurso);
-
-    // YA TENÍAS este (para varios estados)
     long countByIdCursoAndEstadoIn(String idCurso, List<Inscripcion.EstadoInscripcion> estados);
-
-    // NUEVO: por un solo estado (útil si cuentas solo ACTIVA)
     long countByIdCursoAndEstado(String idCurso, EstadoInscripcion estado);
 
     List<Inscripcion> findByIdEstudianteOrderByCreatedAtDesc(String idEstudiante);

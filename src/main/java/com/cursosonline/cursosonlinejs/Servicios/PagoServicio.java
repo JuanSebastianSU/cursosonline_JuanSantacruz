@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/PagoServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Pago;
@@ -19,14 +18,11 @@ public class PagoServicio {
 
     public PagoServicio(PagoRepositorio pagoRepositorio,
                         InscripcionServicio inscripcionServicio,
-                        CursoServicio cursoServicio) { // <—
+                        CursoServicio cursoServicio) {
         this.pagoRepositorio = pagoRepositorio;
         this.inscripcionServicio = inscripcionServicio;
-        this.cursoServicio = cursoServicio; // <—
+        this.cursoServicio = cursoServicio;
     }
-    /* =========================================================
-     * ========  CRUD básico (se mantienen utilidades)  ========
-     * ========================================================= */
 
     public Pago guardar(Pago pago) {
         if (pago.getMoneda() != null) pago.setMoneda(pago.getMoneda().trim().toUpperCase());
@@ -52,14 +48,6 @@ public class PagoServicio {
         return pagoRepositorio.findByReferencia(referencia).orElse(null);
     }
 
-    /* =========================================================
-     * ===============  Flujo “borrador” del usuario  ==========
-     * ========================================================= */
-
-    /**
-     * Crea un pago en estado PENDIENTE (borrador editable por el usuario).
-     * No tocará pagoIds de la inscripción aún.
-     */
     public Pago crearBorrador(String idInscripcion, String userId,
                               BigDecimal monto, String moneda, Pago.MetodoPago metodo,
                               String referencia, String cupon, String gateway, String idempotencyKey) {
@@ -80,10 +68,6 @@ public class PagoServicio {
         return pagoRepositorio.save(p);
     }
 
-    /**
-     * Actualiza campos editables del borrador. Solo si sigue PENDIENTE.
-     * Útil para que el usuario modifique monto/moneda/método antes de aceptar.
-     */
     public Optional<Pago> actualizarBorrador(String idPago,
                                              BigDecimal monto, String moneda, Pago.MetodoPago metodo,
                                              String referencia, String cupon, String gateway) {
@@ -107,11 +91,6 @@ public class PagoServicio {
         });
     }
 
-    /**
-     * Aceptación del usuario (p.ej., “Confirmar y pagar”).
-     * Transición: PENDIENTE -> AUTORIZADO.
-     * Sella autorizadoAt.
-     */
     public Optional<Pago> aceptarPorUsuario(String idPago, String expectedUserId) {
         return pagoRepositorio.findById(idPago).map(p -> {
             exigirEstado(p, Pago.EstadoPago.PENDIENTE, "Solo se puede aceptar un pago en estado PENDIENTE.");
@@ -124,9 +103,6 @@ public class PagoServicio {
         });
     }
 
-    /**
-     * Elimina un pago borrador si aún está PENDIENTE.
-     */
     public boolean eliminarSiPendiente(String idPago, String idInscripcion, String expectedUserId) {
         return pagoRepositorio.findByIdAndIdInscripcion(idPago, idInscripcion).map(p -> {
             exigirEstado(p, Pago.EstadoPago.PENDIENTE, "Solo se puede eliminar un pago en estado PENDIENTE.");
@@ -138,15 +114,6 @@ public class PagoServicio {
         }).orElse(false);
     }
 
-    /* =========================================================
-     * ===============  Transiciones de pasarela  ===============
-     *        (usualmente desde admin/instructor o webhook)
-     * ========================================================= */
-
-    /**
-     * Marca como FALLIDO desde pasarela (autorización o captura falló).
-     * Transiciones válidas: PENDIENTE|AUTORIZADO -> FALLIDO.
-     */
     public Optional<Pago> marcarFallido(String idPago, String gatewayPaymentId) {
         return pagoRepositorio.findById(idPago).map(p -> {
             exigirEstadoEn(p,
@@ -160,13 +127,6 @@ public class PagoServicio {
         });
     }
 
-    /**
-     * Marca como APROBADO (pagado) y enlaza a la inscripción (pagoIds + idPago).
-     * Transiciones válidas: AUTORIZADO|PENDIENTE -> APROBADO.
-     *
-     * Usa este método si tu pasarela REPORTA “aprobado/pagado” sin paso de captura.
-     * Si tu flujo tiene “captura” explícita, usa marcarCapturado().
-     */
     public Optional<Pago> marcarAprobado(String idPago,
                                          String gatewayPaymentId,
                                          String authorizationCode,
@@ -175,7 +135,7 @@ public class PagoServicio {
         return pagoRepositorio.findById(idPago).map(p -> {
             exigirEstadoEn(p,
                     new Pago.EstadoPago[]{Pago.EstadoPago.AUTORIZADO, Pago.EstadoPago.PENDIENTE},
-                    "Solo se puede aprobar desde PENDIENTE o AUTORIZADO."
+                    "Solo se puede aprobar desde PENDIENTENTE o AUTORIZADO."
             );
             if (gatewayPaymentId != null) p.setGatewayPaymentId(gatewayPaymentId);
             if (authorizationCode != null) p.setAuthorizationCode(authorizationCode);
@@ -185,10 +145,8 @@ public class PagoServicio {
             p.setPagadoAt(Instant.now());
             Pago guardado = pagoRepositorio.save(p);
 
-            // Enlazar a inscripción
             inscripcionServicio.anexarPagoAInscripcion(p.getIdInscripcion(), p.getId(), principal);
 
-            // Activar si estaba pendiente y refrescar contador del curso
             String idCurso = inscripcionServicio.activarSiPendientePago(p.getIdInscripcion());
             if (idCurso != null) {
                 cursoServicio.reconstruirInscritosCount(idCurso);
@@ -218,7 +176,6 @@ public class PagoServicio {
 
             inscripcionServicio.anexarPagoAInscripcion(p.getIdInscripcion(), p.getId(), principal);
 
-            // Activar si estaba pendiente y refrescar contador del curso
             String idCurso = inscripcionServicio.activarSiPendientePago(p.getIdInscripcion());
             if (idCurso != null) {
                 cursoServicio.reconstruirInscritosCount(idCurso);
@@ -228,12 +185,6 @@ public class PagoServicio {
         });
     }
 
-    /**
-     * Marca como CANCELADO (antes de que haya dinero efectivo).
-     * Transiciones válidas:
-     *   - PENDIENTE -> CANCELADO (usuario se arrepiente antes de pagar)
-     *   - AUTORIZADO -> CANCELADO (anular autorización si tu pasarela lo permite)
-     */
     public Optional<Pago> marcarCancelado(String idPago) {
         return pagoRepositorio.findById(idPago).map(p -> {
             exigirEstadoEn(p,
@@ -245,13 +196,6 @@ public class PagoServicio {
         });
     }
 
-    /**
-     * Marca como REEMBOLSADO (deshacer un APROBADO/CAPTURADO).
-     * Transiciones válidas: APROBADO|CAPTURADO -> REEMBOLSADO.
-     *
-     * Política: NO removemos el id del pago de pagoIds; así mantienes trazabilidad.
-     * Si deseas “cerrar” el acceso del curso, hazlo en el controlador/servicio de Inscripción.
-     */
     public Optional<Pago> marcarReembolsado(String idPago, String gatewayPaymentId) {
         return pagoRepositorio.findById(idPago).map(p -> {
             exigirEstadoEn(p,
@@ -264,10 +208,6 @@ public class PagoServicio {
             return pagoRepositorio.save(p);
         });
     }
-
-    /* =========================================================
-     * =====================  Validaciones  =====================
-     * ========================================================= */
 
     private void validarMontoYMonedaYMetodo(BigDecimal monto, String moneda, Pago.MetodoPago metodo) {
         if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0)

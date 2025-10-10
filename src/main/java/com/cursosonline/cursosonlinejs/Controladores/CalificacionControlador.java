@@ -32,48 +32,40 @@ public class CalificacionControlador {
         this.usuarioRepo = usuarioRepo;
     }
 
-    /* ===== helper mínimo para tomar el id del calificador del token ===== */
     private String currentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return null;
         return usuarioRepo.findByEmail(auth.getName()).map(u -> u.getId()).orElse(null);
     }
 
-    /* ===================== CREAR ===================== */
-    // Solo ADMIN o INSTRUCTOR dueño del curso del intento
     @PostMapping("/intentos/{idIntento}/calificacion")
-@PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeIntento(#idIntento)")
-public ResponseEntity<?> calificar(@PathVariable String idIntento,
-                                   @Valid @RequestBody CalificarRequest body) {
-    String calificadoPor = currentUserId();
-    if (calificadoPor == null) {
-        return ResponseEntity.status(401).body(Map.of("message","No autenticado."));
-    }
-
-    try {
-        var creada = calificacionServicio.calificar(
-                idIntento,
-                BigDecimal.valueOf(body.getPuntaje()),
-                body.getFeedback(),
-                calificadoPor
-        );
-        if (creada.isEmpty()) {
-            return ResponseEntity.status(409).body(Map.of("message","Intento no válido o ya calificado."));
+    @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeIntento(#idIntento)")
+    public ResponseEntity<?> calificar(@PathVariable String idIntento,
+                                       @Valid @RequestBody CalificarRequest body) {
+        String calificadoPor = currentUserId();
+        if (calificadoPor == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "No autenticado."));
         }
-        Calificacion c = creada.get();
-        return ResponseEntity.created(URI.create("/api/v1/calificaciones/" + c.getId())).body(c);
-    } catch (IllegalStateException ex) {
-        // Aquí caen los “no se puede interactuar porque está ARCHIVADO”
-        return ResponseEntity.status(409).body(Map.of("message", ex.getMessage()));
-    } catch (IllegalArgumentException ex) {
-        // Por si llega un puntaje inválido, etc.
-        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+
+        try {
+            var creada = calificacionServicio.calificar(
+                    idIntento,
+                    BigDecimal.valueOf(body.getPuntaje()),
+                    body.getFeedback(),
+                    calificadoPor
+            );
+            if (creada.isEmpty()) {
+                return ResponseEntity.status(409).body(Map.of("message", "Intento no válido o ya calificado."));
+            }
+            Calificacion c = creada.get();
+            return ResponseEntity.created(URI.create("/api/v1/calificaciones/" + c.getId())).body(c);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(409).body(Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
     }
-}
 
-
-    /* ===================== VER POR INTENTO ===================== */
-    // Admin, Instructor del curso, o Estudiante dueño del intento
     @GetMapping("/intentos/{idIntento}/calificacion")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeIntento(#idIntento) or @calPermisos.esDuenoDeIntento(#idIntento)")
     public ResponseEntity<?> obtenerPorIntento(@PathVariable String idIntento) {
@@ -82,8 +74,6 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /* ===================== VER POR ID ===================== */
-    // Admin, Instructor del curso de la calificación, o Estudiante dueño
     @GetMapping("/calificaciones/{id}")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeCalificacion(#id) or @calPermisos.esDuenoDeCalificacion(#id)")
     public ResponseEntity<?> obtener(@PathVariable String id) {
@@ -92,8 +82,6 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /* ===================== LISTAR POR EVALUACION ===================== */
-    // Solo Admin o Instructor dueño del curso de la evaluación
     @GetMapping("/evaluaciones/{idEvaluacion}/calificaciones")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeEvaluacion(#idEvaluacion)")
     public ResponseEntity<?> listarPorEvaluacion(@PathVariable String idEvaluacion) {
@@ -101,8 +89,6 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
         return lista.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(lista);
     }
 
-    /* ===================== ACTUALIZAR ===================== */
-    // Solo Admin o Instructor dueño del curso de la calificación
     @PatchMapping("/calificaciones/{id}")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeCalificacion(#id)")
     public ResponseEntity<?> actualizar(@PathVariable String id,
@@ -117,8 +103,6 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
         }
     }
 
-    /* ===================== PUBLICAR ===================== */
-    // Solo Admin o Instructor dueño del curso de la calificación
     @PatchMapping("/calificaciones/{id}/publicar")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeCalificacion(#id)")
     public ResponseEntity<?> publicar(@PathVariable String id) {
@@ -127,8 +111,6 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /* ===================== ELIMINAR ===================== */
-    // Solo Admin o Instructor dueño del curso de la calificación
     @DeleteMapping("/calificaciones/{id}")
     @PreAuthorize("hasRole('ADMIN') or @calPermisos.esInstructorDeCalificacion(#id)")
     public ResponseEntity<?> eliminar(@PathVariable String id) {
@@ -136,9 +118,9 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
         return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
-    /* ===== DTOs ===== */
     public static class CalificarRequest {
-        @NotNull @Min(0)
+        @NotNull
+        @Min(0)
         private Integer puntaje;
         private String feedback;
         public Integer getPuntaje() { return puntaje; }
@@ -149,8 +131,8 @@ public ResponseEntity<?> calificar(@PathVariable String idIntento,
 
     public static class ActualizarCalificacionRequest {
         @Min(0)
-        private Integer puntaje;  // opcional
-        private String feedback;  // opcional
+        private Integer puntaje;
+        private String feedback;
         public Integer getPuntaje() { return puntaje; }
         public void setPuntaje(Integer puntaje) { this.puntaje = puntaje; }
         public String getFeedback() { return feedback; }

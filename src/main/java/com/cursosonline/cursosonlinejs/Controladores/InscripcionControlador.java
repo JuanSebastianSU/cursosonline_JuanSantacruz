@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/InscripcionControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Inscripcion;
@@ -101,7 +100,6 @@ public class InscripcionControlador {
             return ResponseEntity.badRequest().body(Map.of("message","Estado inválido. Usa: activa | completada | cancelada | pendiente_pago | suspendida | expirada"));
         }
 
-        // *** Regla nueva: SOLO ADMIN o INSTRUCTOR DEL CURSO pueden marcar COMPLETADA ***
         if (nuevo == Inscripcion.EstadoInscripcion.COMPLETADA) {
             if (!esAdmin() && !esInstructorDelCurso(idCurso)) {
                 return ResponseEntity.status(403).body(Map.of("message", "Solo ADMIN o el INSTRUCTOR del curso pueden marcar como COMPLETADA."));
@@ -110,7 +108,6 @@ public class InscripcionControlador {
 
         var actualizada = inscripcionServicio.actualizarEstado(id, nuevo.name());
 
-        // Ajustar snapshot del curso según transición ACTIVA <-> no ACTIVA
         if (antes != Inscripcion.EstadoInscripcion.ACTIVA && nuevo == Inscripcion.EstadoInscripcion.ACTIVA) {
             cursoServicio.incInscritosCount(idCurso, +1);
         } else if (antes == Inscripcion.EstadoInscripcion.ACTIVA && nuevo != Inscripcion.EstadoInscripcion.ACTIVA) {
@@ -131,13 +128,12 @@ public class InscripcionControlador {
 
     @GetMapping("/contador")
     public ResponseEntity<?> contador(@PathVariable String idCurso) {
-        long total = inscripcionServicio.contarActivasPorCurso(idCurso); // solo ACTIVA
+        long total = inscripcionServicio.contarActivasPorCurso(idCurso);
         return ResponseEntity.ok(Map.of("cursoId", idCurso, "inscritosActivos", total));
     }
 
     public static record EstadoRequest(@NotBlank String estado) {}
 
-    /* ================= helpers ================= */
     private static Inscripcion.EstadoInscripcion parseEstado(String raw) {
         if (raw == null) throw new IllegalArgumentException("El estado es obligatorio");
         switch (raw.trim().toLowerCase()) {
@@ -168,7 +164,6 @@ public class InscripcionControlador {
                 .map(c -> {
                     var auth = SecurityContextHolder.getContext().getAuthentication();
                     if (auth == null || auth.getName() == null) return false;
-                    // usamos el mismo util del servicio para resolver userId desde el email
                     try {
                         var userId = inscripcionServicio.obtenerIdEstudianteActual().orElse(null);
                         return userId != null && userId.equals(c.getIdInstructor());

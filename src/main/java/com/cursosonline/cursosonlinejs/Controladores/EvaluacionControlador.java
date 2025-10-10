@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/EvaluacionControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -53,7 +52,6 @@ public class EvaluacionControlador {
         return a.getAuthorities().stream().anyMatch(ga -> "ROLE_ADMIN".equals(ga.getAuthority()));
     }
 
-    /* ===================== CREATE ===================== */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> crear(@PathVariable String idLeccion,
@@ -69,7 +67,6 @@ public class EvaluacionControlador {
         return ResponseEntity.created(location).body(creada);
     }
 
-    /* ===================== LIST ===================== */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion) or @evalPermisos.estaInscritoEnCursoDeLeccion(#idLeccion)")
     public ResponseEntity<?> listar(@PathVariable String idLeccion) {
@@ -84,21 +81,17 @@ public class EvaluacionControlador {
         boolean instructor = evalPermisos.esInstructorDeLeccion(idLeccion);
 
         if (!admin && !instructor) {
-            // alumno/visitante: NO ver si hay archivados
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO
                     || leccion.getEstado() == Leccion.EstadoPublicacion.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
             }
-            // solo PUBLICADAS
             return ResponseEntity.ok(evaluacionServicio.listarPublicadasPorLeccion(idLeccion));
         }
 
-        // admin/instructor: ven todas
         return ResponseEntity.ok(evaluacionServicio.listarPorLeccion(idLeccion));
     }
 
-    /* ===================== GET ONE ===================== */
     @GetMapping(value = "/{idEval}", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion) or @evalPermisos.estaInscritoEnCursoDeLeccion(#idLeccion)")
     public ResponseEntity<?> obtener(@PathVariable String idLeccion, @PathVariable String idEval) {
@@ -117,7 +110,6 @@ public class EvaluacionControlador {
         boolean instructor = evalPermisos.esInstructorDeLeccion(idLeccion);
 
         if (!admin && !instructor) {
-            // bloquea si hay archivados o la evaluación no está PUBLICADA
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO
                     || leccion.getEstado() == Leccion.EstadoPublicacion.ARCHIVADO) {
@@ -131,7 +123,6 @@ public class EvaluacionControlador {
         return ResponseEntity.ok(e);
     }
 
-    /* ===================== PUBLICAR ===================== */
     @PatchMapping("/{idEval}/publicar")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> publicar(@PathVariable String idLeccion, @PathVariable String idEval) {
@@ -140,7 +131,6 @@ public class EvaluacionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== ARCHIVAR ===================== */
     @PatchMapping("/{idEval}/archivar")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> archivar(@PathVariable String idLeccion, @PathVariable String idEval) {
@@ -153,7 +143,6 @@ public class EvaluacionControlador {
         }
     }
 
-    /* ===================== UPDATE (PUT) ===================== */
     @PutMapping(value = "/{idEval}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> actualizar(@PathVariable String idLeccion,
@@ -171,7 +160,6 @@ public class EvaluacionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== PATCH (parcial) ===================== */
     @PatchMapping(value = "/{idEval}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> patch(@PathVariable String idLeccion,
@@ -191,7 +179,6 @@ public class EvaluacionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /* ===================== DELETE ===================== */
     @DeleteMapping("/{idEval}")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
     public ResponseEntity<?> eliminar(@PathVariable String idLeccion, @PathVariable String idEval) {
@@ -199,27 +186,24 @@ public class EvaluacionControlador {
         return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
-    /* ===================== DTOs ===================== */
-
     public static record CrearEvalRequest(
             @NotBlank String titulo,
-            @NotBlank String tipo,        // "quiz" | "tarea"
+            @NotBlank String tipo,
             @Min(1) int puntajeMaximo
     ) {}
 
     public static record ActualizarEvalRequest(
             @NotBlank String titulo,
-            @NotBlank String tipo,        // "quiz" | "tarea"
+            @NotBlank String tipo,
             @Min(1) int puntajeMaximo
     ) {}
 
     public static record PatchEvalRequest(
             String titulo,
-            String tipo,        // opcional
+            String tipo,
             Integer puntajeMaximo
     ) {}
 
-    /* helper: mapea string → enum */
     private static TipoEvaluacion parseTipo(String raw) {
         if (raw == null) throw new IllegalArgumentException("tipo es obligatorio");
         switch (raw.trim().toLowerCase()) {

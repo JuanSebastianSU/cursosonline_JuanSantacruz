@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Repositorios/CursoRepositorio.java
 package com.cursosonline.cursosonlinejs.Repositorios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -24,7 +23,6 @@ public interface CursoRepositorio extends MongoRepository<Curso, String> {
 
     Page<Curso> findByIdInstructor(String idInstructor, Pageable pageable);
 
-    // === NUEVO: listado completo del instructor (sin paginar) ===
     List<Curso> findByIdInstructorOrderByCreatedAtAsc(String idInstructor);
 
     Page<Curso> findByEstado(String estado, Pageable pageable);

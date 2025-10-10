@@ -7,6 +7,5 @@ import com.cursosonline.cursosonlinejs.Entidades.Usuario;
 public interface UsuarioRepositorio extends MongoRepository<Usuario, String> {
 
     Optional<Usuario> findByEmail(String email);
-
     boolean existsByEmail(String email);
 }

@@ -2,7 +2,6 @@ package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Entidades.Certificado;
 import com.cursosonline.cursosonlinejs.Repositorios.*;
-
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +38,6 @@ public class CertificadoPermisos {
                 .orElse(false);
     }
 
-    /** ¿El autenticado es el instructor dueño del curso? */
     public boolean esInstructorDelCurso(String idCurso) {
         String uid = currentUserId();
         if (uid == null || !esInstructor(uid)) return false;
@@ -48,7 +46,6 @@ public class CertificadoPermisos {
                 .orElse(false);
     }
 
-    /** ¿El autenticado puede ver el certificado (admin, instructor dueño del curso o estudiante dueño)? */
     public boolean puedeVerCertificado(String idCertificado) {
         String uid = currentUserId();
         if (uid == null) return false;
@@ -60,13 +57,11 @@ public class CertificadoPermisos {
         if (esAdmin(uid)) return true;
         if (uid.equals(c.getIdEstudiante())) return true;
 
-        // instructor dueño del curso del certificado
         return cursoRepo.findById(c.getIdCurso())
                 .map(cur -> uid.equals(cur.getIdInstructor()))
                 .orElse(false);
     }
 
-    /** ¿El autenticado es instructor dueño del curso del certificado? (para revocar/eliminar) */
     public boolean esInstructorDeCertificado(String idCertificado) {
         String uid = currentUserId();
         if (uid == null || !esInstructor(uid)) return false;
@@ -76,13 +71,11 @@ public class CertificadoPermisos {
         ).orElse(false);
     }
 
-    /** ¿El autenticado es el mismo estudiante? (para listar por estudiante) */
     public boolean esMismoEstudiante(String idEstudiante) {
         String uid = currentUserId();
         return uid != null && uid.equals(idEstudiante);
     }
 
-    /** ¿Es admin? (para listar por estudiante como admin) */
     public boolean esAdminActual() {
         String uid = currentUserId();
         return uid != null && esAdmin(uid);

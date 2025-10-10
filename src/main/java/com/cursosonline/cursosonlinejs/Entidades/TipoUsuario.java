@@ -13,7 +13,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Document(collection = "tipos_usuario")
-@Getter @Setter
+@Getter
+@Setter
 public class TipoUsuario {
 
     @Id
@@ -21,14 +22,12 @@ public class TipoUsuario {
 
     @NotBlank(message = "El nombre del tipo de usuario es obligatorio")
     @Indexed(unique = true)
-    private String nombre; // p.ej. "ADMIN", "Instructor", "Usuario"
+    private String nombre;
 
     private String descripcion;
 
-    /** true si este tipo es propio del sistema y no debería borrarse (p.ej. ADMIN) */
     private boolean system;
 
-    /** true si este tipo debe asignarse por defecto a nuevos usuarios (máximo 1) */
     private boolean isDefault;
 
     @CreatedDate

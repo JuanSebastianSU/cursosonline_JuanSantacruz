@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/MisInscripcionesControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Inscripcion;
@@ -21,7 +20,6 @@ public class MisInscripcionesControlador {
         this.inscripcionServicio = inscripcionServicio;
     }
 
-    // Lista todas mis inscripciones (opcional filtro por estado)
     @GetMapping(produces = "application/json")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> listar(@RequestParam(required = false) String estado) {
@@ -33,7 +31,6 @@ public class MisInscripcionesControlador {
         return ResponseEntity.ok(data);
     }
 
-    // Mi inscripción para un curso concreto (si existe)
     @GetMapping(value = "/curso/{idCurso}", produces = "application/json")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> miInscripcionEnCurso(@PathVariable String idCurso) {

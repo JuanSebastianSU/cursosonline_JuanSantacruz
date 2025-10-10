@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Seguridad/LeccionPermisos.java
 package com.cursosonline.cursosonlinejs.Seguridad;
 
 import com.cursosonline.cursosonlinejs.Entidades.Inscripcion;
@@ -20,7 +19,6 @@ public class LeccionPermisos {
     private final CursoRepositorio cursoRepo;
     private final InscripcionRepositorio inscripcionRepo;
 
-    // Consideramos “con acceso” a los que estén ACTIVA (ajusta si quieres incluir PENDIENTE_PAGO)
     private static final List<Inscripcion.EstadoInscripcion> ESTADOS_CON_ACCESO =
             List.of(Inscripcion.EstadoInscripcion.ACTIVA);
 
@@ -34,7 +32,6 @@ public class LeccionPermisos {
         this.inscripcionRepo = inscripcionRepo;
     }
 
-    /** ¿El autenticado es el instructor (dueño) del curso al que pertenece el módulo? */
     public boolean esInstructorDelModulo(String idModulo) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;
@@ -52,7 +49,6 @@ public class LeccionPermisos {
                 .orElse(false);
     }
 
-    /** ¿El autenticado está inscrito (con acceso) en el curso al que pertenece el módulo? */
     public boolean estaInscritoEnCursoDelModulo(String idModulo) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) return false;

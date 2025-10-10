@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Servicios/ModuloServicio.java
 package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Modulo;
@@ -21,8 +20,6 @@ public class ModuloServicio {
         this.cursoServicio = cursoServicio;
     }
 
-    /* ===================== CRUD ===================== */
-
     public Modulo guardar(Modulo modulo) {
         if (modulo.getTitulo() != null) {
             modulo.setTitulo(modulo.getTitulo().trim());
@@ -31,20 +28,17 @@ public class ModuloServicio {
         final boolean esNueva = (modulo.getId() == null);
 
         if (!esNueva) {
-            // Cargar estado actual desde BD y validar editabilidad
             Modulo actual = moduloRepositorio.findById(modulo.getId())
                     .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
             if (actual.getEstado() == Modulo.EstadoModulo.PUBLICADO) {
                 throw new IllegalStateException("No se puede editar un módulo en estado PUBLICADO. Archívalo primero.");
             }
-            // Congelar idCurso en updates
             modulo.setIdCurso(actual.getIdCurso());
         }
 
         Modulo saved = moduloRepositorio.save(modulo);
 
         if (saved.getIdCurso() != null) {
-            // Refresca snapshot de módulos del curso (solo publicados si así lo configuraste en CursoServicio)
             cursoServicio.reconstruirModulosSnapshot(saved.getIdCurso());
         }
         return saved;
@@ -59,15 +53,12 @@ public class ModuloServicio {
     }
 
     public void eliminar(String id) {
-        // tomar idCurso antes de borrar
         String idCurso = moduloRepositorio.findById(id).map(Modulo::getIdCurso).orElse(null);
         moduloRepositorio.deleteById(id);
         if (idCurso != null) {
             cursoServicio.reconstruirModulosSnapshot(idCurso);
         }
     }
-
-    /* ===================== soporte al controlador ===================== */
 
     public Modulo obtener(String id) {
         return moduloRepositorio.findById(id).orElse(null);
@@ -91,9 +82,6 @@ public class ModuloServicio {
                 .orElse(1);
     }
 
-    /* ===================== Reordenamientos ===================== */
-
-    /** Cambia el orden de un módulo. Si el nuevo orden ya está ocupado, hace "swap". */
     public Modulo cambiarOrden(String idCurso, String idModulo, int nuevoOrden) {
         if (nuevoOrden < 1) nuevoOrden = 1;
 
@@ -107,7 +95,6 @@ public class ModuloServicio {
             throw new IllegalArgumentException("El módulo no pertenece al curso");
 
         if (actual.getOrden() == nuevoOrden) {
-            // aun así refrescamos por si hubo cambios previos
             cursoServicio.reconstruirModulosSnapshot(idCurso);
             return actual;
         }
@@ -130,7 +117,6 @@ public class ModuloServicio {
         }
     }
 
-    /** Mueve un módulo arriba/abajo (delta = +1 o -1 típicamente). */
     public Modulo moverPorDelta(String idCurso, String idModulo, int delta) {
         Modulo actual = moduloRepositorio.findById(idModulo)
                 .orElseThrow(() -> new NoSuchElementException("Módulo no encontrado"));
@@ -144,8 +130,6 @@ public class ModuloServicio {
         int nuevoOrden = Math.max(1, actual.getOrden() + delta);
         return cambiarOrden(idCurso, idModulo, nuevoOrden);
     }
-
-    /* ===================== Publicar / Archivar ===================== */
 
     public Optional<Modulo> publicar(String id) {
         return moduloRepositorio.findById(id).map(m -> {
@@ -174,10 +158,6 @@ public class ModuloServicio {
         });
     }
 
-    /**
-     * Reordena secuencialmente según la lista de IDs (1..n).
-     * Solo acepta módulos del mismo curso; si hay intrusos o faltantes, lanza error.
-     */
     public List<Modulo> reordenarSecuencial(String idCurso, List<String> idsEnOrden) {
         if (idsEnOrden == null || idsEnOrden.isEmpty())
             throw new IllegalArgumentException("La lista de ids no puede estar vacía");
@@ -200,7 +180,6 @@ public class ModuloServicio {
             mapa.get(id).setOrden(orden++);
         }
         List<Modulo> res = moduloRepositorio.saveAll(modulos);
-        // refrescar snapshot del curso
         cursoServicio.reconstruirModulosSnapshot(idCurso);
         return res;
     }

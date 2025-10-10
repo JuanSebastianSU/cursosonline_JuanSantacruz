@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Repositorios/PagoRepositorio.java
 package com.cursosonline.cursosonlinejs.Repositorios;
 
 import java.util.List;
@@ -11,10 +10,7 @@ public interface PagoRepositorio extends MongoRepository<Pago, String> {
     List<Pago> findByIdInscripcion(String idInscripcion);
 
     boolean existsByIdInscripcionAndEstado(String idInscripcion, Pago.EstadoPago estado);
-
     Optional<Pago> findByReferencia(String referencia);
-
-    // nuevo: asegurar pertenencia a la inscripción
     Optional<Pago> findByIdAndIdInscripcion(String id, String idInscripcion);
     
 }

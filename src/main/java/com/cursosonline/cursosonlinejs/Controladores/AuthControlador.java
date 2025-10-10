@@ -50,19 +50,16 @@ public class AuthControlador {
         this.tipoUsuarioServicio = tipoUsuarioServicio;
     }
 
-    // --- Configurables por properties (con valores por defecto) ---
     @Value("${security.auth.max-failed-attempts:5}")
     private int maxFailedAttempts;
 
     @Value("${security.auth.lock-minutes:15}")
     private long lockMinutes;
 
-    // ---------- REGISTER (PÚBLICO) ----------
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegistroRequest req) {
         String email = normalizeEmail(req.email());
 
-        // 1) evitar duplicados
         if (usuarioRepositorio.findByEmail(email).isPresent()) {
             return ResponseEntity.status(409).body(Map.of(
                     "error", "EMAIL_IN_USE",
@@ -70,49 +67,43 @@ public class AuthControlador {
             ));
         }
 
-        // 2) determinar el tipo por defecto desde Mongo
         String rolPorDefecto = tipoUsuarioServicio.getDefault()
                 .map(TipoUsuario::getNombre)
                 .orElseGet(() -> tipoUsuarioServicio.findByNombreIgnoreCase("Usuario")
                         .map(TipoUsuario::getNombre)
                         .orElse("USUARIO"));
 
-        // 3) crear usuario
         var u = new Usuario();
         u.setNombre(req.nombre().trim());
         u.setEmail(email);
         u.setPassword(passwordEncoder.encode(req.password()));
-        u.setRol(rolPorDefecto);            // ← guarda el nombre exacto del TipoUsuario
+        u.setRol(rolPorDefecto);
         u.setEstado("ACTIVO");
         u.setEmailVerified(false);
         u.setFailedLoginAttempts(0);
 
         usuarioRepositorio.save(u);
 
-        // 4) devolver token igual que /login
         String token = jwtService.generateToken(u);
         JwtResponse resp = new JwtResponse(
                 token,
                 "Bearer",
                 u.getNombre(),
                 u.getId(),
-                List.of(asAuthority(u.getRol())),   // ["ROLE_USUARIO"] por ejemplo
+                List.of(asAuthority(u.getRol())),
                 jwtService.getAccessTokenTtlSeconds()
         );
         return ResponseEntity.created(URI.create("/api/users/" + u.getId()))
                 .body(resp);
     }
 
-    // ---------- LOGIN (PÚBLICO) ----------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         final String emailNorm = normalizeEmail(request.getEmail());
         final Instant now = Instant.now();
 
-        // Buscamos usuario
         Usuario u = usuarioRepositorio.findByEmail(emailNorm).orElse(null);
 
-        // Si está bloqueado y aún no expira, responder 423
         if (u != null && u.getLockedUntil() != null && u.getLockedUntil().isAfter(now)) {
             long secs = Duration.between(now, u.getLockedUntil()).toSeconds();
             return ResponseEntity.status(HttpStatus.LOCKED)
@@ -123,7 +114,6 @@ public class AuthControlador {
                     ));
         }
 
-        // Si el bloqueo expiró, limpiar bloqueo y contador
         if (u != null && u.getLockedUntil() != null && !u.getLockedUntil().isAfter(now)) {
             u.setLockedUntil(null);
             u.setFailedLoginAttempts(0);
@@ -131,7 +121,6 @@ public class AuthControlador {
         }
 
         try {
-            // Autenticar usando email normalizado
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(emailNorm, request.getPassword())
             );
@@ -145,7 +134,6 @@ public class AuthControlador {
                         .body(Map.of("error", "ACCOUNT_INACTIVE", "message", "La cuenta no está activa"));
             }
 
-            // Actualiza metadatos de acceso
             u.setLastLoginAt(now);
             u.setFailedLoginAttempts(0);
             u.setLockedUntil(null);
@@ -157,13 +145,12 @@ public class AuthControlador {
                     "Bearer",
                     u.getNombre(),
                     u.getId(),
-                    List.of(asAuthority(u.getRol())),   // ["ROLE_ADMIN"] | ["ROLE_INSTRUCTOR"] | ["ROLE_USUARIO"]
+                    List.of(asAuthority(u.getRol())),
                     jwtService.getAccessTokenTtlSeconds()
             );
             return ResponseEntity.ok(resp);
 
         } catch (BadCredentialsException e) {
-            // Credenciales inválidas: incrementa contador y bloquea si supera umbral
             if (u != null) {
                 int attempts = (u.getFailedLoginAttempts() == null ? 0 : u.getFailedLoginAttempts()) + 1;
                 u.setFailedLoginAttempts(attempts);
@@ -181,12 +168,10 @@ public class AuthControlador {
         }
     }
 
-    /* ================== helpers ================== */
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 
-    /** Convierte "Usuario" -> "ROLE_USUARIO", "Instructor" -> "ROLE_INSTRUCTOR", "ADMIN" -> "ROLE_ADMIN" */
     private String asAuthority(String rolNombre) {
         String base = (rolNombre == null || rolNombre.isBlank()) ? "USUARIO" : rolNombre.trim();
         return "ROLE_" + base.toUpperCase().replace(' ', '_');

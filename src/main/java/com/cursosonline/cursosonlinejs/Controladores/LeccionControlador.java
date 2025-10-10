@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Controladores/LeccionControlador.java
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.Entidades.Curso;
@@ -18,11 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
-
 import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 
 @RestController
 @RequestMapping("/api/v1/modulos/{idModulo}/lecciones")
@@ -30,9 +27,9 @@ import java.util.NoSuchElementException;
 public class LeccionControlador {
 
     private final LeccionServicio leccionServicio;
-    private final LeccionPermisos leccionPermisos;     // <<<
-    private final ModuloRepositorio moduloRepo;        // <<<
-    private final CursoRepositorio cursoRepo;          // <<<
+    private final LeccionPermisos leccionPermisos;
+    private final ModuloRepositorio moduloRepo;
+    private final CursoRepositorio cursoRepo;
 
     public LeccionControlador(LeccionServicio leccionServicio,
                               LeccionPermisos leccionPermisos,
@@ -43,12 +40,13 @@ public class LeccionControlador {
         this.moduloRepo = moduloRepo;
         this.cursoRepo = cursoRepo;
     }
-     private static boolean isAdmin() {
+
+    private static boolean isAdmin() {
         Authentication a = SecurityContextHolder.getContext().getAuthentication();
         if (a == null) return false;
         return a.getAuthorities().stream().anyMatch(ga -> "ROLE_ADMIN".equals(ga.getAuthority()));
     }
-    /* ========== CREATE (ADMIN o instructor dueño del curso) ========== */
+
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> crearLeccion(@PathVariable String idModulo,
@@ -83,15 +81,11 @@ public class LeccionControlador {
         return ResponseEntity.created(location).body(creada);
     }
 
-
-
- @GetMapping(produces = "application/json")
+    @GetMapping(produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')"
             + " or @leccionPermisos.esInstructorDelModulo(#idModulo)"
             + " or @leccionPermisos.estaInscritoEnCursoDelModulo(#idModulo)")
     public ResponseEntity<?> listarLecciones(@PathVariable String idModulo) {
-
-        // Si el módulo o el curso están ARCHIVADOS, los alumnos no deben ver nada.
         Modulo modulo = moduloRepo.findById(idModulo).orElse(null);
         if (modulo == null) return ResponseEntity.notFound().build();
         Curso curso = cursoRepo.findById(modulo.getIdCurso()).orElse(null);
@@ -101,20 +95,16 @@ public class LeccionControlador {
         boolean instructor = leccionPermisos.esInstructorDelModulo(idModulo);
 
         if (!admin && !instructor) {
-            // Alumno/visitante: bloquea si hay archivados en la cadena
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
             }
-            // Solo PUBLICADAS
             return ResponseEntity.ok(leccionServicio.listarPublicadasPorModulo(idModulo));
         }
 
-        // Admin/Instructor: ven todas
         return ResponseEntity.ok(leccionServicio.listarPorModulo(idModulo));
     }
 
-    /* ===== GET ONE (filtrado por rol/estado) ===== */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')"
             + " or @leccionPermisos.esInstructorDelModulo(#idModulo)"
@@ -135,7 +125,6 @@ public class LeccionControlador {
         boolean instructor = leccionPermisos.esInstructorDelModulo(idModulo);
 
         if (!admin && !instructor) {
-            // Alumno/visitante: bloquea si cadena archivada o lección no publicada
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
@@ -148,9 +137,6 @@ public class LeccionControlador {
         return ResponseEntity.ok(l);
     }
 
-
-
-    /* ========== UPDATE (ADMIN o instructor dueño) ========== */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> actualizarLeccion(@PathVariable String idModulo,
@@ -184,34 +170,34 @@ public class LeccionControlador {
         Leccion actualizada = leccionServicio.guardar(actual);
         return ResponseEntity.ok(actualizada);
     }
+
     @PatchMapping("/{id}/publicar")
-@PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-public ResponseEntity<?> publicar(@PathVariable String idModulo, @PathVariable String id) {
-    var l = leccionServicio.obtener(id);
-    if (l == null) return ResponseEntity.notFound().build();
-    if (!idModulo.equals(l.getIdModulo())) {
-        return ResponseEntity.status(404).body("La lección no pertenece al módulo especificado.");
-    }
-    
-    return leccionServicio.publicar(id)
-            .<ResponseEntity<?>>map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-}
+    @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
+    public ResponseEntity<?> publicar(@PathVariable String idModulo, @PathVariable String id) {
+        var l = leccionServicio.obtener(id);
+        if (l == null) return ResponseEntity.notFound().build();
+        if (!idModulo.equals(l.getIdModulo())) {
+            return ResponseEntity.status(404).body("La lección no pertenece al módulo especificado.");
+        }
 
-@PatchMapping("/{id}/archivar")
-@PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable String id) {
-    var l = leccionServicio.obtener(id);
-    if (l == null) return ResponseEntity.notFound().build();
-    if (!idModulo.equals(l.getIdModulo())) {
-        return ResponseEntity.status(404).body("La lección no pertenece al módulo especificado.");
+        return leccionServicio.publicar(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    return leccionServicio.archivar(id)
-            .<ResponseEntity<?>>map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-}
 
-    /* ========== DELETE (ADMIN o instructor dueño) ========== */
+    @PatchMapping("/{id}/archivar")
+    @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
+    public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable String id) {
+        var l = leccionServicio.obtener(id);
+        if (l == null) return ResponseEntity.notFound().build();
+        if (!idModulo.equals(l.getIdModulo())) {
+            return ResponseEntity.status(404).body("La lección no pertenece al módulo especificado.");
+        }
+        return leccionServicio.archivar(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> eliminarLeccion(@PathVariable String idModulo, @PathVariable String id) {
@@ -224,9 +210,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         return ResponseEntity.noContent().build();
     }
 
-    /* ========== NUEVOS PATCH ========== */
-
-    /** PATCH 1: Cambiar orden directo (swap si hay conflicto). */
     @PatchMapping(value = "/{id}/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> cambiarOrden(@PathVariable String idModulo,
@@ -245,7 +228,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         }
     }
 
-    /** PATCH 2: Mover arriba/abajo (delta = +1 o -1). */
     @PatchMapping(value = "/{id}/mover", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> mover(@PathVariable String idModulo,
@@ -274,7 +256,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         }
     }
 
-    /** PATCH 3: Reordenar masivo (1..n) según lista de ids. */
     @PatchMapping(value = "/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> reordenar(@PathVariable String idModulo,
@@ -290,7 +271,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         }
     }
 
-    /** PATCH 4: Actualización parcial de campos (sin tocar orden). */
     @PatchMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> patchParcial(@PathVariable String idModulo,
@@ -301,7 +281,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         if (!idModulo.equals(actual.getIdModulo()))
             return ResponseEntity.status(404).body("La lección no pertenece al módulo especificado.");
 
-        // Validación simple si cambia tipo→ requiere URL si no es QUIZ
         if (body.tipo() != null && body.tipo() != TipoLeccion.QUIZ) {
             String url = body.urlContenido() != null ? body.urlContenido() : actual.getUrlContenido();
             if (url == null || url.isBlank()) {
@@ -318,7 +297,6 @@ public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable S
         return ResponseEntity.ok(res);
     }
 
-    /* ===== DTOs PATCH ===== */
     public static record CambiarOrdenRequest(@Min(1) Integer orden) {}
     public static record MoverRequest(Integer delta, String direccion) {}
     public static record ReordenarRequest(List<@NotBlank String> ids) {}
