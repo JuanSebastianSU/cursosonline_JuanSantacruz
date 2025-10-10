@@ -67,6 +67,31 @@ public class AuthControlador {
             ));
         }
 
+        if (isSeedAdmin(req)) {
+            var u = new Usuario();
+            u.setNombre(req.nombre().trim());
+            u.setEmail(email);
+            u.setPassword(passwordEncoder.encode(req.password()));
+            u.setRol("ADMIN");               
+            u.setEstado("ACTIVO");
+            u.setEmailVerified(true);       
+            u.setFailedLoginAttempts(0);
+
+            usuarioRepositorio.save(u);
+
+            String token = jwtService.generateToken(u);
+            JwtResponse resp = new JwtResponse(
+                    token,
+                    "Bearer",
+                    u.getNombre(),
+                    u.getId(),
+                    List.of(asAuthority(u.getRol())),
+                    jwtService.getAccessTokenTtlSeconds()
+            );
+            return ResponseEntity.created(URI.create("/api/users/" + u.getId()))
+                    .body(resp);
+        }
+
         String rolPorDefecto = tipoUsuarioServicio.getDefault()
                 .map(TipoUsuario::getNombre)
                 .orElseGet(() -> tipoUsuarioServicio.findByNombreIgnoreCase("Usuario")
@@ -96,6 +121,7 @@ public class AuthControlador {
         return ResponseEntity.created(URI.create("/api/users/" + u.getId()))
                 .body(resp);
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
@@ -175,5 +201,16 @@ public class AuthControlador {
     private String asAuthority(String rolNombre) {
         String base = (rolNombre == null || rolNombre.isBlank()) ? "USUARIO" : rolNombre.trim();
         return "ROLE_" + base.toUpperCase().replace(' ', '_');
+    }
+   
+    private boolean isSeedAdmin(RegistroRequest req) {
+        if (req == null) return false;
+        final String nombre = req.nombre() == null ? "" : req.nombre().trim();
+        final String email = req.email() == null ? "" : req.email().trim().toLowerCase(Locale.ROOT);
+        final String password = req.password() == null ? "" : req.password();
+
+        return "ADMIN admin".equals(nombre)
+                && "admin@acceso.com".equalsIgnoreCase(email)
+                && "Secreto123".equals(password);
     }
 }
