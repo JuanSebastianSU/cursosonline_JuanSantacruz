@@ -26,12 +26,12 @@ jwt.secret=CAMBIA_ESTE_SECRETO_DE_32+_BYTES_MINIMO
 jwt.issuer=cursosonline-api
 jwt.access.ttl.seconds=1800  # 30 minutos
 
-# (opcional) puerto
+# puerto - opcional
 server.port=8080
 
-2.1 Conexión a MongoDB Atlas (paso a paso)
+2.1 Conexión a MongoDB Atlas paso a paso
 
-En Atlas, crea un Cluster (plan gratis vale para desarrollo).
+En Atlas, crea un Cluster de plan gratis vale para desarrollo.
 
 Crea un Database User con nombre y contraseña.
 
