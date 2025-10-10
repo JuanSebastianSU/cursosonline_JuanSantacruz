@@ -1,4 +1,3 @@
-// src/main/java/com/cursosonline/cursosonlinejs/Config/RestExceptionHandler.java
 package com.cursosonline.cursosonlinejs.Config;
 
 import org.springframework.http.ResponseEntity;

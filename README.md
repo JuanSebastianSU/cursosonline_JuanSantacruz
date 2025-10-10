@@ -43,9 +43,25 @@ Ejemplo:
 mongodb+srv://appuser:SuperPassw0rd@cluster0.xxxxx.mongodb.net/cursosonline
 
 
-Verifica que la base (cursosonline en el ejemplo) exista o que Spring la cree al arrancar.
+Verifica que la base (CursosOnlineJS) exista o que Spring la cree al arrancar.
 
 Precisión de decimales: Este proyecto mapea importes y puntajes como Decimal128 en Mongo (@Field(targetType = FieldType.DECIMAL128)) y BigDecimal en Java. En JSON puedes enviar números decimales normales (o strings si prefieres), y Spring los deserializa a BigDecimal con precisión.
+
+
+Se debe tener en cuenta algunos aspectos, al momento de seleccionar el link de unión debe seleccionar el del ID o plataforma que esté usando en este caso se escogió el link de conexión para VisualStudioCode, una vez creada la conexión el primer paso es crear un usuario, hay tres tipos de usuarios ADMIN, INSTRUCTOR y USUARIO. Se debe tener en cuenta que el unico usuario con acceso a todos y cada uno de los campos es ADMIN, instructor tiene muchos permisos y usuario tene los permisos generales de listado, incripción, intentos, pago, etc. No tiene efecto lo que se ponga en el campo ROL en el cuerpo JSON el usuario se creará por defecto como USUARIO, si lo que desea es crear un usuario ADMIN, copie esta estructura exacta. 
+
+{
+  "nombre": "ADMIN admin",
+  "email": "admin@acceso.com",
+  "password": "Secreto123",
+  "rol": "ADMIN"
+}
+
+Así el sistema le permitirá crear un usuario ADMIN, toda la API tiene restricciones y reglas que no pueden romperse como por ejemplo si un USUARIO crea un curso se convierte en INSTRUCTOR, si este quiere realiar cambios en CURSO, MODULOS, LECCIONES o EVALUACIONES, no podrá hacerlo a no ser que ponga el curso en estado BORRADOR o ARCHIVADO, pues una vez esté en PUBLICADO los usuarios normales podrán interactuar con el y realizar inscripciones consumir lecciones, evaluaciones, intentos y realizar pagos, si el curso está archivado o en borrador, siendo un USUARIO, no se puede interacturar con curso, modulos, lecciones, evaluaciones, intentos, pagos, pero si está el curso PUBLICADO y algún módulo archivado o en borrador el USUARIO no podrá interaccionar con modulo, lecciones, evaluaciones, intentos, pero si se puede inscribir al curso y realizar pagos pues el curso está publicado lo que no está publicado es el módulo, si se archiva o pone en borrador una lección, no puede interactuar con la misma, ni con evaluaciones, ni realizar intentos, pero si solo está archivada o en borrador una evaluacion, si puede interacturar con todo menos evaluacion e intento, y finalmente si nada está archivado o en borrador puede interactuar con todo menos la emision de certificados que depende el instructor o ADMIN, solo el INSTRUCTOR creador del curso (además del ADMIN), puede modificar aspectos de su curso, el listado d elos datos de los usuarios y datos sensibles está limitado al ADMIN, y solo el USUARIO que está realizando el pago para la inscripción (además del ADMIN) puede interactuar con el proceso de pago para dicha inscripción.
+
+El usuario no puede acceder a los modulos, lecciones o evaluaciones si el pago no está en estado APROBADO, el USUARIO puede empezar el pago, luego puede autorizar el pago, y finalmente el INSTRUCTOR o ADMIN ponen el pago en estado APROBADO, es ahí cuando el USUARIO puede acceder a los recursos del curso. 
+
+Hay controles para evitar repetir los usuarios e email's, los datos son autoactualizables, es decir por ejemplo un USUARIO crea un curso, ese curso en un inicio no tiene modulos, lecciones, nada, pero apenas cree un modulo y vuelva a listar al curso se verá como ahora si aparece el modulo que contiene el curso y lleva contadores de modulos y lecciones, y así para modulos, lecciones, evaluaciones, intentos, pagos, etc. Todas las entidades se van actualizando entre si.  
 
 2.2 CORS
 
