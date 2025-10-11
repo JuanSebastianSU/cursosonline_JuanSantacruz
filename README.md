@@ -604,11 +604,13 @@ Para consmir los endpoints puede seguir esta guía:
 
 USUARIO:
 
+
 1. Registrar Usuario:
 
 POST "http://localhost:8080/api/auth/register" Cualquier usuario.
 
 Cuerpo:
+```json
 {
   "nombre": "Remigio Gonzales",
   "email": "remigio@gonzales.com",
@@ -617,7 +619,7 @@ Cuerpo:
 }
 
 Respuesta: 
-
+```json
 "{
     "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZW1pZ2lvQGdvbnphbGVzLmNvbSIsImp0aSI6IjgxYzc0NzQ2LTY2NTYtNGZjOC04M2IyLWE4NTI0ZjM5MDYyZiIsImlzcyI6ImN1cnNvc29ubGluZS1hcGkiLCJpYXQiOjE3NjAyMDA4MTQsImV4cCI6MTc2MDIwMjYxNCwidWlkIjoiNjhlYTg4NmUxOTFmZDA4MDdiODdmOGMxIiwicm9sZXMiOlsiUk9MRV9VU1VBUklPIl19.Ws15HfzERtw4BThSds_5A0JSfzvDoh_7LxycMNEH-i4",
     "type": "Bearer",
@@ -634,6 +636,8 @@ Respuesta:
 POST "http://localhost:8080/api/auth/login" Cualquier usuario.
 
 Cuerpo: 
+
+```json
 {
   "email": "admin@acceso.com",
   "password": "Secreto123"
