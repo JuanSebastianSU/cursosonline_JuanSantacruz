@@ -598,3 +598,1289 @@ Crear curso (BORRADOR), módulos/lecciones, publicar.
 Inscribir alumno → pago → aprobar/capturar → inscripción ACTIVA.
 
 Evaluación publicada → intento → calificación → (opcional) certificado.
+
+Se debe ingresar el token del usuario con el que quiere realizar las acciones, por ejemplo si quiere realizar una inscripción debería usar el token del usuario que desea hacer la inscripción, si lo que se quiere es probar funcionalidad directa se puede usar el ADMIN para todo pero es mejor usar cada usuario para lo que se planeó que pudera hacer.
+Para consmir los endpoints puede seguir esta guía: 
+
+USUARIO:
+
+1. Registrar Usuario:
+
+POST "http://localhost:8080/api/auth/register" Cualquier usuario.
+
+Cuerpo:
+{
+  "nombre": "Remigio Gonzales",
+  "email": "remigio@gonzales.com",
+  "password": "Secreto123",
+  "rol": "Usuario"
+}
+
+Respuesta: 
+
+"{
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZW1pZ2lvQGdvbnphbGVzLmNvbSIsImp0aSI6IjgxYzc0NzQ2LTY2NTYtNGZjOC04M2IyLWE4NTI0ZjM5MDYyZiIsImlzcyI6ImN1cnNvc29ubGluZS1hcGkiLCJpYXQiOjE3NjAyMDA4MTQsImV4cCI6MTc2MDIwMjYxNCwidWlkIjoiNjhlYTg4NmUxOTFmZDA4MDdiODdmOGMxIiwicm9sZXMiOlsiUk9MRV9VU1VBUklPIl19.Ws15HfzERtw4BThSds_5A0JSfzvDoh_7LxycMNEH-i4",
+    "type": "Bearer",
+    "username": "Remigio Gonzales",
+    "userId": "68ea886e191fd0807b87f8c1",
+    "roles": [
+        "ROLE_USUARIO"
+    ],
+    "expiresIn": 1800
+}"
+
+2. Loguear Usuario:
+
+POST "http://localhost:8080/api/auth/login" Cualquier usuario.
+
+Cuerpo: 
+{
+  "email": "admin@acceso.com",
+  "password": "Secreto123"
+}
+
+Respuesta:
+{
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBhY2Nlc28uY29tIiwianRpIjoiN2JjYWZmM2QtNjRmMi00NDczLWFiMzEtMDdiOGQwYWY4ZjAwIiwiaXNzIjoiY3Vyc29zb25saW5lLWFwaSIsImlhdCI6MTc2MDIwMDgzNSwiZXhwIjoxNzYwMjAyNjM1LCJ1aWQiOiI2OGU5MjBiZDEwNmU2YTVkZjgxOWE2NDQiLCJyb2xlcyI6WyJST0xFX0FETUlOIl19.sJ6pvuMbvl0tE7fbcihh6ESpm6FU2yATUdc8sRSv5bs",
+    "type": "Bearer",
+    "username": "ADMIN admin",
+    "userId": "68e920bd106e6a5df819a644",
+    "roles": [
+        "ROLE_ADMIN"
+    ],
+    "expiresIn": 1800
+}
+
+3. Crear tipo de usuario:
+
+POST "http://localhost:8080/api/tipousuario" Solo ADMIN.
+
+Cuerpo:
+{
+  "nombre": "TIPO_PRUEBA2",
+  "descripcion": "Ejemplo de creacion de tipo de usuario"
+}
+
+Respuesta: 
+{
+    "id": "68ea8975191fd0807b87f8c2",
+    "nombre": "TIPO_PRUEBA2",
+    "descripcion": "Ejemplo de creacion de tipo de usuario",
+    "system": false,
+    "createdAt": "2025-10-11T16:44:37.818612200Z",
+    "updatedAt": "2025-10-11T16:44:37.818612200Z",
+    "default": false
+}
+
+4. Listar tipos de usuarios creados:
+
+GET "http://localhost:8080/api/tipousuario" Solo ADMIN.
+
+Respuesta: 
+{
+    "content": [
+        {
+            "id": "68e3b65ca29051b43d1f334d",
+            "nombre": "INSTRUCTOR",
+            "descripcion": "Puede crear y gestionar cursos",
+            "system": false,
+            "createdAt": "2025-10-06T12:30:20.052Z",
+            "updatedAt": "2025-10-06T12:30:20.052Z",
+            "default": false
+        },
+        {
+            "id": "68ea8975191fd0807b87f8c2",
+            "nombre": "TIPO_PRUEBA2",
+            "descripcion": "Ejemplo de creacion de tipo de usuario",
+            "system": false,
+            "createdAt": "2025-10-11T16:44:37.818Z",
+            "updatedAt": "2025-10-11T16:44:37.818Z",
+            "default": false
+        },
+        {
+            "id": "68e3b7eea29051b43d1f3350",
+            "nombre": "USUARIO",
+            "descripcion": "Puede navegar y consumir la mayoria de los servicios y opciones, pero no tiene permisos especiales ni puede administrar.",
+            "system": false,
+            "createdAt": "2025-10-06T12:37:02.138Z",
+            "updatedAt": "2025-10-10T03:33:07.030Z",
+            "default": false
+        }
+    ],
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 20,
+        "sort": {
+            "empty": false,
+            "sorted": true,
+            "unsorted": false
+        },
+        "offset": 0,
+        "paged": true,
+        "unpaged": false
+    },
+    "last": true,
+    "totalElements": 3,
+    "totalPages": 1,
+    "first": true,
+    "numberOfElements": 3,
+    "size": 20,
+    "number": 0,
+    "sort": {
+        "empty": false,
+        "sorted": true,
+        "unsorted": false
+    },
+    "empty": false
+}
+
+5. Listar los usuarios registrados:
+
+GET "http://localhost:8080/api/usuarios" Solo ADMIN.
+
+Respuesta: 
+[
+    {
+        "id": "68e3b2b0cea19dc739e6325a",
+        "nombre": "Juan Santacruz Admin",
+        "email": "juan@santacruzadmin.com",
+        "rol": "INSTRUCTOR",
+        "estado": "ACTIVO",
+        "emailVerified": true,
+        "lastLoginAt": "2025-10-10T16:30:13.064Z",
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-06T12:00:00Z",
+        "updatedAt": "2025-10-10T16:30:14.414Z",
+        "version": 39,
+        "cursos": [
+            {
+                "id": "68e888232fba1df2ae0fd994",
+                "titulo": "Ejemplo 2"
+            }
+        ]
+    },
+    {
+        "id": "68e920bd106e6a5df819a644",
+        "nombre": "ADMIN admin",
+        "email": "admin@acceso.com",
+        "rol": "ADMIN",
+        "estado": "ACTIVO",
+        "emailVerified": true,
+        "lastLoginAt": "2025-10-11T16:43:51.067Z",
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-10T15:05:33.205Z",
+        "updatedAt": "2025-10-11T16:43:51.470Z",
+        "version": 17,
+        "cursos": null
+    },
+    {
+        "id": "68ea8751191fd0807b87f8bd",
+        "nombre": "Pedro Gonzales",
+        "email": "pedro@gonzales.com",
+        "rol": "USUARIO",
+        "estado": "ACTIVO",
+        "emailVerified": false,
+        "lastLoginAt": null,
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-11T16:35:29.025Z",
+        "updatedAt": "2025-10-11T16:35:29.025Z",
+        "version": 0,
+        "cursos": null
+    },
+    {
+        "id": "68ea8794191fd0807b87f8be",
+        "nombre": "Antonio Gonzales",
+        "email": "antonio@gonzales.com",
+        "rol": "USUARIO",
+        "estado": "ACTIVO",
+        "emailVerified": false,
+        "lastLoginAt": null,
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-11T16:36:36.226Z",
+        "updatedAt": "2025-10-11T16:36:36.226Z",
+        "version": 0,
+        "cursos": null
+    },
+    {
+        "id": "68ea8828191fd0807b87f8bf",
+        "nombre": "Carlos Gonzales",
+        "email": "carlos@gonzales.com",
+        "rol": "USUARIO",
+        "estado": "ACTIVO",
+        "emailVerified": false,
+        "lastLoginAt": null,
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-11T16:39:04.377Z",
+        "updatedAt": "2025-10-11T16:39:04.377Z",
+        "version": 0,
+        "cursos": null
+    },
+    {
+        "id": "68ea8840191fd0807b87f8c0",
+        "nombre": "Mario Gonzales",
+        "email": "mario@gonzales.com",
+        "rol": "USUARIO",
+        "estado": "ACTIVO",
+        "emailVerified": false,
+        "lastLoginAt": null,
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-11T16:39:28.815Z",
+        "updatedAt": "2025-10-11T16:39:28.815Z",
+        "version": 0,
+        "cursos": null
+    },
+    {
+        "id": "68ea886e191fd0807b87f8c1",
+        "nombre": "Remigio Gonzales",
+        "email": "remigio@gonzales.com",
+        "rol": "USUARIO",
+        "estado": "ACTIVO",
+        "emailVerified": false,
+        "lastLoginAt": null,
+        "failedLoginAttempts": 0,
+        "lockedUntil": null,
+        "passwordUpdatedAt": null,
+        "mfaEnabled": false,
+        "fechaRegistro": "2025-10-11T16:40:14.584Z",
+        "updatedAt": "2025-10-11T16:40:14.584Z",
+        "version": 0,
+        "cursos": null
+    }
+]
+
+6. Listar un usuario en específico por ID:
+
+GET "http://localhost:8080/api/usuarios/68ea886e191fd0807b87f8c1" Solo ADMIN.
+
+Respuesta: 
+{
+    "id": "68ea886e191fd0807b87f8c1",
+    "nombre": "Remigio Gonzales",
+    "email": "remigio@gonzales.com",
+    "rol": "USUARIO",
+    "estado": "ACTIVO",
+    "emailVerified": false,
+    "lastLoginAt": null,
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "passwordUpdatedAt": null,
+    "mfaEnabled": false,
+    "fechaRegistro": "2025-10-11T16:40:14.584Z",
+    "updatedAt": "2025-10-11T16:40:14.584Z",
+    "version": 0,
+    "cursos": null
+}
+
+7. Listar un tipo de usuario específio por ID:
+
+GET "http://localhost:8080/api/tipousuario/68e3b65ca29051b43d1f334d"  Solo ADMIN.
+
+Respuesta:
+{
+    "id": "68e3b65ca29051b43d1f334d",
+    "nombre": "INSTRUCTOR",
+    "descripcion": "Puede crear y gestionar cursos",
+    "system": false,
+    "createdAt": "2025-10-06T12:30:20.052Z",
+    "updatedAt": "2025-10-06T12:30:20.052Z",
+    "default": false
+}
+
+8. Actualizar todos los datos de un usuario por ID: 
+
+PUT "http://localhost:8080/api/usuarios/68ea8794191fd0807b87f8be" Solo ADMIN.
+
+Cuerpo: 
+
+{
+  "nombre": "Anthonio Gonzales",
+  "email": "anthonio@gonzales.com",
+  "password": "Secreto123"
+}
+
+Respuesta:
+
+{
+    "id": "68ea8794191fd0807b87f8be",
+    "nombre": "Anthonio Gonzales",
+    "email": "antonio@gonzales.com",
+    "rol": "USUARIO",
+    "estado": "ACTIVO",
+    "emailVerified": false,
+    "lastLoginAt": "2025-10-11T17:00:12.298Z",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "passwordUpdatedAt": "2025-10-11T17:01:10.043223400Z",
+    "mfaEnabled": false,
+    "fechaRegistro": "2025-10-11T16:36:36.226Z",
+    "updatedAt": "2025-10-11T17:01:10.043223400Z",
+    "version": 3,
+    "cursos": null
+}
+
+9. Actualizar datos de un tipo de usuario específico por ID:
+
+PUT "http://localhost:8080/api/tipousuario/68e3b7eea29051b43d1f3350" Solo ADMIN.
+
+Cuerpo:
+
+{
+  "nombre": "USUARIO",
+  "descripcion": "Puede navegar y consumir la mayoria de los servicios y opciones, sin embargo no tiene permisos especiales ni puede administrar."
+}
+
+Respuesta:
+
+{
+    "id": "68e3b7eea29051b43d1f3350",
+    "nombre": "USUARIO",
+    "descripcion": "Puede navegar y consumir la mayoria de los servicios y opciones, sin embargo no tiene permisos especiales ni puede administrar.",
+    "system": false,
+    "createdAt": "2025-10-06T12:37:02.138Z",
+    "updatedAt": "2025-10-11T17:03:24.857800800Z",
+    "default": false
+}
+
+10. Actualizar estado de un usuario específico por ID: 
+
+PATCH "http://localhost:8080/api/usuarios/68ea8828191fd0807b87f8bf/estado" Solo ADMIN.
+
+Cuerpo:
+
+{ "estado": "INACTIVO" }
+
+Respuesta:
+
+{
+    "message": "Estado actualizado correctamente."
+}
+
+11. Actualizar contraseña de un usuario por ID: 
+
+PATCH "http://localhost:8080/api/usuarios/68ea8794191fd0807b87f8be/password" ADMIN o Usuario a quien le pertenece la cuenta.
+
+Cuerpo:
+
+{ "password": "Secreto12345" }
+
+Respuesta:
+
+{
+    "message": "Contraseña actualizada correctamente."
+}
+
+12. Eliminar un usuario por ID:
+
+DELETE "http://localhost:8080/api/usuarios/68ea886e191fd0807b87f8c1" Solo ADMIN.
+
+13. Eliminar tipo de usuario por ID:
+
+DELETE "http://localhost:8080/api/tipousuario/68ea8975191fd0807b87f8c2" Solo ADMIN.
+
+
+
+CURSOS
+
+1. Crear un curso.
+
+POST "http://localhost:8080/api/v1/cursos" Cualquier USUARIO.
+
+Cuerpo:
+
+{
+  "titulo": "Curso Java Experto.",
+  "descripcion": "Curso avanzado de JAVA",
+  "categoria": "Backend",
+  "nivel": "avanzado",
+  "idioma": "en",
+  "precio": 25
+}
+
+Respuesta: 
+
+{
+    "id": "68ea9311191fd0807b87f8c6",
+    "titulo": "Curso Java Experto.",
+    "slug": null,
+    "descripcion": "Curso avanzado de JAVA",
+    "etiquetas": null,
+    "categoria": "Backend",
+    "nivel": "AVANZADO",
+    "idioma": "en",
+    "precio": 25.0,
+    "precioLista": null,
+    "moneda": "USD",
+    "gratuito": null,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "destacado": null,
+    "idInstructor": "68ea8828191fd0807b87f8bf",
+    "duracionTotalMinutos": 0,
+    "modulosCount": 0,
+    "leccionesCount": 0,
+    "modulos": null,
+    "imagenPortadaUrl": null,
+    "promoVideoUrl": null,
+    "ratingAvg": null,
+    "ratingCount": null,
+    "inscritosCount": 0,
+    "accesoVitalicio": true,
+    "accessDays": null,
+    "enrollmentOpenAt": null,
+    "enrollmentCloseAt": null,
+    "cupoMaximo": null,
+    "createdAt": "2025-10-11T17:25:37.925266500Z",
+    "updatedAt": "2025-10-11T17:25:37.925266500Z",
+    "version": 0
+}
+
+2. Publicar curso por ID:
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4/publicar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta: 
+
+{
+    "id": "68ea92bc191fd0807b87f8c4",
+    "titulo": "Curso Java Inicial.",
+    "slug": null,
+    "descripcion": "Curso de fundamentos de JAVA",
+    "etiquetas": null,
+    "categoria": "Backend",
+    "nivel": "PRINCIPIANTE",
+    "idioma": "en",
+    "precio": 25.0,
+    "precioLista": null,
+    "moneda": "USD",
+    "gratuito": null,
+    "estado": "PUBLICADO",
+    "publishedAt": "2025-10-11T17:33:34.387666Z",
+    "destacado": null,
+    "idInstructor": "68ea8828191fd0807b87f8bf",
+    "duracionTotalMinutos": 0,
+    "modulosCount": 0,
+    "leccionesCount": 0,
+    "modulos": null,
+    "imagenPortadaUrl": null,
+    "promoVideoUrl": null,
+    "ratingAvg": null,
+    "ratingCount": null,
+    "inscritosCount": 0,
+    "accesoVitalicio": true,
+    "accessDays": null,
+    "enrollmentOpenAt": null,
+    "enrollmentCloseAt": null,
+    "cupoMaximo": null,
+    "createdAt": "2025-10-11T17:24:12.373Z",
+    "updatedAt": "2025-10-11T17:33:34.387666Z",
+    "version": 1
+}
+
+3. Listar Cursos (Solo se ven si están publicados): 
+
+GET "http://localhost:8080/api/v1/cursos" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        },
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "sort": "fechaCreacion,desc"
+}
+
+4. Listar cursos por categoría: 
+
+GET "http://localhost:8080/api/v1/cursos/buscar?categoria=Backend&page=0&size=10" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        },
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+5. Listar cursos por descripción:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?q=fundamentos" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+6. Listar cursos por idioma:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?idioma=en" Todos los usuarios.
+
+Respuesta:
+
+{
+    "content": [
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        },
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+
+7. Listar cursos por nivel:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?nivel=intermedio" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+8. Archivar un curso por ID:
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea9311191fd0807b87f8c6/archivar" Solo ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta: 
+
+{
+    "id": "68ea9311191fd0807b87f8c6",
+    "titulo": "Curso Java Experto.",
+    "slug": null,
+    "descripcion": "Curso avanzado de JAVA",
+    "etiquetas": null,
+    "categoria": "Backend",
+    "nivel": "AVANZADO",
+    "idioma": "en",
+    "precio": 25.0,
+    "precioLista": null,
+    "moneda": "USD",
+    "gratuito": null,
+    "estado": "ARCHIVADO",
+    "publishedAt": null,
+    "destacado": null,
+    "idInstructor": "68ea8828191fd0807b87f8bf",
+    "duracionTotalMinutos": 0,
+    "modulosCount": 0,
+    "leccionesCount": 0,
+    "modulos": null,
+    "imagenPortadaUrl": null,
+    "promoVideoUrl": null,
+    "ratingAvg": null,
+    "ratingCount": null,
+    "inscritosCount": 0,
+    "accesoVitalicio": true,
+    "accessDays": null,
+    "enrollmentOpenAt": null,
+    "enrollmentCloseAt": null,
+    "cupoMaximo": null,
+    "createdAt": "2025-10-11T17:25:37.925Z",
+    "updatedAt": "2025-10-11T17:55:31.483371600Z",
+    "version": 1
+}
+
+9. Listar curso específico por ID:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?id=68ea92bc191fd0807b87f8c4" Todos los usuarios.
+
+Respuesta:
+
+{
+    "content": [
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+10. Listar los cursos por instructor:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?idInstructor=68ea8828191fd0807b87f8bf" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        },
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "sort": "createdAt,desc"
+}
+
+11. Litar cursos por precio:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?maxPrecio=30.0&sort=precio" Todos los usuarios.
+
+Respuesta:
+
+{
+    "content": [
+        {
+            "id": "68ea92bc191fd0807b87f8c4",
+            "titulo": "Curso Java Inicial.",
+            "slug": null,
+            "descripcion": "Curso de fundamentos de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "PRINCIPIANTE",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:33:34.387Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:12.373Z",
+            "updatedAt": "2025-10-11T17:33:34.387Z",
+            "version": 1
+        },
+        {
+            "id": "68ea92e1191fd0807b87f8c5",
+            "titulo": "Curso Java Promedio.",
+            "slug": null,
+            "descripcion": "Curso de avance de JAVA",
+            "etiquetas": null,
+            "categoria": "Backend",
+            "nivel": "INTERMEDIO",
+            "idioma": "en",
+            "precio": 25.0,
+            "precioLista": null,
+            "moneda": "USD",
+            "gratuito": null,
+            "estado": "PUBLICADO",
+            "publishedAt": "2025-10-11T17:35:29.410Z",
+            "destacado": null,
+            "idInstructor": "68ea8828191fd0807b87f8bf",
+            "duracionTotalMinutos": 0,
+            "modulosCount": 0,
+            "leccionesCount": 0,
+            "modulos": null,
+            "imagenPortadaUrl": null,
+            "promoVideoUrl": null,
+            "ratingAvg": null,
+            "ratingCount": null,
+            "inscritosCount": 0,
+            "accesoVitalicio": true,
+            "accessDays": null,
+            "enrollmentOpenAt": null,
+            "enrollmentCloseAt": null,
+            "cupoMaximo": null,
+            "createdAt": "2025-10-11T17:24:49.932Z",
+            "updatedAt": "2025-10-11T17:35:29.410Z",
+            "version": 1
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1,
+    "sort": "precio"
+}
+
+12. Listar cursos gratuitos:
+
+GET "http://localhost:8080/api/v1/cursos/buscar?gratuito=true" Todos los usuarios.
+
+Respuesta: 
+
+{
+    "content": [],
+    "page": 0,
+    "size": 10,
+    "totalElements": 0,
+    "totalPages": 0,
+    "sort": "createdAt,desc"
+}
+
+13. Editar curso por ID:
+
+PUT "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+
+{
+  "titulo": "Curso inicial de JAVA2.",
+  "descripcion": "Curso de fundamentos de JAVA",
+  "categoria": "Backend",
+  "nivel": "PRINCIPIANTE",
+  "idioma": "es",
+  "precio": 25
+}
+
+Respuesta: 
+
+{
+    "id": "68ea92bc191fd0807b87f8c4",
+    "titulo": "Curso inicial de JAVA2.",
+    "slug": null,
+    "descripcion": "Curso de fundamentos de JAVA",
+    "etiquetas": null,
+    "categoria": "Backend",
+    "nivel": "PRINCIPIANTE",
+    "idioma": "es",
+    "precio": 25.0,
+    "precioLista": null,
+    "moneda": "USD",
+    "gratuito": null,
+    "estado": "ARCHIVADO",
+    "publishedAt": "2025-10-11T17:33:34.387Z",
+    "destacado": null,
+    "idInstructor": "68ea8828191fd0807b87f8bf",
+    "duracionTotalMinutos": 0,
+    "modulosCount": 0,
+    "leccionesCount": 0,
+    "modulos": null,
+    "imagenPortadaUrl": null,
+    "promoVideoUrl": null,
+    "ratingAvg": null,
+    "ratingCount": null,
+    "inscritosCount": 0,
+    "accesoVitalicio": true,
+    "accessDays": null,
+    "enrollmentOpenAt": null,
+    "enrollmentCloseAt": null,
+    "cupoMaximo": null,
+    "createdAt": "2025-10-11T17:24:12.373Z",
+    "updatedAt": "2025-10-11T22:02:30.596287100Z",
+    "version": 3
+}
+
+13. Cambiar estado a borrador:
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4/estado" Solo ADMIN e INSTRUCTOR dueño del curso.
+
+Cuerpo:
+
+{
+  "estado": "BORRADOR"
+}
+
+Respuesta: 
+
+{
+    "id": "68ea92bc191fd0807b87f8c4",
+    "titulo": "Curso inicial de JAVA2.",
+    "slug": null,
+    "descripcion": "Curso de fundamentos de JAVA",
+    "etiquetas": null,
+    "categoria": "Backend",
+    "nivel": "PRINCIPIANTE",
+    "idioma": "es",
+    "precio": 25.0,
+    "precioLista": null,
+    "moneda": "USD",
+    "gratuito": null,
+    "estado": "BORRADOR",
+    "publishedAt": "2025-10-11T17:33:34.387Z",
+    "destacado": null,
+    "idInstructor": "68ea8828191fd0807b87f8bf",
+    "duracionTotalMinutos": 0,
+    "modulosCount": 0,
+    "leccionesCount": 0,
+    "modulos": null,
+    "imagenPortadaUrl": null,
+    "promoVideoUrl": null,
+    "ratingAvg": null,
+    "ratingCount": null,
+    "inscritosCount": 0,
+    "accesoVitalicio": true,
+    "accessDays": null,
+    "enrollmentOpenAt": null,
+    "enrollmentCloseAt": null,
+    "cupoMaximo": null,
+    "createdAt": "2025-10-11T17:24:12.373Z",
+    "updatedAt": "2025-10-11T22:03:57.672211600Z",
+    "version": 4
+}
+
+14. Eliminar un curso por ID:
+
+DELETE "http://localhost:8080/api/v1/cursos/68e888232fba1df2ae0fd994" ADMIN o INSTRUCTOR dueño del curso.
+
+
+INSCRIPCION
+
+1. Crear una inscripción por ID del curso.
+
+POST "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones" Todos los usuarios.
+
+Respuesta:
+
+{
+    "id": "68ead75c3ed5753384c5780a",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8794191fd0807b87f8be",
+    "estado": "PENDIENTE_PAGO",
+    "accessStartAt": "2025-10-11T22:17:00.851481400Z",
+    "accessEndAt": null,
+    "accesoVitalicio": null,
+    "progresoPct": null,
+    "leccionesCompletadas": null,
+    "moduloActualId": null,
+    "leccionActualId": null,
+    "lastAccessAt": null,
+    "idPago": null,
+    "pagoIds": null,
+    "precioLista": null,
+    "descuento": null,
+    "impuestos": null,
+    "totalPagado": null,
+    "moneda": null,
+    "cupon": null,
+    "origen": null,
+    "certificadoId": null,
+    "notaFinal": null,
+    "aprobadoFinal": null,
+    "createdAt": "2025-10-11T22:17:00.854479700Z",
+    "updatedAt": "2025-10-11T22:17:00.854479700Z",
+    "completadaAt": null,
+    "canceladaAt": null,
+    "idempotencyKey": null,
+    "metadata": null,
+    "version": 0
+}
+
+2. 
