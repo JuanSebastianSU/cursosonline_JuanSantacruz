@@ -617,6 +617,7 @@ Cuerpo:
   "password": "Secreto123",
   "rol": "Usuario"
 }
+```json
 
 Respuesta: 
 ```json
@@ -630,7 +631,7 @@ Respuesta:
     ],
     "expiresIn": 1800
 }"
-
+```json
 2. Loguear Usuario:
 
 POST "http://localhost:8080/api/auth/login" Cualquier usuario.
@@ -642,8 +643,9 @@ Cuerpo:
   "email": "admin@acceso.com",
   "password": "Secreto123"
 }
-
+```json
 Respuesta:
+```json
 {
     "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBhY2Nlc28uY29tIiwianRpIjoiN2JjYWZmM2QtNjRmMi00NDczLWFiMzEtMDdiOGQwYWY4ZjAwIiwiaXNzIjoiY3Vyc29zb25saW5lLWFwaSIsImlhdCI6MTc2MDIwMDgzNSwiZXhwIjoxNzYwMjAyNjM1LCJ1aWQiOiI2OGU5MjBiZDEwNmU2YTVkZjgxOWE2NDQiLCJyb2xlcyI6WyJST0xFX0FETUlOIl19.sJ6pvuMbvl0tE7fbcihh6ESpm6FU2yATUdc8sRSv5bs",
     "type": "Bearer",
@@ -654,18 +656,21 @@ Respuesta:
     ],
     "expiresIn": 1800
 }
-
+```json
 3. Crear tipo de usuario:
 
 POST "http://localhost:8080/api/tipousuario" Solo ADMIN.
 
 Cuerpo:
+```json
 {
   "nombre": "TIPO_PRUEBA2",
   "descripcion": "Ejemplo de creacion de tipo de usuario"
 }
-
+```json
 Respuesta: 
+
+```json
 {
     "id": "68ea8975191fd0807b87f8c2",
     "nombre": "TIPO_PRUEBA2",
@@ -675,12 +680,14 @@ Respuesta:
     "updatedAt": "2025-10-11T16:44:37.818612200Z",
     "default": false
 }
-
+```json
 4. Listar tipos de usuarios creados:
 
 GET "http://localhost:8080/api/tipousuario" Solo ADMIN.
 
 Respuesta: 
+
+```json
 {
     "content": [
         {
@@ -737,12 +744,13 @@ Respuesta:
     },
     "empty": false
 }
-
+```json
 5. Listar los usuarios registrados:
 
 GET "http://localhost:8080/api/usuarios" Solo ADMIN.
 
 Respuesta: 
+```json
 [
     {
         "id": "68e3b2b0cea19dc739e6325a",
@@ -869,12 +877,13 @@ Respuesta:
         "cursos": null
     }
 ]
-
+```json
 6. Listar un usuario en específico por ID:
 
 GET "http://localhost:8080/api/usuarios/68ea886e191fd0807b87f8c1" Solo ADMIN.
 
 Respuesta: 
+```json
 {
     "id": "68ea886e191fd0807b87f8c1",
     "nombre": "Remigio Gonzales",
@@ -892,12 +901,13 @@ Respuesta:
     "version": 0,
     "cursos": null
 }
-
+```json
 7. Listar un tipo de usuario específio por ID:
 
 GET "http://localhost:8080/api/tipousuario/68e3b65ca29051b43d1f334d"  Solo ADMIN.
 
 Respuesta:
+```json
 {
     "id": "68e3b65ca29051b43d1f334d",
     "nombre": "INSTRUCTOR",
@@ -907,21 +917,21 @@ Respuesta:
     "updatedAt": "2025-10-06T12:30:20.052Z",
     "default": false
 }
-
+```json
 8. Actualizar todos los datos de un usuario por ID: 
 
 PUT "http://localhost:8080/api/usuarios/68ea8794191fd0807b87f8be" Solo ADMIN.
 
 Cuerpo: 
-
+```json
 {
   "nombre": "Anthonio Gonzales",
   "email": "anthonio@gonzales.com",
   "password": "Secreto123"
 }
-
+```json
 Respuesta:
-
+```json
 {
     "id": "68ea8794191fd0807b87f8be",
     "nombre": "Anthonio Gonzales",
@@ -939,20 +949,20 @@ Respuesta:
     "version": 3,
     "cursos": null
 }
-
+```json
 9. Actualizar datos de un tipo de usuario específico por ID:
 
 PUT "http://localhost:8080/api/tipousuario/68e3b7eea29051b43d1f3350" Solo ADMIN.
 
 Cuerpo:
-
+```json
 {
   "nombre": "USUARIO",
   "descripcion": "Puede navegar y consumir la mayoria de los servicios y opciones, sin embargo no tiene permisos especiales ni puede administrar."
 }
-
+```json
 Respuesta:
-
+```json
 {
     "id": "68e3b7eea29051b43d1f3350",
     "nombre": "USUARIO",
@@ -962,35 +972,35 @@ Respuesta:
     "updatedAt": "2025-10-11T17:03:24.857800800Z",
     "default": false
 }
-
+```json
 10. Actualizar estado de un usuario específico por ID: 
 
 PATCH "http://localhost:8080/api/usuarios/68ea8828191fd0807b87f8bf/estado" Solo ADMIN.
 
 Cuerpo:
-
+```json
 { "estado": "INACTIVO" }
-
+```json
 Respuesta:
-
+```json
 {
     "message": "Estado actualizado correctamente."
 }
-
+```json
 11. Actualizar contraseña de un usuario por ID: 
 
 PATCH "http://localhost:8080/api/usuarios/68ea8794191fd0807b87f8be/password" ADMIN o Usuario a quien le pertenece la cuenta.
 
 Cuerpo:
-
+```json
 { "password": "Secreto12345" }
-
+```json
 Respuesta:
-
+```json
 {
     "message": "Contraseña actualizada correctamente."
 }
-
+```json
 12. Eliminar un usuario por ID:
 
 DELETE "http://localhost:8080/api/usuarios/68ea886e191fd0807b87f8c1" Solo ADMIN.
@@ -1008,7 +1018,7 @@ CURSOS
 POST "http://localhost:8080/api/v1/cursos" Cualquier USUARIO.
 
 Cuerpo:
-
+```json
 {
   "titulo": "Curso Java Experto.",
   "descripcion": "Curso avanzado de JAVA",
@@ -1017,9 +1027,9 @@ Cuerpo:
   "idioma": "en",
   "precio": 25
 }
-
+```json
 Respuesta: 
-
+```json
 {
     "id": "68ea9311191fd0807b87f8c6",
     "titulo": "Curso Java Experto.",
@@ -1055,13 +1065,13 @@ Respuesta:
     "updatedAt": "2025-10-11T17:25:37.925266500Z",
     "version": 0
 }
-
+```json
 2. Publicar curso por ID:
 
 PATCH "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4/publicar" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta: 
-
+```json
 {
     "id": "68ea92bc191fd0807b87f8c4",
     "titulo": "Curso Java Inicial.",
@@ -1097,13 +1107,13 @@ Respuesta:
     "updatedAt": "2025-10-11T17:33:34.387666Z",
     "version": 1
 }
-
+```json
 3. Listar Cursos (Solo se ven si están publicados): 
 
 GET "http://localhost:8080/api/v1/cursos" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [
         {
@@ -1183,13 +1193,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "fechaCreacion,desc"
 }
-
+```json
 4. Listar cursos por categoría: 
 
 GET "http://localhost:8080/api/v1/cursos/buscar?categoria=Backend&page=0&size=10" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [
         {
@@ -1269,13 +1279,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 5. Listar cursos por descripción:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?q=fundamentos" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [
         {
@@ -1320,13 +1330,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 6. Listar cursos por idioma:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?idioma=en" Todos los usuarios.
 
 Respuesta:
-
+```json
 {
     "content": [
         {
@@ -1406,14 +1416,14 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 
 7. Listar cursos por nivel:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?nivel=intermedio" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [
         {
@@ -1458,13 +1468,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 8. Archivar un curso por ID:
 
 PATCH "http://localhost:8080/api/v1/cursos/68ea9311191fd0807b87f8c6/archivar" Solo ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta: 
-
+```json
 {
     "id": "68ea9311191fd0807b87f8c6",
     "titulo": "Curso Java Experto.",
@@ -1500,13 +1510,13 @@ Respuesta:
     "updatedAt": "2025-10-11T17:55:31.483371600Z",
     "version": 1
 }
-
+```json
 9. Listar curso específico por ID:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?id=68ea92bc191fd0807b87f8c4" Todos los usuarios.
 
 Respuesta:
-
+```json
 {
     "content": [
         {
@@ -1551,13 +1561,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 10. Listar los cursos por instructor:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?idInstructor=68ea8828191fd0807b87f8bf" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [
         {
@@ -1637,13 +1647,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "createdAt,desc"
 }
-
+```json
 11. Litar cursos por precio:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?maxPrecio=30.0&sort=precio" Todos los usuarios.
 
 Respuesta:
-
+```json
 {
     "content": [
         {
@@ -1723,13 +1733,13 @@ Respuesta:
     "totalPages": 1,
     "sort": "precio"
 }
-
+```json
 12. Listar cursos gratuitos:
 
 GET "http://localhost:8080/api/v1/cursos/buscar?gratuito=true" Todos los usuarios.
 
 Respuesta: 
-
+```json
 {
     "content": [],
     "page": 0,
@@ -1738,13 +1748,13 @@ Respuesta:
     "totalPages": 0,
     "sort": "createdAt,desc"
 }
-
+```json
 13. Editar curso por ID:
 
 PUT "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4" ADMIN o INSTRUCTOR dueño del curso.
 
 Cuerpo:
-
+```json
 {
   "titulo": "Curso inicial de JAVA2.",
   "descripcion": "Curso de fundamentos de JAVA",
@@ -1753,9 +1763,9 @@ Cuerpo:
   "idioma": "es",
   "precio": 25
 }
-
+```json
 Respuesta: 
-
+```json
 {
     "id": "68ea92bc191fd0807b87f8c4",
     "titulo": "Curso inicial de JAVA2.",
@@ -1791,19 +1801,19 @@ Respuesta:
     "updatedAt": "2025-10-11T22:02:30.596287100Z",
     "version": 3
 }
-
+```json
 13. Cambiar estado a borrador:
 
 PATCH "http://localhost:8080/api/v1/cursos/68ea92bc191fd0807b87f8c4/estado" Solo ADMIN e INSTRUCTOR dueño del curso.
 
 Cuerpo:
-
+```json
 {
   "estado": "BORRADOR"
 }
-
+```json
 Respuesta: 
-
+```json
 {
     "id": "68ea92bc191fd0807b87f8c4",
     "titulo": "Curso inicial de JAVA2.",
@@ -1839,7 +1849,7 @@ Respuesta:
     "updatedAt": "2025-10-11T22:03:57.672211600Z",
     "version": 4
 }
-
+```json
 14. Eliminar un curso por ID:
 
 DELETE "http://localhost:8080/api/v1/cursos/68e888232fba1df2ae0fd994" ADMIN o INSTRUCTOR dueño del curso.
@@ -1852,7 +1862,7 @@ INSCRIPCION
 POST "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones" Todos los usuarios.
 
 Respuesta:
-
+```json
 {
     "id": "68ead75c3ed5753384c5780a",
     "idCurso": "68ea92e1191fd0807b87f8c5",
@@ -1886,5 +1896,5 @@ Respuesta:
     "metadata": null,
     "version": 0
 }
-
+```json
 2. 
