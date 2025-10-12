@@ -4052,64 +4052,235 @@ DELETE "http://localhost:8080/api/v1/calificaciones/68eb22aa65e470167c9b269c" AD
 
 CERTIFICADO
 
-1.
-POST
+1. Crear un certificado para un alumno con inscripción completada.
+
+POST "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/certificados" ADMIN o INSTRUCTOR dueño del curso. 
 
 Cuerpo:
 ```json
+{ "idEstudiante": "68ea8840191fd0807b87f8c0" }
 
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb2a4ef82a976577db97a6",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "EMITIDO",
+    "emitidoEn": "2025-10-12T04:10:54.248791400Z",
+    "revocadoAt": null,
+    "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+    "codigoHash": null,
+    "publicUrl": null,
+    "qrData": null,
+    "cursoTitulo": "Curso Java Promedio.",
+    "instructorNombre": "Carlos Gonzales",
+    "estudianteNombre": "Mario Gonzales",
+    "moneda": null,
+    "notaFinal": null,
+    "horas": null,
+    "templateId": null,
+    "pdfUrl": null,
+    "backgroundUrl": null,
+    "firmaUrl": null,
+    "selloUrl": null,
+    "createdAt": "2025-10-12T04:10:54.891877200Z",
+    "updatedAt": "2025-10-12T04:10:54.891877200Z",
+    "metadata": null,
+    "version": 0
+}
 ```
 
 
-2.
-GET
+2. Listar certificados por ID.
+
+GET "http://localhost:8080/api/v1/certificados/68eb2a4ef82a976577db97a6" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb2a4ef82a976577db97a6",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "EMITIDO",
+    "emitidoEn": "2025-10-12T04:10:54.248Z",
+    "revocadoAt": null,
+    "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+    "codigoHash": null,
+    "publicUrl": null,
+    "qrData": null,
+    "cursoTitulo": "Curso Java Promedio.",
+    "instructorNombre": "Carlos Gonzales",
+    "estudianteNombre": "Mario Gonzales",
+    "moneda": null,
+    "notaFinal": null,
+    "horas": null,
+    "templateId": null,
+    "pdfUrl": null,
+    "backgroundUrl": null,
+    "firmaUrl": null,
+    "selloUrl": null,
+    "createdAt": "2025-10-12T04:10:54.891Z",
+    "updatedAt": "2025-10-12T04:10:54.891Z",
+    "metadata": null,
+    "version": 0
+}
 ```
 
-3.
-GET
+3. Listar certificado por código de verificación
+
+GET "http://localhost:8080/api/v1/certificados/verificar/4F17A1A67B1F7322E61FCBD9989DF30E" ADMIN o USUARIO propietario del certificado.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb2a4ef82a976577db97a6",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "EMITIDO",
+    "emitidoEn": "2025-10-12T04:10:54.248Z",
+    "revocadoAt": null,
+    "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+    "codigoHash": null,
+    "publicUrl": null,
+    "qrData": null,
+    "cursoTitulo": "Curso Java Promedio.",
+    "instructorNombre": "Carlos Gonzales",
+    "estudianteNombre": "Mario Gonzales",
+    "moneda": null,
+    "notaFinal": null,
+    "horas": null,
+    "templateId": null,
+    "pdfUrl": null,
+    "backgroundUrl": null,
+    "firmaUrl": null,
+    "selloUrl": null,
+    "createdAt": "2025-10-12T04:10:54.891Z",
+    "updatedAt": "2025-10-12T04:10:54.891Z",
+    "metadata": null,
+    "version": 0
+}
 ```
 
-4.
-GET
+4. Listar certificados por curso ID.
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/certificados" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta:
 
 ```json
-
+[
+    {
+        "id": "68eb2a4ef82a976577db97a6",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "estado": "EMITIDO",
+        "emitidoEn": "2025-10-12T04:10:54.248Z",
+        "revocadoAt": null,
+        "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+        "codigoHash": null,
+        "publicUrl": null,
+        "qrData": null,
+        "cursoTitulo": "Curso Java Promedio.",
+        "instructorNombre": "Carlos Gonzales",
+        "estudianteNombre": "Mario Gonzales",
+        "moneda": null,
+        "notaFinal": null,
+        "horas": null,
+        "templateId": null,
+        "pdfUrl": null,
+        "backgroundUrl": null,
+        "firmaUrl": null,
+        "selloUrl": null,
+        "createdAt": "2025-10-12T04:10:54.891Z",
+        "updatedAt": "2025-10-12T04:10:54.891Z",
+        "metadata": null,
+        "version": 0
+    }
+]
 ```
 
-5.
-GET
+5. Listar certificados de un USUARIO.
+
+GET "http://localhost:8080/api/v1/estudiantes/68ea8840191fd0807b87f8c0/certificados" ADMIN o USUARIO propietario de los certificados.
 
 Respuesta:
 
 ```json
-
+[
+    {
+        "id": "68eb2a4ef82a976577db97a6",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "estado": "EMITIDO",
+        "emitidoEn": "2025-10-12T04:10:54.248Z",
+        "revocadoAt": null,
+        "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+        "codigoHash": null,
+        "publicUrl": null,
+        "qrData": null,
+        "cursoTitulo": "Curso Java Promedio.",
+        "instructorNombre": "Carlos Gonzales",
+        "estudianteNombre": "Mario Gonzales",
+        "moneda": null,
+        "notaFinal": null,
+        "horas": null,
+        "templateId": null,
+        "pdfUrl": null,
+        "backgroundUrl": null,
+        "firmaUrl": null,
+        "selloUrl": null,
+        "createdAt": "2025-10-12T04:10:54.891Z",
+        "updatedAt": "2025-10-12T04:10:54.891Z",
+        "metadata": null,
+        "version": 0
+    }
+]
 ```
 
-6.
-GET
+6. Revocar un certificado por ID.
+
+PATCH "http://localhost:8080/api/v1/certificados/68eb2a4ef82a976577db97a6/revocar" ADMIN o INSTRUCTOR dueño del curso. 
 
 Respuesta:
 
 ```json
-
+{
+    "certificado": {
+        "id": "68eb2a4ef82a976577db97a6",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "estado": "REVOCADO",
+        "emitidoEn": "2025-10-12T04:10:54.248Z",
+        "revocadoAt": "2025-10-12T04:21:47.475575400Z",
+        "codigoVerificacion": "4F17A1A67B1F7322E61FCBD9989DF30E",
+        "codigoHash": null,
+        "publicUrl": null,
+        "qrData": null,
+        "cursoTitulo": "Curso Java Promedio.",
+        "instructorNombre": "Carlos Gonzales",
+        "estudianteNombre": "Mario Gonzales",
+        "moneda": null,
+        "notaFinal": null,
+        "horas": null,
+        "templateId": null,
+        "pdfUrl": null,
+        "backgroundUrl": null,
+        "firmaUrl": null,
+        "selloUrl": null,
+        "createdAt": "2025-10-12T04:10:54.891Z",
+        "updatedAt": "2025-10-12T04:21:47.475575400Z",
+        "metadata": null,
+        "version": 1
+    },
+    "message": "Certificado revocado."
+}
 ```
 
-7.
-DELETE
+7. Eliminar un certificado.
+
+DELETE "http://localhost:8080/api/v1/certificados/68eb2a4ef82a976577db97a6" ADMIN o INSTRUCTOR dueño del curso.

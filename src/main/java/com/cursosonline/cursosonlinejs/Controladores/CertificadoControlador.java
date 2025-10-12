@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -27,7 +28,7 @@ public class CertificadoControlador {
 
     @PostMapping("/cursos/{idCurso}/certificados")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDelCurso(#idCurso)")
-    public ResponseEntity<?> emitir(@PathVariable String idCurso,
+    public ResponseEntity<?> emitir(@PathVariable("idCurso") @P("idCurso") String idCurso,
                                     @Valid @RequestBody EmitirCertificadoRequest body) {
         try {
             var creado = certificadoServicio.emitir(idCurso, body.idEstudiante());
