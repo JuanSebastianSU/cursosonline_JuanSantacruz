@@ -79,7 +79,7 @@ public class InscripcionControlador {
     }
 
     @PatchMapping(value = "/{id}/estado", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @inscPermisos.esInscripcionPropia(#id)")
+    @PreAuthorize("hasRole('ADMIN') or @inscPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> actualizarEstado(@PathVariable String idCurso,
                                               @PathVariable String id,
                                               @RequestBody @Valid EstadoRequest body) {

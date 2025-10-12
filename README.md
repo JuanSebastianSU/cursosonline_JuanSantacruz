@@ -621,7 +621,7 @@ Cuerpo:
 
 Respuesta: 
 ```json
-"{
+{
     "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZW1pZ2lvQGdvbnphbGVzLmNvbSIsImp0aSI6IjgxYzc0NzQ2LTY2NTYtNGZjOC04M2IyLWE4NTI0ZjM5MDYyZiIsImlzcyI6ImN1cnNvc29ubGluZS1hcGkiLCJpYXQiOjE3NjAyMDA4MTQsImV4cCI6MTc2MDIwMjYxNCwidWlkIjoiNjhlYTg4NmUxOTFmZDA4MDdiODdmOGMxIiwicm9sZXMiOlsiUk9MRV9VU1VBUklPIl19.Ws15HfzERtw4BThSds_5A0JSfzvDoh_7LxycMNEH-i4",
     "type": "Bearer",
     "username": "Remigio Gonzales",
@@ -630,7 +630,7 @@ Respuesta:
         "ROLE_USUARIO"
     ],
     "expiresIn": 1800
-}"
+}
 ```
 2. Loguear Usuario:
 
@@ -1897,4 +1897,493 @@ Respuesta:
     "version": 0
 }
 ```
-2. 
+2. Listar las inscripciones por curso ID:
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones" Solo ADMIN e INSTRUCTOR dueño del curso.
+
+Respuesta:
+```json
+[
+    {
+        "id": "68ead75c3ed5753384c5780a",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8794191fd0807b87f8be",
+        "estado": "PENDIENTE_PAGO",
+        "accessStartAt": "2025-10-11T22:17:00.851Z",
+        "accessEndAt": null,
+        "accesoVitalicio": null,
+        "progresoPct": null,
+        "leccionesCompletadas": null,
+        "moduloActualId": null,
+        "leccionActualId": null,
+        "lastAccessAt": null,
+        "idPago": null,
+        "pagoIds": null,
+        "precioLista": null,
+        "descuento": null,
+        "impuestos": null,
+        "totalPagado": null,
+        "moneda": null,
+        "cupon": null,
+        "origen": null,
+        "certificadoId": null,
+        "notaFinal": null,
+        "aprobadoFinal": null,
+        "createdAt": "2025-10-11T22:17:00.854Z",
+        "updatedAt": "2025-10-11T22:17:00.854Z",
+        "completadaAt": null,
+        "canceladaAt": null,
+        "idempotencyKey": null,
+        "metadata": null,
+        "version": 0
+    }
+]
+```
+
+3. Listado de inscripciones por estado con ID de curso:
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones?estado=pendiente_pago" Solo ADMIN e INSTRUCTOR dueño del curso.
+
+Respuesta: 
+```json
+[
+    {
+        "id": "68eae5bf3ed5753384c5780c",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "estado": "PENDIENTE_PAGO",
+        "accessStartAt": "2025-10-11T23:18:23.305Z",
+        "accessEndAt": null,
+        "accesoVitalicio": null,
+        "progresoPct": null,
+        "leccionesCompletadas": null,
+        "moduloActualId": null,
+        "leccionActualId": null,
+        "lastAccessAt": null,
+        "idPago": null,
+        "pagoIds": null,
+        "precioLista": null,
+        "descuento": null,
+        "impuestos": null,
+        "totalPagado": null,
+        "moneda": null,
+        "cupon": null,
+        "origen": null,
+        "certificadoId": null,
+        "notaFinal": null,
+        "aprobadoFinal": null,
+        "createdAt": "2025-10-11T23:18:23.307Z",
+        "updatedAt": "2025-10-11T23:18:23.307Z",
+        "completadaAt": null,
+        "canceladaAt": null,
+        "idempotencyKey": null,
+        "metadata": null,
+        "version": 0
+    },
+    {
+        "id": "68eae5893ed5753384c5780b",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8794191fd0807b87f8be",
+        "estado": "PENDIENTE_PAGO",
+        "accessStartAt": "2025-10-11T23:17:29.300Z",
+        "accessEndAt": null,
+        "accesoVitalicio": null,
+        "progresoPct": null,
+        "leccionesCompletadas": null,
+        "moduloActualId": null,
+        "leccionActualId": null,
+        "lastAccessAt": null,
+        "idPago": null,
+        "pagoIds": null,
+        "precioLista": null,
+        "descuento": null,
+        "impuestos": null,
+        "totalPagado": null,
+        "moneda": null,
+        "cupon": null,
+        "origen": null,
+        "certificadoId": null,
+        "notaFinal": null,
+        "aprobadoFinal": null,
+        "createdAt": "2025-10-11T23:17:29.300Z",
+        "updatedAt": "2025-10-11T23:17:29.300Z",
+        "completadaAt": null,
+        "canceladaAt": null,
+        "idempotencyKey": null,
+        "metadata": null,
+        "version": 0
+    }
+]
+```
+4. Listar una inscripción específica por ID del curso e ID de la inscrpción:
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones/68eae5bf3ed5753384c5780c" Solo ADMIN e INSTRUCTOR dueño del curso.
+
+Respuesta: 
+```json
+{
+    "id": "68eae5bf3ed5753384c5780c",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PENDIENTE_PAGO",
+    "accessStartAt": "2025-10-11T23:18:23.305Z",
+    "accessEndAt": null,
+    "accesoVitalicio": null,
+    "progresoPct": null,
+    "leccionesCompletadas": null,
+    "moduloActualId": null,
+    "leccionActualId": null,
+    "lastAccessAt": null,
+    "idPago": null,
+    "pagoIds": null,
+    "precioLista": null,
+    "descuento": null,
+    "impuestos": null,
+    "totalPagado": null,
+    "moneda": null,
+    "cupon": null,
+    "origen": null,
+    "certificadoId": null,
+    "notaFinal": null,
+    "aprobadoFinal": null,
+    "createdAt": "2025-10-11T23:18:23.307Z",
+    "updatedAt": "2025-10-11T23:18:23.307Z",
+    "completadaAt": null,
+    "canceladaAt": null,
+    "idempotencyKey": null,
+    "metadata": null,
+    "version": 0
+}
+```
+
+5. Listar el número de inscripciones por curso.
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones/contador" Todos los usuarios.
+
+Respuesta: 
+```json
+{
+    "inscritosActivos": 0,
+    "cursoId": "68ea92e1191fd0807b87f8c5"
+}
+```
+No se muestra nada porque las inscripciones solo cuentan cuando se realiza el pago. 
+
+6. Listar mis inscripciones.
+
+GET "http://localhost:8080/api/v1/mi/inscripciones" Todos los usuarios.
+
+Respuesta:
+```json
+[
+    {
+        "id": "68eae5893ed5753384c5780b",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idEstudiante": "68ea8794191fd0807b87f8be",
+        "estado": "PENDIENTE_PAGO",
+        "accessStartAt": "2025-10-11T23:17:29.300Z",
+        "accessEndAt": null,
+        "accesoVitalicio": null,
+        "progresoPct": null,
+        "leccionesCompletadas": null,
+        "moduloActualId": null,
+        "leccionActualId": null,
+        "lastAccessAt": null,
+        "idPago": null,
+        "pagoIds": null,
+        "precioLista": null,
+        "descuento": null,
+        "impuestos": null,
+        "totalPagado": null,
+        "moneda": null,
+        "cupon": null,
+        "origen": null,
+        "certificadoId": null,
+        "notaFinal": null,
+        "aprobadoFinal": null,
+        "createdAt": "2025-10-11T23:17:29.300Z",
+        "updatedAt": "2025-10-11T23:17:29.300Z",
+        "completadaAt": null,
+        "canceladaAt": null,
+        "idempotencyKey": null,
+        "metadata": null,
+        "version": 0
+    }
+]
+```
+
+7. Listar inscripciones específicas mias.
+
+GET "http://localhost:8080/api/v1/mi/inscripciones/curso/68ea92e1191fd0807b87f8c5" Todos los usuarios.
+
+Respuesta: 
+```json
+{
+    "id": "68eae5893ed5753384c5780b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8794191fd0807b87f8be",
+    "estado": "PENDIENTE_PAGO",
+    "accessStartAt": "2025-10-11T23:17:29.300Z",
+    "accessEndAt": null,
+    "accesoVitalicio": null,
+    "progresoPct": null,
+    "leccionesCompletadas": null,
+    "moduloActualId": null,
+    "leccionActualId": null,
+    "lastAccessAt": null,
+    "idPago": null,
+    "pagoIds": null,
+    "precioLista": null,
+    "descuento": null,
+    "impuestos": null,
+    "totalPagado": null,
+    "moneda": null,
+    "cupon": null,
+    "origen": null,
+    "certificadoId": null,
+    "notaFinal": null,
+    "aprobadoFinal": null,
+    "createdAt": "2025-10-11T23:17:29.300Z",
+    "updatedAt": "2025-10-11T23:17:29.300Z",
+    "completadaAt": null,
+    "canceladaAt": null,
+    "idempotencyKey": null,
+    "metadata": null,
+    "version": 0
+}
+```
+8. Cambiar el estado de una inscripción a completada para desbloquear opciones de certificados. (Se hizo depués de realizar el pago de la inscripción. -Ver siguiente parte)
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones/68eae5bf3ed5753384c5780c/estado" Solo ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{"estado":"completada"}
+```
+
+Respuesta: 
+```json
+{
+    "id": "68eae5bf3ed5753384c5780c",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "COMPLETADA",
+    "accessStartAt": "2025-10-11T23:18:23.305Z",
+    "accessEndAt": null,
+    "accesoVitalicio": null,
+    "progresoPct": null,
+    "leccionesCompletadas": null,
+    "moduloActualId": null,
+    "leccionActualId": null,
+    "lastAccessAt": null,
+    "idPago": "68eaefb13ed5753384c5780d",
+    "pagoIds": [
+        "68eaefb13ed5753384c5780d"
+    ],
+    "precioLista": null,
+    "descuento": null,
+    "impuestos": null,
+    "totalPagado": null,
+    "moneda": null,
+    "cupon": null,
+    "origen": null,
+    "certificadoId": null,
+    "notaFinal": null,
+    "aprobadoFinal": null,
+    "createdAt": "2025-10-11T23:18:23.307Z",
+    "updatedAt": "2025-10-12T00:18:36.394652700Z",
+    "completadaAt": null,
+    "canceladaAt": null,
+    "idempotencyKey": null,
+    "metadata": null,
+    "version": 3
+}
+```
+
+9. Eliminar inscripción de un curso.
+
+DELETE "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/inscripciones/68eae5893ed5753384c5780b" Solo ADMIN o USUARIO que realizó la inscripción. 
+
+
+PAGO
+1. Generar pago por inscripción ID.
+
+POST "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos/borrador" Solo usuario dueño de la inscripción.
+
+Cuerpo:
+```json
+{
+  "monto": 25.00,
+  "moneda": "USD",
+  "metodo": "TRANSFERENCIA",
+  "referencia": "DEP-20251011-0001",
+  "cupon": "DESCUENTO10",
+  "gateway": "BANCO_PICHINCHA",
+  "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1"
+}
+
+```
+Respuesta:
+```json
+{
+    "id": "68eaefb13ed5753384c5780d",
+    "idInscripcion": "68eae5bf3ed5753384c5780c",
+    "userId": "68ea8840191fd0807b87f8c0",
+    "monto": 25.00,
+    "subtotal": null,
+    "impuestos": null,
+    "comisiones": null,
+    "descuento": null,
+    "moneda": "USD",
+    "metodo": "TRANSFERENCIA",
+    "estado": "PENDIENTE",
+    "referencia": "DEP-20251011-0001",
+    "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+    "cupon": "DESCUENTO10",
+    "gateway": "BANCO_PICHINCHA",
+    "gatewayPaymentId": null,
+    "authorizationCode": null,
+    "reciboUrl": null,
+    "metodoDetalle": null,
+    "createdAt": "2025-10-12T00:00:49.498046800Z",
+    "updatedAt": "2025-10-12T00:00:49.498046800Z",
+    "autorizadoAt": null,
+    "pagadoAt": null,
+    "fallidoAt": null,
+    "reembolsadoAt": null,
+    "version": 0,
+    "metadata": null
+}
+```
+
+2. Cambiar datos del pago sin autorizar por id de la inscripcion e id del pago.
+
+PATCH "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos/68eaefb13ed5753384c5780d" Solo dueño del pago.
+
+Cuerpo:
+```json
+{
+  "monto": 25.50,
+  "moneda": "USD",
+  "metodo": "PAYPAL",
+  "referencia": "ORD-2025-0001-EDIT",
+  "cupon": "NUEVO10",
+  "gateway": "PAYPAL"
+}
+
+```
+Respuesta:
+```json
+{
+    "id": "68eaefb13ed5753384c5780d",
+    "idInscripcion": "68eae5bf3ed5753384c5780c",
+    "userId": "68ea8840191fd0807b87f8c0",
+    "monto": 25.50,
+    "subtotal": null,
+    "impuestos": null,
+    "comisiones": null,
+    "descuento": null,
+    "moneda": "USD",
+    "metodo": "PAYPAL",
+    "estado": "PENDIENTE",
+    "referencia": "ORD-2025-0001-EDIT",
+    "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+    "cupon": "NUEVO10",
+    "gateway": "PAYPAL",
+    "gatewayPaymentId": null,
+    "authorizationCode": null,
+    "reciboUrl": null,
+    "metodoDetalle": null,
+    "createdAt": "2025-10-12T00:00:49.498Z",
+    "updatedAt": "2025-10-12T00:03:28.023918Z",
+    "autorizadoAt": null,
+    "pagadoAt": null,
+    "fallidoAt": null,
+    "reembolsadoAt": null,
+    "version": 1,
+    "metadata": null
+}
+```
+
+3. Autorizar pago por id inscripcion e id pago.
+
+POST "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos/68eaefb13ed5753384c5780d/checkout" Solo dueño del pago.
+
+Respuesta:
+```json
+{
+    "id": "68eaefb13ed5753384c5780d",
+    "idInscripcion": "68eae5bf3ed5753384c5780c",
+    "userId": "68ea8840191fd0807b87f8c0",
+    "monto": 25.50,
+    "subtotal": null,
+    "impuestos": null,
+    "comisiones": null,
+    "descuento": null,
+    "moneda": "USD",
+    "metodo": "PAYPAL",
+    "estado": "AUTORIZADO",
+    "referencia": "ORD-2025-0001-EDIT",
+    "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+    "cupon": "NUEVO10",
+    "gateway": "PAYPAL",
+    "gatewayPaymentId": null,
+    "authorizationCode": null,
+    "reciboUrl": null,
+    "metodoDetalle": null,
+    "createdAt": "2025-10-12T00:00:49.498Z",
+    "updatedAt": "2025-10-12T00:08:07.053266300Z",
+    "autorizadoAt": "2025-10-12T00:08:07.053266300Z",
+    "pagadoAt": null,
+    "fallidoAt": null,
+    "reembolsadoAt": null,
+    "version": 2,
+    "metadata": null
+}
+```
+
+4. Aprobar el pago autorizado.
+
+POST "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos/68eaefb13ed5753384c5780d/aprobar" Solo ADMIN o INSTRUCTOR dueño del curso. 
+
+Respuesta: 
+```json
+{
+    "id": "68eaefb13ed5753384c5780d",
+    "idInscripcion": "68eae5bf3ed5753384c5780c",
+    "userId": "68ea8840191fd0807b87f8c0",
+    "monto": 25.50,
+    "subtotal": null,
+    "impuestos": null,
+    "comisiones": null,
+    "descuento": null,
+    "moneda": "USD",
+    "metodo": "PAYPAL",
+    "estado": "APROBADO",
+    "referencia": "ORD-2025-0001-EDIT",
+    "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+    "cupon": "NUEVO10",
+    "gateway": "PAYPAL",
+    "gatewayPaymentId": null,
+    "authorizationCode": null,
+    "reciboUrl": null,
+    "metodoDetalle": null,
+    "createdAt": "2025-10-12T00:00:49.498Z",
+    "updatedAt": "2025-10-12T00:10:16.468402800Z",
+    "autorizadoAt": "2025-10-12T00:08:07.053Z",
+    "pagadoAt": "2025-10-12T00:10:16.468402800Z",
+    "fallidoAt": null,
+    "reembolsadoAt": null,
+    "version": 3,
+    "metadata": null
+}
+```
+
+5. Listar pagos de inscripción por ID de la inscripcion.
+
+GET "" ADMIN, INSTRUCTOR o USUARIO que realizó la inscripción.
+
+Respuesta: 
+```json
+
+```
