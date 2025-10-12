@@ -51,7 +51,7 @@ public class JWTService {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parser()
                 .setSigningKey(signingKey())
                 .build()
                 .parseClaimsJws(token)
@@ -61,7 +61,7 @@ public class JWTService {
 
     public boolean validarToken(String token, String expectedEmail) {
         try {
-            Claims c = Jwts.parserBuilder()
+            Claims c = Jwts.parser()
                     .setSigningKey(signingKey())
                     .build()
                     .parseClaimsJws(token)
