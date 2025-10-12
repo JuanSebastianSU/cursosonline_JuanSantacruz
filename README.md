@@ -3525,155 +3525,528 @@ DELETE "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaci
 
 INTENTO
 
-1.
-POST
+1. Crear un intento.
+
+POST "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos" ADMIN o USUARIO inscrito al curso.
 
 Cuerpo:
 ```json
-
+{
+  "timeLimitSeconds": 600,
+  "puntajeMaximo": 10.0
+}
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb1a9065e470167c9b2697",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8828191fd0807b87f8bf",
+    "nroIntento": 1,
+    "estado": "EN_PROGRESO",
+    "createdAt": "2025-10-12T03:03:44.207571500Z",
+    "enviadoEn": null,
+    "calificadoAt": null,
+    "updatedAt": "2025-10-12T03:03:44.207571500Z",
+    "timeLimitSeconds": 600,
+    "usedTimeSeconds": 0,
+    "puntaje": 0,
+    "puntajeMaximo": 10.0,
+    "respuestas": null,
+    "version": 0,
+    "idCalificacion": null
+}
 ```
 
-2.
-POST
+2. Enviar intento.
+
+POST "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/68eb207c65e470167c9b269b/entregar" ADMIN o USUARIO inscrito al curso.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "nroIntento": 1,
+    "estado": "ENVIADO",
+    "createdAt": "2025-10-12T03:29:00.550Z",
+    "enviadoEn": "2025-10-12T03:33:29.120378100Z",
+    "calificadoAt": null,
+    "updatedAt": "2025-10-12T03:33:29.269348800Z",
+    "timeLimitSeconds": 600,
+    "usedTimeSeconds": 0,
+    "puntaje": 0,
+    "puntajeMaximo": 10.0,
+    "respuestas": [
+        {
+            "idPregunta": "66f1a2b3c4d5e6f701",
+            "opciones": [
+                "A"
+            ],
+            "textoLibre": null,
+            "puntaje": 1.0,
+            "tiempoSegundos": 35
+        },
+        {
+            "idPregunta": "66f1a2b3c4d5e6f702",
+            "opciones": [
+                "B",
+                "D"
+            ],
+            "textoLibre": null,
+            "puntaje": 0.0,
+            "tiempoSegundos": 50
+        },
+        {
+            "idPregunta": "66f1a2b3c4d5e6f703",
+            "opciones": [],
+            "textoLibre": "París",
+            "puntaje": 1.0,
+            "tiempoSegundos": 20
+        }
+    ],
+    "version": 1,
+    "idCalificacion": null
+}
 ```
 
-3.
-GET
+3. Listar intentos en progreso.
+
+GET "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta:
 
 ```json
-
+[
+    {
+        "id": "68eb1a9065e470167c9b2697",
+        "idEvaluacion": "68eb177a65e470167c9b2694",
+        "idEstudiante": "68ea8828191fd0807b87f8bf",
+        "nroIntento": 1,
+        "estado": "EN_PROGRESO",
+        "createdAt": "2025-10-12T03:03:44.207Z",
+        "enviadoEn": null,
+        "calificadoAt": null,
+        "updatedAt": "2025-10-12T03:03:44.207Z",
+        "timeLimitSeconds": 600,
+        "usedTimeSeconds": 0,
+        "puntaje": 0,
+        "puntajeMaximo": 10.0,
+        "respuestas": null,
+        "version": 0,
+        "idCalificacion": null
+    }
+]
 ```
 
-4.
-GET
+4. Listar todos los intentos.
+
+GET "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/todos" ADMIN, INSTRUCTOR o USUARIO inscrito al curso.
 
 Respuesta:
 
 ```json
-
+[
+    {
+        "id": "68eb207c65e470167c9b269b",
+        "idEvaluacion": "68eb177a65e470167c9b2694",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "nroIntento": 1,
+        "estado": "EN_PROGRESO",
+        "createdAt": "2025-10-12T03:29:00.550Z",
+        "enviadoEn": null,
+        "calificadoAt": null,
+        "updatedAt": "2025-10-12T03:29:00.550Z",
+        "timeLimitSeconds": 600,
+        "usedTimeSeconds": 0,
+        "puntaje": 0,
+        "puntajeMaximo": 10.0,
+        "respuestas": null,
+        "version": 0,
+        "idCalificacion": null
+    },
+    {
+        "id": "68eb1a9065e470167c9b2697",
+        "idEvaluacion": "68eb177a65e470167c9b2694",
+        "idEstudiante": "68ea8828191fd0807b87f8bf",
+        "nroIntento": 1,
+        "estado": "EN_PROGRESO",
+        "createdAt": "2025-10-12T03:03:44.207Z",
+        "enviadoEn": null,
+        "calificadoAt": null,
+        "updatedAt": "2025-10-12T03:03:44.207Z",
+        "timeLimitSeconds": 600,
+        "usedTimeSeconds": 0,
+        "puntaje": 0,
+        "puntajeMaximo": 10.0,
+        "respuestas": null,
+        "version": 0,
+        "idCalificacion": null
+    }
+]
 ```
 
-5.
-GET
+5. Listar intento específico.
+
+GET "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/68eb1a9065e470167c9b2697" ADMIN, INSTRUCTOR o USUARIO inscrito al curso.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb1a9065e470167c9b2697",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8828191fd0807b87f8bf",
+    "nroIntento": 1,
+    "estado": "EN_PROGRESO",
+    "createdAt": "2025-10-12T03:03:44.207Z",
+    "enviadoEn": null,
+    "calificadoAt": null,
+    "updatedAt": "2025-10-12T03:03:44.207Z",
+    "timeLimitSeconds": 600,
+    "usedTimeSeconds": 0,
+    "puntaje": 0,
+    "puntajeMaximo": 10.0,
+    "respuestas": null,
+    "version": 0,
+    "idCalificacion": null
+}
 ```
 
-6.
-PUT
+6. Actualizar un intento en progreso.
+
+PUT "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/68eb1f4465e470167c9b269a" ADMIN o USUARIO inscrito al curso.
 
 Cuerpo:
 ```json
+{
+  "respuestas": [
+    {
+      "idPregunta": "66f1a2b3c4d5e6f701",
+      "opciones": ["A"],                // para opción única
+      "textoLibre": null,               // o un string si es abierta
+      "puntaje": 1.0,                   // BigDecimal
+      "tiempoSegundos": 35
+    },
+    {
+      "idPregunta": "66f1a2b3c4d5e6f702",
+      "opciones": ["B","D"],            // para opción múltiple
+      "textoLibre": null,
+      "puntaje": 0.0,
+      "tiempoSegundos": 50
+    },
+    {
+      "idPregunta": "66f1a2b3c4d5e6f703",
+      "opciones": [],                   // pregunta abierta
+      "textoLibre": "París",
+      "puntaje": 1.0,
+      "tiempoSegundos": 20
+    }
+  ],
+  "usedTimeSeconds": 105
+}
 
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb1f4465e470167c9b269a",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "nroIntento": 1,
+    "estado": "EN_PROGRESO",
+    "createdAt": "2025-10-12T03:23:48.795Z",
+    "enviadoEn": null,
+    "calificadoAt": null,
+    "updatedAt": "2025-10-12T03:25:23.566630400Z",
+    "timeLimitSeconds": 600,
+    "usedTimeSeconds": 105,
+    "puntaje": 0,
+    "puntajeMaximo": 10.0,
+    "respuestas": [
+        {
+            "idPregunta": "66f1a2b3c4d5e6f701",
+            "opciones": [
+                "A"
+            ],
+            "textoLibre": null,
+            "puntaje": 1.0,
+            "tiempoSegundos": 35
+        },
+        {
+            "idPregunta": "66f1a2b3c4d5e6f702",
+            "opciones": [
+                "B",
+                "D"
+            ],
+            "textoLibre": null,
+            "puntaje": 0.0,
+            "tiempoSegundos": 50
+        },
+        {
+            "idPregunta": "66f1a2b3c4d5e6f703",
+            "opciones": [],
+            "textoLibre": "París",
+            "puntaje": 1.0,
+            "tiempoSegundos": 20
+        }
+    ],
+    "version": 1,
+    "idCalificacion": null
+}
 ```
 
-7.
-PATCH
+7. Actualizaciónn parcial de un intento en progreso.
+
+PATCH "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/68eb1f4465e470167c9b269a" ADMIN o USUARIO inscrito al curso.
 
 Cuerpo:
 ```json
+{
+  "respuestas": [
+    {
+      "idPregunta": "66f1a2b3c4d5e6f701",
+      "opciones": ["C"],
+      "textoLibre": null,
+      "puntaje": 0.0,
+      "tiempoSegundos": 40
+    }
+  ]
+}
 
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb1f4465e470167c9b269a",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "nroIntento": 1,
+    "estado": "EN_PROGRESO",
+    "createdAt": "2025-10-12T03:23:48.795Z",
+    "enviadoEn": null,
+    "calificadoAt": null,
+    "updatedAt": "2025-10-12T03:26:44.056639100Z",
+    "timeLimitSeconds": 600,
+    "usedTimeSeconds": 105,
+    "puntaje": 0,
+    "puntajeMaximo": 10.0,
+    "respuestas": [
+        {
+            "idPregunta": "66f1a2b3c4d5e6f701",
+            "opciones": [
+                "C"
+            ],
+            "textoLibre": null,
+            "puntaje": 0.0,
+            "tiempoSegundos": 40
+        }
+    ],
+    "version": 2,
+    "idCalificacion": null
+}
 ```
 
-8.
-DELETE
+8. Eliminar un inteno en progreso.
+
+DELETE "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/intentos/68eb1f4465e470167c9b269a" ADMIN o INSTRUCTOR dueño del curso.
 
 
 CALIFICACION 
 
-1.
-POST
+1. Calificar un intento.
+
+POST "http://localhost:8080/api/v1/intentos/68eb207c65e470167c9b269b/calificacion" ADMIN o INSTRUCTOR dueño del curso.
 
 Cuerpo:
 ```json
-
+{
+  "puntaje": 8,
+  "feedback": "Buen intento, corrige conceptos"
+}
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb22aa65e470167c9b269c",
+    "idIntento": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PENDIENTE",
+    "calificadoAt": null,
+    "puntaje": 8,
+    "puntajeMaximo": 10.0,
+    "porcentaje": 80.00,
+    "notaCorte": null,
+    "aprobado": null,
+    "feedback": "Buen intento, corrige conceptos",
+    "calificadoPor": "68ea8828191fd0807b87f8bf",
+    "rubrica": null,
+    "createdAt": "2025-10-12T03:38:18.172529700Z",
+    "updatedAt": "2025-10-12T03:38:18.172529700Z",
+    "version": 0
+}
 ```
 
-2.
-GET
+2. Listar calificaciones por ID intento.
+
+GET "http://localhost:8080/api/v1/intentos/68eb207c65e470167c9b269b/calificacion" ADMIN, INSTRUCTOR dueño del curso o USUARIO que envió el intento.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb22aa65e470167c9b269c",
+    "idIntento": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PENDIENTE",
+    "calificadoAt": null,
+    "puntaje": 8,
+    "puntajeMaximo": 10.0,
+    "porcentaje": 80.00,
+    "notaCorte": null,
+    "aprobado": null,
+    "feedback": "Buen intento, corrige conceptos",
+    "calificadoPor": "68ea8828191fd0807b87f8bf",
+    "rubrica": null,
+    "createdAt": "2025-10-12T03:38:18.172Z",
+    "updatedAt": "2025-10-12T03:38:18.172Z",
+    "version": 0
+}
 ```
 
-3.
-GET
+3. Listar califcación por ID.
+
+GET "http://localhost:8080/api/v1/calificaciones/68eb22aa65e470167c9b269c" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb22aa65e470167c9b269c",
+    "idIntento": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PENDIENTE",
+    "calificadoAt": null,
+    "puntaje": 8,
+    "puntajeMaximo": 10.0,
+    "porcentaje": 80.00,
+    "notaCorte": null,
+    "aprobado": null,
+    "feedback": "Buen intento, corrige conceptos",
+    "calificadoPor": "68ea8828191fd0807b87f8bf",
+    "rubrica": null,
+    "createdAt": "2025-10-12T03:38:18.172Z",
+    "updatedAt": "2025-10-12T03:38:18.172Z",
+    "version": 0
+}
 ```
 
-4.
-GET
+4. Listar calificaciones de una evaluación.
+
+GET "http://localhost:8080/api/v1/evaluaciones/68eb177a65e470167c9b2694/calificaciones" ADMIN o INSTRUCTOR dueño del curso.
 
 Respuesta:
 
 ```json
-
+[
+    {
+        "id": "68eb22aa65e470167c9b269c",
+        "idIntento": "68eb207c65e470167c9b269b",
+        "idEvaluacion": "68eb177a65e470167c9b2694",
+        "idEstudiante": "68ea8840191fd0807b87f8c0",
+        "estado": "PENDIENTE",
+        "calificadoAt": null,
+        "puntaje": 8,
+        "puntajeMaximo": 10.0,
+        "porcentaje": 80.00,
+        "notaCorte": null,
+        "aprobado": null,
+        "feedback": "Buen intento, corrige conceptos",
+        "calificadoPor": "68ea8828191fd0807b87f8bf",
+        "rubrica": null,
+        "createdAt": "2025-10-12T03:38:18.172Z",
+        "updatedAt": "2025-10-12T03:38:18.172Z",
+        "version": 0
+    }
+]
 ```
 
-5.
-PATCH
+5. Actualizar una calificación.
+
+PATCH "http://localhost:8080/api/v1/calificaciones/68eb22aa65e470167c9b269c" ADMIN o INSTRUCTOR dueño del curso.
 
 Cuerpo:
 ```json
+{
+  "puntaje": 9,
+  "feedback": "Corregido tras revisión."
+}
 
 ```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb22aa65e470167c9b269c",
+    "idIntento": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PENDIENTE",
+    "calificadoAt": null,
+    "puntaje": 9,
+    "puntajeMaximo": 10.0,
+    "porcentaje": 90.00,
+    "notaCorte": null,
+    "aprobado": null,
+    "feedback": "Corregido tras revisión.",
+    "calificadoPor": "68ea8828191fd0807b87f8bf",
+    "rubrica": null,
+    "createdAt": "2025-10-12T03:38:18.172Z",
+    "updatedAt": "2025-10-12T03:45:39.854605400Z",
+    "version": 1
+}
 ```
 
-6.
-PATCH
+6. Publicar calificación.
 
-Cuerpo:
-```json
+PATCH "http://localhost:8080/api/v1/calificaciones/68eb22aa65e470167c9b269c/publicar" ADMIN o INSTRUCTOR dueño del curso.
 
-```
 Respuesta:
 
 ```json
-
+{
+    "id": "68eb22aa65e470167c9b269c",
+    "idIntento": "68eb207c65e470167c9b269b",
+    "idEvaluacion": "68eb177a65e470167c9b2694",
+    "idEstudiante": "68ea8840191fd0807b87f8c0",
+    "estado": "PUBLICADA",
+    "calificadoAt": "2025-10-12T03:46:56.017564Z",
+    "puntaje": 9,
+    "puntajeMaximo": 10.0,
+    "porcentaje": 90.00,
+    "notaCorte": null,
+    "aprobado": null,
+    "feedback": "Corregido tras revisión.",
+    "calificadoPor": "68ea8828191fd0807b87f8bf",
+    "rubrica": null,
+    "createdAt": "2025-10-12T03:38:18.172Z",
+    "updatedAt": "2025-10-12T03:46:56.017564Z",
+    "version": 2
+}
 ```
 
-7.
-DELETE
+7. Eliminar una calificación.
+
+DELETE "http://localhost:8080/api/v1/calificaciones/68eb22aa65e470167c9b269c" ADMIN o INSTRUCTOR dueño del curso.
 
 
 
