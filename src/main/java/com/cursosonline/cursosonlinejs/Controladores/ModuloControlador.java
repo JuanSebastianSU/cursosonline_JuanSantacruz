@@ -52,7 +52,7 @@ public class ModuloControlador {
     }
 
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> crearModulo(@PathVariable String idCurso, @Valid @RequestBody Modulo body) {
         if (body.getTitulo() == null || body.getTitulo().isBlank()) {
             return ResponseEntity.badRequest().body("El título es obligatorio.");
@@ -123,7 +123,7 @@ public class ModuloControlador {
     }
 
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> actualizarModulo(@PathVariable String idCurso,
                                               @PathVariable String id,
                                               @Valid @RequestBody Modulo body) {
@@ -151,7 +151,7 @@ public class ModuloControlador {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> eliminarModulo(@PathVariable String idCurso, @PathVariable String id) {
         Modulo actual = moduloServicio.obtener(id);
         if (actual == null) return ResponseEntity.notFound().build();
@@ -163,7 +163,7 @@ public class ModuloControlador {
     }
 
     @PatchMapping(value = "/{id}/orden", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> cambiarOrden(@PathVariable String idCurso,
                                           @PathVariable String id,
                                           @RequestBody CambiarOrdenRequest body) {
@@ -181,7 +181,7 @@ public class ModuloControlador {
     }
 
     @PatchMapping(value = "/{id}/mover", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> mover(@PathVariable String idCurso,
                                    @PathVariable String id,
                                    @RequestBody MoverRequest body) {
@@ -209,7 +209,7 @@ public class ModuloControlador {
     }
 
     @PatchMapping(value = "/orden", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esInstructorDelCurso(#idCurso)")
+    @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> reordenar(@PathVariable String idCurso,
                                        @RequestBody ReordenarRequest body) {
         if (body == null || body.ids() == null || body.ids().isEmpty()) {

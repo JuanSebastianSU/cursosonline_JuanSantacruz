@@ -2381,9 +2381,1362 @@ Respuesta:
 
 5. Listar pagos de inscripción por ID de la inscripcion.
 
-GET "" ADMIN, INSTRUCTOR o USUARIO que realizó la inscripción.
+GET "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos" ADMIN, INSTRUCTOR o USUARIO que realizó la inscripción.
 
 Respuesta: 
 ```json
+[
+    {
+        "id": "68eaefb13ed5753384c5780d",
+        "idInscripcion": "68eae5bf3ed5753384c5780c",
+        "userId": "68ea8840191fd0807b87f8c0",
+        "monto": 25.50,
+        "subtotal": null,
+        "impuestos": null,
+        "comisiones": null,
+        "descuento": null,
+        "moneda": "USD",
+        "metodo": "PAYPAL",
+        "estado": "APROBADO",
+        "referencia": "ORD-2025-0001-EDIT",
+        "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+        "cupon": "NUEVO10",
+        "gateway": "PAYPAL",
+        "gatewayPaymentId": null,
+        "authorizationCode": null,
+        "reciboUrl": null,
+        "metodoDetalle": null,
+        "createdAt": "2025-10-12T00:00:49.498Z",
+        "updatedAt": "2025-10-12T00:10:16.468Z",
+        "autorizadoAt": "2025-10-12T00:08:07.053Z",
+        "pagadoAt": "2025-10-12T00:10:16.468Z",
+        "fallidoAt": null,
+        "reembolsadoAt": null,
+        "version": 3,
+        "metadata": null
+    }
+]
+```
+6. Listar pago específco por id de inscripcion e id de pago.
+
+GET "http://localhost:8080/api/v1/inscripciones/68eae5bf3ed5753384c5780c/pagos/68eaefb13ed5753384c5780d" ADMIN, INSTRUCTOR y USUARIO.
+
+Respuesta: 
+```json
+{
+    "id": "68eaefb13ed5753384c5780d",
+    "idInscripcion": "68eae5bf3ed5753384c5780c",
+    "userId": "68ea8840191fd0807b87f8c0",
+    "monto": 25.50,
+    "subtotal": null,
+    "impuestos": null,
+    "comisiones": null,
+    "descuento": null,
+    "moneda": "USD",
+    "metodo": "PAYPAL",
+    "estado": "APROBADO",
+    "referencia": "ORD-2025-0001-EDIT",
+    "idempotencyKey": "inscripcion68eae5bf3ed5753384c5780c-intento1",
+    "cupon": "NUEVO10",
+    "gateway": "PAYPAL",
+    "gatewayPaymentId": null,
+    "authorizationCode": null,
+    "reciboUrl": null,
+    "metodoDetalle": null,
+    "createdAt": "2025-10-12T00:00:49.498Z",
+    "updatedAt": "2025-10-12T00:10:16.468Z",
+    "autorizadoAt": "2025-10-12T00:08:07.053Z",
+    "pagadoAt": "2025-10-12T00:10:16.468Z",
+    "fallidoAt": null,
+    "reembolsadoAt": null,
+    "version": 3,
+    "metadata": null
+}
+```
+
+7. Eliminar pago pendiente.
+
+DELETE "http://localhost:8080/api/v1/inscripciones/68e934de106e6a5df819a646/pagos/68e971f6c779b4ac4ce7c73d" USUARIO que creó el pago y ADMIN
+
+
+MODULO
+
+1. Crear una leccion.
+POST "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "Introducción a funciones especializadas JAVA",
+  "descripcion": "Ampliacion de conocimiento",
+  "orden": 1
+}
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Introducción a funciones especializadas JAVA",
+    "slug": null,
+    "descripcion": "Ampliacion de conocimiento",
+    "orden": 1,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:09:33.655047600Z",
+    "updatedAt": "2025-10-12T02:09:33.655047600Z",
+    "version": 0
+}
+```
+
+2. Listar todos los módulos de un curso, por curso ID.
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos" Todos los usuarios.
+
+Respuesta:
+
+```json
+[
+    {
+        "id": "68eb0dddea8b8f7803e2c159",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Introducción a funciones especializadas JAVA",
+        "slug": null,
+        "descripcion": "Ampliacion de conocimiento",
+        "orden": 1,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "duracionTotalMinutos": null,
+        "lecciones": null,
+        "preview": false,
+        "createdAt": "2025-10-12T02:09:33.655Z",
+        "updatedAt": "2025-10-12T02:09:33.655Z",
+        "version": 0
+    },
+    {
+        "id": "68eb0e3cea8b8f7803e2c15a",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Introducción a funciones especializadas JAVA N2",
+        "slug": null,
+        "descripcion": "Ampliacion de conocimiento N2",
+        "orden": 2,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "duracionTotalMinutos": null,
+        "lecciones": null,
+        "preview": false,
+        "createdAt": "2025-10-12T02:11:08.967Z",
+        "updatedAt": "2025-10-12T02:11:08.967Z",
+        "version": 0
+    },
+    {
+        "id": "68eb0e45ea8b8f7803e2c15b",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Introducción a funciones especializadas JAVA N3",
+        "slug": null,
+        "descripcion": "Ampliacion de conocimiento N3",
+        "orden": 3,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "duracionTotalMinutos": null,
+        "lecciones": null,
+        "preview": false,
+        "createdAt": "2025-10-12T02:11:17.274Z",
+        "updatedAt": "2025-10-12T02:11:17.274Z",
+        "version": 0
+    }
+]
+```
+
+3. Listar módulos específicos por Curso ID y Módulo ID.
+
+GET "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/68eb0e45ea8b8f7803e2c15b" Todos los usuarios.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb0e45ea8b8f7803e2c15b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Introducción a funciones especializadas JAVA N3",
+    "slug": null,
+    "descripcion": "Ampliacion de conocimiento N3",
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:11:17.274Z",
+    "updatedAt": "2025-10-12T02:11:17.274Z",
+    "version": 0
+}
+```
+
+4. Actualizar modulo específico.
+
+PUT "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/68eb0e45ea8b8f7803e2c15b" Solo para ADMIN e INSTRUCTOr dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "Fundamentos de POO",
+  "descripcion": "Fundamentos MODIFICADO",
+  "orden": 3
+}
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb0e45ea8b8f7803e2c15b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Fundamentos de POO",
+    "slug": null,
+    "descripcion": "Fundamentos MODIFICADO",
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:11:17.274Z",
+    "updatedAt": "2025-10-12T02:19:42.392104Z",
+    "version": 1
+}
+```
+
+5. Cambiar el orden de un módulo específico.
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/68eb0e45ea8b8f7803e2c15b/orden" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "orden": 1 }
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb0e45ea8b8f7803e2c15b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Fundamentos de POO",
+    "slug": null,
+    "descripcion": "Fundamentos MODIFICADO",
+    "orden": 1,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:11:17.274Z",
+    "updatedAt": "2025-10-12T02:20:30.150Z",
+    "version": 2
+}
+```
+
+6. Actualizar orden de los cursos de manera masiva.
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/orden" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "ids": ["68eb0e3cea8b8f7803e2c15a", "68eb0e45ea8b8f7803e2c15b"] }
+```
+Respuesta:
+
+```json
+[
+    {
+        "id": "68eb0e3cea8b8f7803e2c15a",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Introducción a funciones especializadas JAVA N2",
+        "slug": null,
+        "descripcion": "Ampliacion de conocimiento N2",
+        "orden": 1,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "duracionTotalMinutos": null,
+        "lecciones": null,
+        "preview": false,
+        "createdAt": "2025-10-12T02:11:08.967Z",
+        "updatedAt": "2025-10-12T02:22:43.470119700Z",
+        "version": 1
+    },
+    {
+        "id": "68eb0e45ea8b8f7803e2c15b",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Fundamentos de POO",
+        "slug": null,
+        "descripcion": "Fundamentos MODIFICADO",
+        "orden": 2,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "duracionTotalMinutos": null,
+        "lecciones": null,
+        "preview": false,
+        "createdAt": "2025-10-12T02:11:17.274Z",
+        "updatedAt": "2025-10-12T02:22:43.635180500Z",
+        "version": 3
+    }
+]
+```
+
+7. Publicar un módulo.
+
+PATCH "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/68eb0e45ea8b8f7803e2c15b/publicar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb0e45ea8b8f7803e2c15b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Fundamentos de POO",
+    "slug": null,
+    "descripcion": "Fundamentos MODIFICADO",
+    "orden": 2,
+    "estado": "PUBLICADO",
+    "publishedAt": "2025-10-12T02:25:50.210730800Z",
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:11:17.274Z",
+    "updatedAt": "2025-10-12T02:25:50.210730800Z",
+    "version": 4
+}
+```
+
+8. Archivar módulo.
+
+PATCH "" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb0e45ea8b8f7803e2c15b",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Fundamentos de POO",
+    "slug": null,
+    "descripcion": "Fundamentos MODIFICADO",
+    "orden": 2,
+    "estado": "ARCHIVADO",
+    "publishedAt": "2025-10-12T02:25:50.210Z",
+    "duracionTotalMinutos": null,
+    "lecciones": null,
+    "preview": false,
+    "createdAt": "2025-10-12T02:11:17.274Z",
+    "updatedAt": "2025-10-12T02:26:54.425237900Z",
+    "version": 5
+}
+```
+
+9. Eliminar un módulo.
+
+DELETE "http://localhost:8080/api/v1/cursos/68ea92e1191fd0807b87f8c5/modulos/68eb0e45ea8b8f7803e2c15b" ADMIN o INSTRUCTOR dueño del curso.
+
+
+
+LECCION
+1. Crear una lección.
+
+POST "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "Leccion N2",
+  "tipo": "QUIZ",          
+  "urlContenido": "https://…", // Obligatorio si no es QUIZ
+  "duracion": 300                        
+}
 
 ```
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "Leccion N2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 300,
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204733400Z",
+    "updatedAt": "2025-10-12T02:32:27.204733400Z",
+    "version": 0
+}
+```
+
+2.
+GET "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones" ADMIN,INSTRUCTOR dueño del curso, o inscrito al curso.
+
+Respuesta:
+
+```json
+[
+    {
+        "id": "68eb132a65e470167c9b2691",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "titulo": "Leccion N1",
+        "slug": null,
+        "tipo": "ARTICULO",
+        "urlContenido": "https://…",
+        "contenidoTexto": null,
+        "video": null,
+        "recursos": null,
+        "duracion": 300,
+        "orden": 1,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "preview": false,
+        "evaluaciones": null,
+        "createdAt": "2025-10-12T02:32:10.656Z",
+        "updatedAt": "2025-10-12T02:32:10.656Z",
+        "version": 0
+    },
+    {
+        "id": "68eb133365e470167c9b2692",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "titulo": "Leccion N2",
+        "slug": null,
+        "tipo": "VIDEO",
+        "urlContenido": "https://…",
+        "contenidoTexto": null,
+        "video": null,
+        "recursos": null,
+        "duracion": 300,
+        "orden": 2,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "preview": false,
+        "evaluaciones": null,
+        "createdAt": "2025-10-12T02:32:19.476Z",
+        "updatedAt": "2025-10-12T02:32:19.476Z",
+        "version": 0
+    },
+    {
+        "id": "68eb133b65e470167c9b2693",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "titulo": "Leccion N2",
+        "slug": null,
+        "tipo": "QUIZ",
+        "urlContenido": "https://…",
+        "contenidoTexto": null,
+        "video": null,
+        "recursos": null,
+        "duracion": 300,
+        "orden": 3,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "preview": false,
+        "evaluaciones": null,
+        "createdAt": "2025-10-12T02:32:27.204Z",
+        "updatedAt": "2025-10-12T02:32:27.204Z",
+        "version": 0
+    }
+]
+```
+
+3.
+GET "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693" ADMIN,INSTRUCTOR dueño del curso, o inscrito al curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "Leccion N2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 300,
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:32:27.204Z",
+    "version": 0
+}
+```
+
+4. Actualizar leccion por modulo ID y leccion ID.
+
+PUT "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "QUIZ actualizada 2",
+  "tipo": "QUIZ",             // enum: VIDEO | ARTICULO | QUIZ
+  "urlContenido": "https://…",
+  "duracion": 420,
+  "estado": "BORRADOR",
+  "orden": 3
+}
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:38:14.965511600Z",
+    "version": 1
+}
+```
+
+5. Reordenar las lecciones por modulo id y leccion id, con dirección.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693/mover" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "direccion": "up" }
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 2,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:39:36.181442300Z",
+    "version": 2
+}
+```
+
+6. Reordenar una lección con modulo ID y leccion ID de manera directa.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693/orden" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "orden": 3 }
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 3,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:40:44.095771600Z",
+    "version": 3
+}
+```
+
+7. Reordenamiento masivo de lecciones.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/orden" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "ids": ["68eb133b65e470167c9b2693","68eb132a65e470167c9b2691"] }
+```
+Respuesta:
+
+```json
+[
+    {
+        "id": "68eb132a65e470167c9b2691",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "titulo": "Leccion N1",
+        "slug": null,
+        "tipo": "ARTICULO",
+        "urlContenido": "https://…",
+        "contenidoTexto": null,
+        "video": null,
+        "recursos": null,
+        "duracion": 300,
+        "orden": 2,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "preview": false,
+        "evaluaciones": null,
+        "createdAt": "2025-10-12T02:32:10.656Z",
+        "updatedAt": "2025-10-12T02:42:25.305152400Z",
+        "version": 1
+    },
+    {
+        "id": "68eb133b65e470167c9b2693",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "titulo": "QUIZ actualizada 2",
+        "slug": null,
+        "tipo": "QUIZ",
+        "urlContenido": "https://…",
+        "contenidoTexto": null,
+        "video": null,
+        "recursos": null,
+        "duracion": 420,
+        "orden": 1,
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "preview": false,
+        "evaluaciones": null,
+        "createdAt": "2025-10-12T02:32:27.204Z",
+        "updatedAt": "2025-10-12T02:42:25.453537500Z",
+        "version": 4
+    }
+]
+```
+
+8. Editar un campo específico de lecciones.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{"estado": "BORRADOR"}
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 1,
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:43:49.843553400Z",
+    "version": 7
+}
+```
+
+9. Publicar una lección.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693/publicar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 1,
+    "estado": "PUBLICADO",
+    "publishedAt": "2025-10-12T02:45:12.395307600Z",
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:45:12.395307600Z",
+    "version": 8
+}
+```
+
+10. Archivar una lección.
+
+PATCH "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693/archivar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb133b65e470167c9b2693",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "titulo": "QUIZ actualizada 2",
+    "slug": null,
+    "tipo": "QUIZ",
+    "urlContenido": "https://…",
+    "contenidoTexto": null,
+    "video": null,
+    "recursos": null,
+    "duracion": 420,
+    "orden": 1,
+    "estado": "ARCHIVADO",
+    "publishedAt": "2025-10-12T02:45:12.395Z",
+    "preview": false,
+    "evaluaciones": null,
+    "createdAt": "2025-10-12T02:32:27.204Z",
+    "updatedAt": "2025-10-12T02:46:14.315962700Z",
+    "version": 9
+}
+```
+
+11. Eliminar una lección.
+
+DELETE "http://localhost:8080/api/v1/modulos/68eb0dddea8b8f7803e2c159/lecciones/68eb133b65e470167c9b2693" ADMIN o INSTRUCTOR dueño del curso.
+
+
+EVALUACION
+
+1. Crear una evaluación.
+
+POST "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "Evaluacion 1 Leccion 3",
+  "tipo": "quiz",    
+  "puntajeMaximo": 100
+}
+
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Evaluacion 1 Leccion 3",
+    "descripcion": null,
+    "tipo": "QUIZ",
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "puntajeMaximo": 100,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107660700Z",
+    "updatedAt": "2025-10-12T02:50:53.107660700Z",
+    "version": 0
+}
+```
+
+2. Listar las evaluaciones de una lección específica.
+
+GET "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones" ADMIN, INSTRUCTOR dueño del curso o USUARIO inscrito.
+
+Respuesta:
+
+```json
+[
+    {
+        "id": "68eb177a65e470167c9b2694",
+        "idLeccion": "68eb132a65e470167c9b2691",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Evaluacion 1 Leccion 1",
+        "descripcion": null,
+        "tipo": "QUIZ",
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "puntajeMaximo": 100,
+        "notaAprobatoria": null,
+        "maxIntentos": null,
+        "minSegundosEntreIntentos": null,
+        "timeLimitSeconds": null,
+        "disponibleDesde": null,
+        "disponibleHasta": null,
+        "dueAt": null,
+        "permitirEntregaTardia": null,
+        "penalizacionTardiaPct": null,
+        "bancoPreguntasId": null,
+        "totalPreguntas": null,
+        "barajarPreguntas": null,
+        "barajarOpciones": null,
+        "politicaResultado": "SOLO_PUNTAJE",
+        "autoCalificable": null,
+        "requiereRevisionManual": null,
+        "createdAt": "2025-10-12T02:50:34.133Z",
+        "updatedAt": "2025-10-12T02:50:34.133Z",
+        "version": 0
+    },
+    {
+        "id": "68eb178865e470167c9b2695",
+        "idLeccion": "68eb132a65e470167c9b2691",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Evaluacion 1 Leccion 2",
+        "descripcion": null,
+        "tipo": "QUIZ",
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "puntajeMaximo": 100,
+        "notaAprobatoria": null,
+        "maxIntentos": null,
+        "minSegundosEntreIntentos": null,
+        "timeLimitSeconds": null,
+        "disponibleDesde": null,
+        "disponibleHasta": null,
+        "dueAt": null,
+        "permitirEntregaTardia": null,
+        "penalizacionTardiaPct": null,
+        "bancoPreguntasId": null,
+        "totalPreguntas": null,
+        "barajarPreguntas": null,
+        "barajarOpciones": null,
+        "politicaResultado": "SOLO_PUNTAJE",
+        "autoCalificable": null,
+        "requiereRevisionManual": null,
+        "createdAt": "2025-10-12T02:50:48.494Z",
+        "updatedAt": "2025-10-12T02:50:48.494Z",
+        "version": 0
+    },
+    {
+        "id": "68eb178d65e470167c9b2696",
+        "idLeccion": "68eb132a65e470167c9b2691",
+        "idModulo": "68eb0dddea8b8f7803e2c159",
+        "idCurso": "68ea92e1191fd0807b87f8c5",
+        "titulo": "Evaluacion 1 Leccion 3",
+        "descripcion": null,
+        "tipo": "QUIZ",
+        "estado": "BORRADOR",
+        "publishedAt": null,
+        "puntajeMaximo": 100,
+        "notaAprobatoria": null,
+        "maxIntentos": null,
+        "minSegundosEntreIntentos": null,
+        "timeLimitSeconds": null,
+        "disponibleDesde": null,
+        "disponibleHasta": null,
+        "dueAt": null,
+        "permitirEntregaTardia": null,
+        "penalizacionTardiaPct": null,
+        "bancoPreguntasId": null,
+        "totalPreguntas": null,
+        "barajarPreguntas": null,
+        "barajarOpciones": null,
+        "politicaResultado": "SOLO_PUNTAJE",
+        "autoCalificable": null,
+        "requiereRevisionManual": null,
+        "createdAt": "2025-10-12T02:50:53.107Z",
+        "updatedAt": "2025-10-12T02:50:53.107Z",
+        "version": 0
+    }
+]
+```
+
+3. Listar una evaluacion específica por leccion ID y Evaluacion ID.
+
+GET "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696" ADMIN, INSTRUCTOR dueño del curso o USUARIO inscrito.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Evaluacion 1 Leccion 3",
+    "descripcion": null,
+    "tipo": "QUIZ",
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "puntajeMaximo": 100,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107Z",
+    "updatedAt": "2025-10-12T02:50:53.107Z",
+    "version": 0
+}
+```
+
+4. Actualizar evaluaciones por id leccion e id evaluacion.
+
+PUT "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{
+  "titulo": "Quiz Leccion 3 (actualizado)",
+  "tipo": "tarea",         
+  "puntajeMaximo": 100
+}
+
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Quiz Leccion 3 (actualizado)",
+    "descripcion": null,
+    "tipo": "TAREA",
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "puntajeMaximo": 100,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107Z",
+    "updatedAt": "2025-10-12T02:56:05.655114700Z",
+    "version": 1
+}
+```
+
+5. Actualizar parámetros específicos de una evaluación.
+
+PATCH "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696" ADMIN o INSTRUCTOR dueño del curso.
+
+Cuerpo:
+```json
+{ "puntajeMaximo": 120 }
+```
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Quiz Leccion 3 (actualizado)",
+    "descripcion": null,
+    "tipo": "TAREA",
+    "estado": "BORRADOR",
+    "publishedAt": null,
+    "puntajeMaximo": 120,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107Z",
+    "updatedAt": "2025-10-12T02:57:08.475328500Z",
+    "version": 2
+}
+```
+
+6. Publicar una evaluación por ID lección e ID evaluación.
+
+PATCH "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696/publicar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Quiz Leccion 3 (actualizado)",
+    "descripcion": null,
+    "tipo": "TAREA",
+    "estado": "PUBLICADA",
+    "publishedAt": "2025-10-12T02:58:00.858693800Z",
+    "puntajeMaximo": 120,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107Z",
+    "updatedAt": "2025-10-12T02:58:00.858693800Z",
+    "version": 3
+}
+```
+
+7. Archivar una evaluación.
+
+PATCH "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696/archivar" ADMIN o INSTRUCTOR dueño del curso.
+
+Respuesta:
+
+```json
+{
+    "id": "68eb178d65e470167c9b2696",
+    "idLeccion": "68eb132a65e470167c9b2691",
+    "idModulo": "68eb0dddea8b8f7803e2c159",
+    "idCurso": "68ea92e1191fd0807b87f8c5",
+    "titulo": "Quiz Leccion 3 (actualizado)",
+    "descripcion": null,
+    "tipo": "TAREA",
+    "estado": "ARCHIVADA",
+    "publishedAt": "2025-10-12T02:58:00.858Z",
+    "puntajeMaximo": 120,
+    "notaAprobatoria": null,
+    "maxIntentos": null,
+    "minSegundosEntreIntentos": null,
+    "timeLimitSeconds": null,
+    "disponibleDesde": null,
+    "disponibleHasta": null,
+    "dueAt": null,
+    "permitirEntregaTardia": null,
+    "penalizacionTardiaPct": null,
+    "bancoPreguntasId": null,
+    "totalPreguntas": null,
+    "barajarPreguntas": null,
+    "barajarOpciones": null,
+    "politicaResultado": "SOLO_PUNTAJE",
+    "autoCalificable": null,
+    "requiereRevisionManual": null,
+    "createdAt": "2025-10-12T02:50:53.107Z",
+    "updatedAt": "2025-10-12T02:58:57.188940400Z",
+    "version": 4
+}
+```
+
+8. Eliminar una evaluación. 
+
+DELETE "http://localhost:8080/api/v1/lecciones/68eb132a65e470167c9b2691/evaluaciones/68eb178d65e470167c9b2696" ADMIN o INSTRUCTOR dueño del curso.
+
+
+INTENTO
+
+1.
+POST
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+2.
+POST
+
+Respuesta:
+
+```json
+
+```
+
+3.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+4.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+5.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+6.
+PUT
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+7.
+PATCH
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+8.
+DELETE
+
+
+CALIFICACION 
+
+1.
+POST
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+2.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+3.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+4.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+5.
+PATCH
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+6.
+PATCH
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+7.
+DELETE
+
+
+
+CERTIFICADO
+
+1.
+POST
+
+Cuerpo:
+```json
+
+```
+Respuesta:
+
+```json
+
+```
+
+
+2.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+3.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+4.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+5.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+6.
+GET
+
+Respuesta:
+
+```json
+
+```
+
+7.
+DELETE
