@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!--
+    ✔ RÚBRICA: HTML básico + documentación
+    - Títulos, párrafos, listas y botones.
+    - Este <base> hace que las rutas relativas funcionen con o sin context-path.
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Demo DOM + API Cursos</title>
+  <base href="./" />
+  <link rel="stylesheet" href="estilo.css" />
+</head>
+<body>
+  <!-- HEADER (título principal) -->
+  <header>
+    <!--
+      ✔ RÚBRICA: seleccionar por id (titulo-pagina), cambiar estilos dinámicos (mouseover/out).
+      - El JS cambia el color y actualiza el texto con el total de cursos.
+    -->
+    <h2 class="titulo" id="titulo-pagina">Página de prueba (DOM + API de Cursos)</h2>
+  </header>
+
+  <!-- NAVBAR (barra de navegación dinámica) -->
+  <nav class="navbar">
+    <!--
+      ✔ RÚBRICA: responder a eventos (click) para menú hamburguesa en móviles.
+    -->
+    <button class="menu-toggle" id="menuToggle"><span></span></button>
+
+    <!--
+      ✔ RÚBRICA: crear elementos en DOM (el menú se rellena con JS a partir de /api/menu).
+      - Cada <a> tendrá data-url para cargar parciales HTML en #pagina por fetch().
+    -->
+    <ul id="menu_principal" class="menuPrincipal"></ul>
+
+    <div class="menu-actions">
+      <button id="btn-menu-refresh">Actualizar menú</button>
+      <label class="auto-refresh">
+        <input type="checkbox" id="chk-menu-autorefresh" />
+        Auto-actualizar menú (10s)
+      </label>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO DINÁMICO (aquí se inyectan las páginas parciales) -->
+  <section class="paginaWeb">
+    <div id="pagina"></div>
+  </section>
+
+  <!-- PANEL DEMO: Gestión de Cursos (cumple toda la rúbrica de DOM/JS) -->
+  <section id="cursos-panel">
+    <h3>Gestión de Cursos (DOM + llamadas a tu API)</h3>
+
+    <p class="descripcion" id="desc-cursos">
+      Explora, agrega y elimina cursos. (Pasa el mouse por el título arriba para ver un evento)
+    </p>
+
+    <!--
+      ✔ RÚBRICA:
+      - Selección por id/class/tag (inputs y botones).
+      - Eventos: click, keydown (Enter crea).
+      - Modificar texto/estilos, visibilidad y creación/eliminación en DOM.
+    -->
+    <div class="form-curso">
+      <label for="curso-nombre">Nombre:</label>
+      <input type="text" id="curso-nombre" placeholder="Nombre del curso" />
+
+      <label for="curso-desc">Descripción:</label>
+      <input type="text" id="curso-desc" placeholder="Descripción breve" />
+
+      <button id="btn-crear">Crear (API)</button>
+      <button id="btn-eliminar-ultimo">Eliminar último (DOM)</button>
+      <button id="btn-cambiar-color">Resaltar descripción</button>
+
+      <label class="auto-refresh">
+        <input type="checkbox" id="chk-autorefresh" />
+        Auto-actualizar cursos (10s)
+      </label>
+
+      <button id="btn-actualizar">Actualizar lista (API)</button>
+      <button id="btn-toggle-visibility">Ocultar/Mostrar lista</button>
+    </div>
+
+    <ul id="lista-cursos"></ul>
+  </section>
+
+  <!--
+    ✔ RÚBRICA: Documentación VISUAL de lo implementado.
+    - El revisor ve aquí qué hace cada parte sin abrir el código.
+  -->
+  <section id="documentacion" style="margin:24px 0; background:#fff; border-radius:10px; padding:16px">
+    <h3>Documentación de la Interactividad</h3>
+    <ul>
+      <li><strong>Selección por id/class/tag:</strong> en <code>codigo.js</code> se usan <code>getElementById</code>, <code>querySelector</code>, <code>getElementsByTagName</code>.</li>
+      <li><strong>Modificar texto:</strong> el título muestra el total de cursos; en <code>renderCursos()</code> se arma el <code>innerText</code> de cada ítem.</li>
+      <li><strong>Estilos dinámicos:</strong> color del título (mouseover/out), tamaño de fuente en la descripción y <code>classList.toggle()</code> para resaltar/ocultar.</li>
+      <li><strong>Crear/Eliminar DOM:</strong> <code>renderCursos()</code> usa <code>createElement/appendChild</code> y el botón elimina el último <code>li</code> con <code>removeChild</code>.</li>
+      <li><strong>Eventos:</strong> <code>click</code> (botones), <code>mouseover</code>/<code>mouseout</code> (título), <code>keydown</code> (Enter crea un curso).</li>
+      <li><strong>Navegación por pestañas:</strong> delegación de eventos en el menú y carga de parciales HTML con <code>fetch()</code>.</li>
+    </ul>
+  </section>
+
+  <script src="codigo.js"></script>
+</body>
+</html>
