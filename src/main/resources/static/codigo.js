@@ -1,38 +1,33 @@
 /* =========================================================
-   DEMO DOM + API de Cursos + Navbar dinámico (100% comentado)
-   Cumple la rúbrica:
-   - Selecciones por id/class/tag
-   - Modificar texto y estilos dinámicamente
-   - Crear/eliminar nodos DOM
-   - Eventos (click, mouseover, keydown)
-   - Carga de parciales HTML con fetch()
+   DEMO DOM + API de Cursos + Navbar dinámico (frontend only)
+   ADAPTADO a tu backend real:
+   - GET /api/v1/cursos devuelve PageResponse {content, totalElements, totalPages, ...}
+   - No-admin: listar solo PUBLICADO (según tu controlador)
+   - PUT/PATCH/DELETE protegidos (dueño o admin)
    ========================================================= */
 
 /* ==========================
    CONFIG (mismo origen)
-   - Usamos rutas RELATIVAS (sin barra inicial) para funcionar
-     con o sin context-path.
    ========================== */
-const MENU_API   = "api/menu";        // GET/POST/PUT/DELETE/PATCH reordenar
-const CURSOS_API = "api/v1/cursos";   // GET/POST/DELETE según tu backend
+const MENU_API   = "api/menu";
+const CURSOS_API = "api/v1/cursos";
 
-// Persistencia opcional de JWT (si tu API lo exige para POST/DELETE)
+// (Opcional) publicar automáticamente tras crear para que aparezca en la lista de no-admin
+const AUTO_PUBLICAR_TRAS_CREAR = true;
+
+// JWT opcional (si tu API lo exige para POST/PUT/PATCH/DELETE)
 // localStorage.setItem('jwt','TU_TOKEN_JWT');
 function getJwt() { return localStorage.getItem("jwt") || null; }
 function authHeaders(extra = {}) {
-  // Construye headers con Authorization si hay JWT
   const t = getJwt();
   const base = { "Accept": "application/json", "Content-Type": "application/json" };
   return t ? { ...base, "Authorization": `Bearer ${t}`, ...extra } : { ...base, ...extra };
 }
 
 /* ==========================
-   HELPERS (solo frontend)
-   - Adaptan el payload del formulario a lo que tu API espera.
+   HELPERS FRONTEND
    ========================== */
-const DEFAULT_INSTRUCTOR_ID = "instructor01"; // ⚠️ ajusta a un ID válido de tu BD si aplica
-
-// Decodifica JWT (si existe) para intentar obtener un id de usuario
+const DEFAULT_INSTRUCTOR_ID = "instructor01"; // si tu backend lo usa desde JWT, esto no se usará
 function parseJwt(token) {
   try {
     const base = token.split(".")[1];
@@ -40,8 +35,6 @@ function parseJwt(token) {
     return JSON.parse(json);
   } catch { return null; }
 }
-
-// Devuelve idInstructor usando JWT o un valor por defecto
 function currentInstructorId() {
   const t = getJwt();
   if (!t) return DEFAULT_INSTRUCTOR_ID;
@@ -51,27 +44,19 @@ function currentInstructorId() {
 
 /* ==========================
    NAVEGACIÓN + MENÚ DINÁMICO
-   - Carga /api/menu y arma <ul id="menu_principal">
-   - Delegación de eventos: un listener maneja todos los <a>
-   - Carga parciales HTML de /paginas/*.html en #pagina
    ========================== */
 const $menu = document.getElementById("menu_principal");
 const $btnMenuRefresh = document.getElementById("btn-menu-refresh");
 const $chkMenuAuto = document.getElementById("chk-menu-autorefresh");
 
-/** Cargar un HTML (parcial) en #pagina respetando <base href="./"> */
 async function cargarPagina(pagina, pushState = true) {
   try {
     if (!/\.html(\?.*)?$/i.test(pagina)) throw new Error(`Solo .html (recibí: ${pagina})`);
-    // Resuelve la URL final con base en document.baseURI (<base href="./"> en index.html)
     const resolved = new URL(pagina, document.baseURI).href;
     const resp = await fetch(resolved, { cache: "no-cache" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} al pedir ${resolved}`);
-
     const html = await resp.text();
-    const $contenedor = document.getElementById("pagina");
-    $contenedor.innerHTML = html; // ✔ RÚBRICA: modificar contenido HTML/Texto
-
+    document.getElementById("pagina").innerHTML = html;
     setActiveMenu(pagina);
     if (pushState) history.pushState({ url: pagina }, "", `#${pagina}`);
   } catch (e) {
@@ -86,22 +71,19 @@ Ruta solicitada: ${pagina}
   }
 }
 
-/** Renderiza el menú a partir de un array de items {nombre,url} */
 function renderMenu(items) {
-  $menu.innerHTML = ""; // limpia el ul
+  $menu.innerHTML = "";
   items.forEach(item => {
-    // ✔ RÚBRICA: crear nodos DOM dinámicamente
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.textContent = item.nombre;
-    a.href = `#${item.url}`; // útil si se copia el link
-    a.dataset.url = item.url; // clave para el router simple
+    a.href = `#${item.url}`;
+    a.dataset.url = item.url;
     li.appendChild(a);
     $menu.appendChild(li);
   });
 }
 
-/** Descarga del menú desde API (con fallback estático si falla) */
 async function cargarMenu() {
   try {
     const res = await fetch(MENU_API, { headers: authHeaders() });
@@ -117,9 +99,7 @@ async function cargarMenu() {
   }
 }
 
-/** Delegación de clic (detecta <a data-url> incluso si haces clic en el <li>) */
 $menu.addEventListener("click", (ev) => {
-  // ✔ RÚBRICA: eventos de usuario (click)
   const liOrA = ev.target.closest("li, a[data-url]");
   if (!liOrA) return;
   const a = liOrA.matches("a[data-url]") ? liOrA : liOrA.querySelector("a[data-url]");
@@ -128,25 +108,21 @@ $menu.addEventListener("click", (ev) => {
   cargarPagina(a.dataset.url);
 });
 
-/** Marca activo el enlace cuyo data-url coincide con la página mostrada */
 function setActiveMenu(url) {
   $menu.querySelectorAll("a[data-url]").forEach(a => {
     a.classList.toggle("active", a.dataset.url === url);
   });
 }
 
-/** Menú hamburguesa (móviles) */
 function initMenuToggle() {
   const btn = document.getElementById("menuToggle");
   if (!btn) return;
   btn.addEventListener("click", () => $menu.classList.toggle("show"));
 }
 
-/** Botón para refrescar menú + auto-refresh cada 10s si está marcado */
 $btnMenuRefresh.addEventListener("click", cargarMenu);
 setInterval(() => { if ($chkMenuAuto.checked) cargarMenu(); }, 10000);
 
-/** Soporte Back/Forward del navegador + cambios de hash manuales */
 window.addEventListener("popstate", () => {
   const url = location.hash.replace(/^#/, "") || "paginas/inicio.html";
   cargarPagina(url, false);
@@ -157,36 +133,80 @@ window.addEventListener("hashchange", () => {
 });
 
 /* ==========================
-   DOM + API CURSOS
-   - El formulario envía lo mínimo y el frontend completa campos
-     que tu API exige (sin tocar backend).
+   DOM + API CURSOS (ADAPTADO)
    ========================== */
-// Selección por id/class/tag (✔ RÚBRICA)
-const titulo       = document.getElementById("titulo-pagina");         // id
-const descripcion  = document.querySelector(".descripcion");            // class
-const listaCursos  = document.getElementById("lista-cursos");           // id
-const nombreInput  = document.getElementById("curso-nombre");           // id
-const descInput    = document.getElementById("curso-desc");             // id
-const btnCrear     = document.getElementById("btn-crear");              // id
-const btnEliminarU = document.getElementById("btn-eliminar-ultimo");    // id
-const btnColor     = document.getElementById("btn-cambiar-color");      // id
-const btnActualizar= document.getElementById("btn-actualizar");         // id
-const btnToggleVis = document.getElementById("btn-toggle-visibility");  // id
-const chkAuto      = document.getElementById("chk-autorefresh");        // id
+// Selección (rubro de la rúbrica)
+const titulo       = document.getElementById("titulo-pagina");
+const descripcion  = document.querySelector(".descripcion");
+const listaCursos  = document.getElementById("lista-cursos");
+const nombreInput  = document.getElementById("curso-nombre");
+const descInput    = document.getElementById("curso-desc");
+const btnCrear     = document.getElementById("btn-crear");
+const btnEliminarU = document.getElementById("btn-eliminar-ultimo");
+const btnColor     = document.getElementById("btn-cambiar-color");
+const btnActualizar= document.getElementById("btn-actualizar");
+const btnToggleVis = document.getElementById("btn-toggle-visibility");
+const chkAuto      = document.getElementById("chk-autorefresh");
 
-// También por tag/class (demostración de selección ✔ RÚBRICA)
-const todosLosBotones = document.getElementsByTagName("button");        // tag
-const descripciones   = document.getElementsByClassName("descripcion");  // class
+// Demostración de selección por tag/class
+const todosLosBotones = document.getElementsByTagName("button");
+const descripciones   = document.getElementsByClassName("descripcion");
 
-// ✔ RÚBRICA: estilos dinámicos (color y tamaño)
+// Estilos dinámicos del título (mouseover/out)
 titulo.addEventListener("mouseover", () => { titulo.style.color = "yellow"; });
 titulo.addEventListener("mouseout",  () => { titulo.style.color = "white";  });
 if (descripcion) descripcion.style.fontSize = "16px";
 
-// Muestra de modificar texto dinámicamente (total de cursos)
-let totalCursos = 0;
+// Estado simple de paginación (coincide con tu PageResponse)
+const paging = {
+  page: 0,
+  size: 5,
+  totalPages: 0,
+  totalElements: 0
+};
 
-/** Renderiza la lista de cursos en el DOM (creación de nodos ✔) */
+// Controles de paginación (creados dinámicamente)
+let $paginacion = null;
+function ensurePaginacionUI() {
+  if ($paginacion) return;
+  $paginacion = document.createElement("div");
+  $paginacion.style.marginTop = "10px";
+  $paginacion.style.display = "flex";
+  $paginacion.style.alignItems = "center";
+  $paginacion.style.gap = "8px";
+
+  const btnPrev = document.createElement("button");
+  btnPrev.textContent = "« Anterior";
+  btnPrev.addEventListener("click", async () => {
+    if (paging.page > 0) { paging.page--; await listarCursosAPI(); }
+  });
+
+  const btnNext = document.createElement("button");
+  btnNext.textContent = "Siguiente »";
+  btnNext.addEventListener("click", async () => {
+    if (paging.page < paging.totalPages - 1) { paging.page++; await listarCursosAPI(); }
+  });
+
+  const info = document.createElement("span");
+  info.id = "page-info";
+
+  $paginacion.appendChild(btnPrev);
+  $paginacion.appendChild(info);
+  $paginacion.appendChild(btnNext);
+  listaCursos.parentElement.appendChild($paginacion);
+}
+function renderInfoPaginacion() {
+  const info = document.getElementById("page-info");
+  if (!info) return;
+  info.textContent = `Página ${paging.page + 1} de ${Math.max(paging.totalPages, 1)} — ${paging.totalElements} curso(s)`;
+}
+
+// Título dinámico con total
+function actualizarTitulo() {
+  titulo.textContent = `Página de prueba (DOM + API de Cursos) — ${paging.totalElements} curso(s)`;
+}
+
+/** Renderiza cursos (con botones: Editar, Publicar, Archivar, Eliminar) */
 function renderCursos(cursos = []) {
   listaCursos.innerHTML = "";
   (cursos || []).forEach(c => {
@@ -195,8 +215,8 @@ function renderCursos(cursos = []) {
 
     const texto = document.createElement("span");
     const title = c.titulo ?? c.nombre ?? "(sin título)";
-    const desc   = c.descripcion ? ` — ${c.descripcion}` : "";
-    texto.innerText = `${title}${desc}`; // ✔ RÚBRICA: modificar texto
+    const desc  = c.descripcion ? ` — ${c.descripcion}` : "";
+    texto.innerText = `${title}${desc}`;
 
     const badge = document.createElement("span");
     badge.classList.add("badge-id");
@@ -205,14 +225,42 @@ function renderCursos(cursos = []) {
     const acciones = document.createElement("div");
     acciones.classList.add("acciones");
 
+    // EDITAR (PUT)
+    const btnEdit = document.createElement("button");
+    btnEdit.innerText = "Editar (API)";
+    btnEdit.addEventListener("click", async () => {
+      await editarCursoUI(c);
+    });
+
+    // PUBLICAR (PATCH /{id}/publicar)
+    const btnPub = document.createElement("button");
+    btnPub.innerText = "Publicar (API)";
+    btnPub.addEventListener("click", async () => {
+      await publicarCursoAPI(c.id);
+      await listarCursosAPI();
+    });
+
+    // ARCHIVAR (PATCH /{id}/archivar)
+    const btnArc = document.createElement("button");
+    btnArc.innerText = "Archivar (API)";
+    btnArc.addEventListener("click", async () => {
+      await archivarCursoAPI(c.id);
+      await listarCursosAPI();
+    });
+
+    // ELIMINAR (DELETE)
     const btnDel = document.createElement("button");
     btnDel.innerText = "Eliminar (API)";
     btnDel.addEventListener("click", async () => {
       if (!c.id) return alert("No hay id para eliminar en la API.");
-      await eliminarCursoAPI(c.id);     // DELETE a tu API
-      await listarCursosAPI();          // refresca DOM
+      if (!confirm(`¿Eliminar curso "${title}"?`)) return;
+      await eliminarCursoAPI(c.id);
+      await listarCursosAPI();
     });
 
+    acciones.appendChild(btnEdit);
+    acciones.appendChild(btnPub);
+    acciones.appendChild(btnArc);
     acciones.appendChild(btnDel);
     li.appendChild(texto);
     li.appendChild(badge);
@@ -220,50 +268,54 @@ function renderCursos(cursos = []) {
     listaCursos.appendChild(li);
   });
 
-  // Ejemplo de estilo iterativo por tag
+  // Un pequeño estilo en los ítems
   const lis = listaCursos.getElementsByTagName("li");
   for (let i = 0; i < lis.length; i++) lis[i].style.borderColor = "#ccc";
 }
 
-/** GET cursos (tolera 204) y actualiza el título con el total */
+/** GET cursos → PageResponse */
 async function listarCursosAPI() {
   try {
-    const res = await fetch(CURSOS_API, { headers: authHeaders() });
-    if (res.status === 204) { renderCursos([]); totalCursos = 0; actualizarTitulo(); return; }
+    ensurePaginacionUI();
+    const qs = new URLSearchParams({ page: String(paging.page), size: String(paging.size) });
+    const res = await fetch(`${CURSOS_API}?${qs.toString()}`, { headers: authHeaders() });
+    if (res.status === 204) {
+      paging.totalElements = 0; paging.totalPages = 1;
+      renderCursos([]); actualizarTitulo(); renderInfoPaginacion(); return;
+    }
     if (!res.ok) throw new Error(`GET cursos: ${res.status}`);
     const data = await res.json();
-    const arr = Array.isArray(data) ? data : [];
-    totalCursos = arr.length;
-    actualizarTitulo();   // ✔ RÚBRICA: modificar texto (título)
+
+    // Tu backend devuelve PageResponse
+    const arr = Array.isArray(data?.content) ? data.content : [];
+    paging.page = Number.isFinite(data?.page) ? data.page : paging.page;
+    paging.size = Number.isFinite(data?.size) ? data.size : paging.size;
+    paging.totalElements = Number.isFinite(data?.totalElements) ? data.totalElements : arr.length;
+    paging.totalPages = Number.isFinite(data?.totalPages) ? data.totalPages : 1;
+
+    actualizarTitulo();
     renderCursos(arr);
+    renderInfoPaginacion();
   } catch (e) {
     console.error(e);
     renderCursos([]);
   }
 }
 
-// Actualiza el título con el contador de cursos (ejemplo claro)
-function actualizarTitulo() {
-  titulo.textContent = `Página de prueba (DOM + API de Cursos) — ${totalCursos} curso(s)`;
-}
-
-/** POST curso (mapea el formulario a tu entidad Curso sin tocar backend) */
+/** POST curso (usa tu DTO CrearCursoRequest) */
 async function crearCursoAPI(nombre, descripcion) {
   try {
-    // Validación mínima UI (el backend hará la suya)
     if (!nombre || nombre.trim().length < 3) {
-      alert("El título debe tener al menos 3 caracteres."); return;
+      alert("El título debe tener al menos 3 caracteres."); return null;
     }
-
-    // Payload adaptado a tu entidad Curso (campos requeridos por tu API)
+    // Tu CrearCursoRequest exige: titulo, descripcion, categoria, nivel, idioma, precio
     const payload = {
       titulo: nombre.trim(),
       descripcion: (descripcion || "").trim() || null,
       categoria: "GENERAL",
-      idioma: "es-EC",                 // ISO válido (ej: es o es-EC)
-      nivel: "PRINCIPIANTE",           // enum Curso.Nivel
-      estado: "BORRADOR",              // enum Curso.EstadoCurso
-      idInstructor: currentInstructorId() // @NotBlank
+      nivel: "PRINCIPIANTE",
+      idioma: "es-EC",
+      precio: 0 // @Min(0) — si quieres, agrega un input en la UI y léelo
     };
 
     const res = await fetch(CURSOS_API, {
@@ -271,31 +323,113 @@ async function crearCursoAPI(nombre, descripcion) {
       headers: authHeaders(),
       body: JSON.stringify(payload)
     });
-
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       throw new Error(`POST curso: ${res.status} ${txt}`);
     }
-    return await res.json();
+    const creado = await res.json();
+
+    // Si no eres admin, la lista no mostrará BORRADOR.
+    // Para que aparezca, publicamos de una (si se permite).
+    if (AUTO_PUBLICAR_TRAS_CREAR && creado?.id) {
+      try { await publicarCursoAPI(creado.id); } catch (e) { console.warn("No se pudo publicar automáticamente:", e?.message || e); }
+    }
+    return creado;
   } catch (e) {
     console.error(e);
     alert("No se pudo crear el curso. Revisa JWT/seguridad y el payload.");
+    return null;
   }
 }
 
-/** DELETE curso */
+/** PUT curso (Actualiza con tu DTO ActualizarCursoRequest) */
+async function actualizarCursoAPI(id, { titulo, descripcion, categoria, nivel, idioma, precio }) {
+  const payload = { titulo, descripcion, categoria, nivel, idioma, precio };
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`PUT curso: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/** PATCH estado (genérico) -> /{id}/estado con {estado} */
+async function patchEstadoCursoAPI(id, estado) {
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/estado`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ estado })
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`PATCH estado: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/** PATCH publicar (sin body) -> /{id}/publicar */
+async function publicarCursoAPI(id) {
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/publicar`, {
+    method: "PATCH",
+    headers: authHeaders()
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`PATCH publicar: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/** PATCH archivar (sin body) -> /{id}/archivar */
+async function archivarCursoAPI(id) {
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/archivar`, {
+    method: "PATCH",
+    headers: authHeaders()
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`PATCH archivar: ${res.status} ${txt}`);
+  }
+  return await res.json();
+}
+
+/** DELETE */
 async function eliminarCursoAPI(id) {
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders()
+  });
+  if (!res.ok && res.status !== 204 && res.status !== 200) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`DELETE curso: ${res.status} ${txt}`);
+  }
+}
+
+/* ===== UI para EDITAR (prompt rápido sin tocar HTML) ===== */
+async function editarCursoUI(curso) {
   try {
-    const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      headers: authHeaders()
-    });
-    if (!res.ok && res.status !== 204 && res.status !== 200) {
-      throw new Error(`DELETE curso: ${res.status}`);
-    }
+    const titulo = prompt("Título:", curso.titulo ?? "");
+    if (titulo == null) return;
+    const descripcion = prompt("Descripción:", curso.descripcion ?? "");
+    if (descripcion == null) return;
+    const categoria = prompt("Categoria:", curso.categoria ?? "GENERAL");
+    if (categoria == null) return;
+    const nivel = prompt("Nivel (PRINCIPIANTE/INTERMEDIO/AVANZADO):", curso.nivel ?? "PRINCIPIANTE");
+    if (nivel == null) return;
+    const idioma = prompt("Idioma (es o es-EC):", curso.idioma ?? "es-EC");
+    if (idioma == null) return;
+    const precio = Number(prompt("Precio (>=0):", String(curso.precio ?? 0)));
+    if (Number.isNaN(precio) || precio < 0) { alert("Precio inválido"); return; }
+
+    await actualizarCursoAPI(curso.id, { titulo, descripcion, categoria, nivel, idioma, precio });
+    await listarCursosAPI();
   } catch (e) {
     console.error(e);
-    alert("No se pudo eliminar (verifica API/JWT/ID).");
+    alert("No se pudo actualizar. Verifica permisos/JWT y datos.");
   }
 }
 
@@ -303,36 +437,33 @@ async function eliminarCursoAPI(id) {
 btnCrear.addEventListener("click", async () => {
   const nombre = (nombreInput.value || "").trim();
   const desc   = (descInput.value || "").trim();
-
   if (!getJwt()) {
-    // Si tu backend exige JWT para POST, puedes setearlo con:
-    // localStorage.setItem('jwt','TU_TOKEN_JWT');
-    console.warn("No hay JWT en localStorage. Si tu API exige token, añade uno.");
+    console.warn("No hay JWT en localStorage. Si tu API exige token, añade uno con localStorage.setItem('jwt','TU_TOKEN_JWT').");
   }
-
-  await crearCursoAPI(nombre, desc); // POST
-  await listarCursosAPI();           // GET para refrescar
-  nombreInput.value = ""; descInput.value = "";
+  const creado = await crearCursoAPI(nombre, desc);
+  if (creado) {
+    // tras crear (y quizá publicar), refrescamos la página 1 (0) para verlo
+    paging.page = 0;
+    await listarCursosAPI();
+    nombreInput.value = ""; descInput.value = "";
+  }
 });
 
-// ✔ RÚBRICA: keydown → Enter crea curso
 nombreInput.addEventListener("keydown", (e) => { if (e.key === "Enter") btnCrear.click(); });
 
-// ✔ RÚBRICA: eliminar nodo DOM (solo visual)
 btnEliminarU.addEventListener("click", () => {
   if (listaCursos.lastElementChild) listaCursos.removeChild(listaCursos.lastElementChild);
 });
 
-// ✔ RÚBRICA: estilos dinámicos usando classList.toggle()
 btnColor.addEventListener("click", () => { descripcion.classList.toggle("resaltado"); });
 
-// ✔ RÚBRICA: visibilidad dinámica
 btnToggleVis.addEventListener("click", () => { listaCursos.classList.toggle("oculto"); });
 
-// Refrescar desde API
-btnActualizar.addEventListener("click", listarCursosAPI);
+btnActualizar.addEventListener("click", async () => {
+  paging.page = 0;
+  await listarCursosAPI();
+});
 
-// Auto-actualizar lista de cursos
 setInterval(() => { if (chkAuto.checked) listarCursosAPI(); }, 10000);
 
 /* ==========================
@@ -342,18 +473,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMenuToggle();
   await cargarMenu();
 
-  // Carga inicial según #hash o Inicio por defecto
   const initial = location.hash.replace(/^#/, "") || "paginas/inicio.html";
   await cargarPagina(initial, false);
 
-  // Carga inicial de cursos
   await listarCursosAPI();
 });
 
-/* ===== Debug util (opcional) =====
-   Abre consola y ejecuta: debugRutas()
-   Debe imprimir 200 para los parciales.
-*/
+/* ===== Debug util (opcional) ===== */
 window.debugRutas = async function () {
   const rutas = ["paginas/inicio.html","paginas/mision-vision.html","paginas/contacto.html"];
   for (const ruta of rutas) {
