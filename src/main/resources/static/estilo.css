@@ -113,3 +113,35 @@ header {
   .menuPrincipal.show { display: flex; }
   #cursos-panel .form-curso { grid-template-columns: 1fr; }
 }
+
+/* ===== Formulario (básico) ===== */
+.card {
+  background:#fff; border-radius:10px; padding:20px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+.field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.field.inline { flex-direction:row; align-items:center; gap:10px; }
+.field label { font-weight:bold; }
+.field input[type="text"],
+.field input[type="email"],
+.field textarea {
+  padding:10px; border:1px solid #ccc; border-radius:8px; outline:none;
+}
+.field input:focus, .field textarea:focus {
+  border-color:#1565c0; box-shadow:0 0 0 3px rgba(21,101,192,0.15);
+}
+.error {
+  color:#b00020; min-height:1em; /* reserva espacio para que no “salte” el layout */
+}
+.is-invalid { border-color:#b00020 !important; }
+.is-valid   { border-color:#2e7d32 !important; }
+
+.actions { display:flex; gap:10px; }
+.actions button {
+  background:#1565c0; color:#fff; border:none; padding:10px 14px;
+  border-radius:8px; cursor:pointer;
+}
+.actions button:hover { background:#0d47a1; }
+
+.form-estado { margin-top:10px; }
+

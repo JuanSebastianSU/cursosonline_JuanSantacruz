@@ -1,0 +1,69 @@
+<!-- paginas/registro.html -->
+<section class="card" id="registro">
+  <h3>Registro de usuario</h3>
+
+  <!--
+    ✔ RÚBRICA (HTML):
+    - Formulario completo con campos necesarios y <label> asociados con for/id.
+    - El atributo novalidate hace que los mensajes los controle nuestro JS.
+  -->
+  <form id="form-register" novalidate>
+    <!-- Nombre -->
+    <div class="field">
+      <label for="fr-nombre">Nombre completo</label>
+      <input id="fr-nombre" name="nombre" type="text"
+             placeholder="Tu nombre y apellido"
+             required minlength="3" maxlength="200" autocomplete="name" />
+      <small class="error" id="errr-nombre" aria-live="polite"></small>
+    </div>
+
+    <!-- Email -->
+    <div class="field">
+      <label for="fr-email">Correo electrónico</label>
+      <input id="fr-email" name="email" type="email"
+             placeholder="tucorreo@dominio.com"
+             required maxlength="200" autocomplete="email" />
+      <small class="error" id="errr-email" aria-live="polite"></small>
+    </div>
+
+    <!-- Contraseña -->
+    <div class="field">
+      <label for="fr-password">Contraseña</label>
+      <input id="fr-password" name="password" type="password"
+             placeholder="Mínimo 8 caracteres"
+             required minlength="8" autocomplete="new-password" />
+      <small class="error" id="errr-password" aria-live="polite"></small>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="field">
+      <label for="fr-password2">Confirmar contraseña</label>
+      <input id="fr-password2" name="password2" type="password"
+             placeholder="Repite tu contraseña"
+             required minlength="8" autocomplete="new-password" />
+      <small class="error" id="errr-password2" aria-live="polite"></small>
+    </div>
+
+    <!-- Acepto términos -->
+    <div class="field inline">
+      <input id="fr-acepto" name="acepto" type="checkbox" required />
+      <label for="fr-acepto">Acepto los términos y condiciones</label>
+    </div>
+    <small class="error" id="errr-acepto" aria-live="polite"></small>
+
+    <!-- Acciones -->
+    <div class="actions">
+      <button type="submit" id="btn-register">Crear cuenta</button>
+      <button type="reset">Limpiar</button>
+    </div>
+
+    <!-- Estado global del formulario -->
+    <div id="register-estado" role="status" aria-live="polite" class="form-estado"></div>
+  </form>
+
+  <!--
+    Nota: La lógica de validación/submit está en codigo.js (initRegistroFormSiExiste()).
+    Allí se explica, en comentarios, cómo se valida y a qué endpoint se envía.
+  -->
+    
+</section>
