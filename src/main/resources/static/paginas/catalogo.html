@@ -1,0 +1,32 @@
+<section id="catalogo-wrap" aria-labelledby="catalogo-title">
+  <header class="view-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <h2 id="catalogo-title" style="margin:0">Catálogo</h2>
+
+    <form id="catalogo-filtros" class="filters" autocomplete="off" role="search" aria-label="Filtros de catálogo" style="display:flex;gap:8px;flex-wrap:wrap">
+      <label style="display:none" for="f-q">Buscar</label>
+      <input type="search" id="f-q" placeholder="Buscar curso..." />
+
+      <label style="display:none" for="f-categoria">Categoría</label>
+      <select id="f-categoria">
+        <option value="">Todas las categorías</option>
+      </select>
+
+      <label style="display:none" for="f-nivel">Nivel</label>
+      <select id="f-nivel">
+        <option value="">Todos los niveles</option>
+        <option value="PRINCIPIANTE">Principiante</option>
+        <option value="INTERMEDIO">Intermedio</option>
+        <option value="AVANZADO">Avanzado</option>
+      </select>
+
+      <button class="btn" id="f-apply">Filtrar</button>
+      <button class="btn ghost" id="f-clear" type="button">Limpiar</button>
+    </form>
+  </header>
+
+  <!-- Grid de tarjetas (4 por página) -->
+  <div id="catalogo-grid" class="grid4" aria-live="polite"></div>
+
+  <!-- Paginación -->
+  <nav id="catalogo-pager" class="pager" aria-label="Paginación"></nav>
+</section>

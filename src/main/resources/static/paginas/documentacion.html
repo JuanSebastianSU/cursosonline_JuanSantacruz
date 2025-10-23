@@ -1,0 +1,46 @@
+<main class="wrap" aria-labelledby="doc-title">
+  <article class="card">
+    <h1 id="doc-title">Documentación del sitio</h1>
+
+    <section>
+      <h2>Estructura semántica</h2>
+      <ul>
+        <li>Layout base: <code>&lt;header&gt;</code>, <code>&lt;main id="pagina"&gt;</code> (parciales), <code>&lt;footer&gt;</code>.</li>
+        <li>Vistas: secciones con <code>&lt;section&gt;</code>/<code>&lt;article&gt;</code> y jerarquía de <code>h1–h3</code>.</li>
+        <li>Navegación: hash-router simple; menús generados desde API o fallback.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Decisiones de diseño</h2>
+      <ul>
+        <li>Escala tipográfica del sistema, contraste en modo oscuro, radios y sombras suaves.</li>
+        <li>Grid responsivo (4→3→2→1) y Flex para acciones/controles.</li>
+        <li>Tokens CSS: colores, radios, sombras; clases reutilizables (<code>.card</code>, <code>.badge</code>, etc.).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Técnicas aplicadas</h2>
+      <ul>
+        <li>DOM: selección por id/class/tag, <code>innerText/innerHTML</code>, estilos dinámicos, creación/eliminación de nodos.</li>
+        <li>Eventos: <em>click, mouseover, keydown</em>, <em>input/submit</em> en formularios.</li>
+        <li>Accesibilidad: <code>aria-label</code>, <code>aria-live</code>, <code>summary/details</code>, <code>sr-only</code>.</li>
+        <li>Rendimiento UX: cache de parciales + <code>AbortController</code>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Capturas de pantalla</h2>
+      <p>Reemplaza las imágenes por tus capturas reales (móvil, tablet y desktop).</p>
+      <div class="grid4">
+        <figure class="thumb">
+          <img src="https://picsum.photos/seed/mobile/400/800" alt="Vista móvil" />
+          <figcaption>Vista móvil</figcaption>
+        </figure>
+        <figure class="thumb">
+          <img src="https://picsum.photos/seed/tablet/800/600" alt="Vista tablet" />
+          <figcaption>Vista tablet</figcaption>
+        </figure>
+        <figure class="thumb">
+          <img src="https://picsum.photos/seed/desktop/1200/800" alt="Vista desktop" /

@@ -1,62 +1,32 @@
-<!-- paginas/formulario.html -->
-<section class="card">
-  <h3>Formulario de contacto</h3>
-  <p style="margin-bottom:12px">
-    Ejemplo de validación básica (HTML5 + JS). Los campos muestran errores en tiempo real.
-  </p>
-
-  <form id="form-demo" novalidate>
-    <!-- Nombre -->
-    <div class="field">
-      <label for="f-nombre">Nombre completo</label>
-      <input id="f-nombre" name="nombre" type="text"
-             placeholder="Tu nombre y apellido"
-             required minlength="3" maxlength="80"
-             autocomplete="name" />
-      <small class="error" id="err-nombre" aria-live="polite"></small>
-    </div>
-
-    <!-- Email -->
-    <div class="field">
-      <label for="f-email">Correo electrónico</label>
-      <input id="f-email" name="email" type="email"
-             placeholder="tucorreo@dominio.com"
-             required maxlength="120" autocomplete="email" />
-      <small class="error" id="err-email" aria-live="polite"></small>
-    </div>
-
-    <!-- Asunto -->
-    <div class="field">
-      <label for="f-asunto">Asunto</label>
-      <input id="f-asunto" name="asunto" type="text"
-             placeholder="Motivo del mensaje"
-             required minlength="5" maxlength="100" />
-      <small class="error" id="err-asunto" aria-live="polite"></small>
-    </div>
-
-    <!-- Mensaje -->
-    <div class="field">
-      <label for="f-mensaje">Mensaje</label>
-      <textarea id="f-mensaje" name="mensaje" rows="5"
-                placeholder="Escribe tu mensaje"
-                required minlength="10" maxlength="1000"></textarea>
-      <small class="error" id="err-mensaje" aria-live="polite"></small>
-    </div>
-
-    <!-- Aceptación -->
-    <div class="field inline">
-      <input id="f-acepto" name="acepto" type="checkbox" required />
-      <label for="f-acepto">Acepto los términos y condiciones</label>
-    </div>
-    <small class="error" id="err-acepto" aria-live="polite"></small>
-
-    <!-- Botones -->
-    <div class="actions">
-      <button type="submit" id="btn-form-enviar">Enviar</button>
-      <button type="reset">Limpiar</button>
-    </div>
-
-    <!-- Estado -->
-    <div id="form-estado" role="status" aria-live="polite" class="form-estado"></div>
-  </form>
+<section class="view" aria-labelledby="form-title">
+  <article class="card form">
+    <h2 id="form-title">Contáctanos</h2>
+    <form id="form-demo" autocomplete="off" novalidate>
+      <label>Nombre
+        <input type="text" id="f-nombre" required minlength="3" />
+        <small id="err-nombre" class="error"></small>
+      </label>
+      <label>Email
+        <input type="email" id="f-email" required />
+        <small id="err-email" class="error"></small>
+      </label>
+      <label>Asunto
+        <input type="text" id="f-asunto" required minlength="5" />
+        <small id="err-asunto" class="error"></small>
+      </label>
+      <label>Mensaje
+        <textarea id="f-mensaje" required minlength="10" rows="4"></textarea>
+        <small id="err-mensaje" class="error"></small>
+      </label>
+      <label class="inline">
+        <input type="checkbox" id="f-acepto" />
+        <span>Acepto los términos</span>
+        <small id="err-acepto" class="error"></small>
+      </label>
+      <div class="actions">
+        <button class="btn primary">Enviar</button>
+      </div>
+      <p id="form-estado" class="form-state" role="status" aria-live="polite"></p>
+    </form>
+  </article>
 </section>

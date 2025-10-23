@@ -1,12 +1,15 @@
 /* =========================================================
    DEMO DOM + API de Cursos + Navbar dinámico (frontend only)
-   ADAPTADO a tu backend real:
-   - GET /api/v1/cursos devuelve PageResponse {content, totalElements, totalPages, ...}
-   - No-admin: listar solo PUBLICADO (según tu controlador)
-   - PUT/PATCH/DELETE protegidos (dueño o admin)
-   - Formulario de contacto con validación básica (HTML5 + JS)
-   - Parche de menú: garantiza que "Formulario" aparezca sin tocar backend
-   - (Opcional) Registro de usuario: si existe paginas/registro.html
+   **Versión adaptada + mejoras**
+   - Mantiene index + parciales + codigo.js (sin login SPA)
+   - AbortController para evitar "flashbacks" al navegar rápido  // [CHANGE]
+   - Cache de parciales con TTL para navegación más fluida       // [CHANGE]
+   - Catálogo: spinner + pager accesible + rango "Mostrando"     // [CHANGE]
+   - Categorías autocompletadas desde datos (opcional endpoint)  // [CHANGE]
+   - Imágenes con placeholder si fallan                          // [CHANGE]
+   - Un solo lugar para autopublicar al crear curso              // [CHANGE]
+   - Gate del Área de instructor si no hay JWT (con flag)        // [CHANGE]
+   - Compatibilidad PageResponse {number,size} vs {page,size}    // [CHANGE]
    ========================================================= */
 
 /* ==========================
@@ -14,18 +17,17 @@
    ========================== */
 const MENU_API   = "api/menu";
 const CURSOS_API = "api/v1/cursos";
+const CURSOS_BUSCAR_API = "api/v1/cursos/buscar";
+const CATEGORIAS_API = "api/v1/categorias"; // opcional, si existe          // [CHANGE]
 
-// Publicar automáticamente tras crear para que aparezca en la lista de no-admin
-const AUTO_PUBLICAR_TRAS_CREAR = true;
+// Controla si se permite operar "Área de instructor" sin JWT.
+const ALLOW_INSTRUCTOR_WITHOUT_JWT = false;                                  // [CHANGE]
 
-// Endpoint para el formulario de contacto (puedes cambiar por enviar.php si quieres)
+// Endpoints opcionales (si usas esos parciales)
 const FORM_API = "api/formulario";
-
-// Endpoint real de tu API para registrar (AuthControlador)
 const AUTH_REGISTER = "api/auth/register";
 
 // JWT opcional (si tu API lo exige para POST/PUT/PATCH/DELETE)
-// localStorage.setItem('jwt','TU_TOKEN_JWT');
 function getJwt() { return localStorage.getItem("jwt") || null; }
 function authHeaders(extra = {}) {
   const t = getJwt();
@@ -50,90 +52,153 @@ function currentInstructorId() {
   const p = parseJwt(t) || {};
   return p.userId || p.uid || p.id || p.sub || p.username || p.name || DEFAULT_INSTRUCTOR_ID;
 }
+function escapeHtml(s=""){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function truncate(s="", n=110){ return s.length>n ? s.slice(0,n-1)+"…" : s; }
+function courseImageUrl(c){
+  return c.portadaUrl || c.imagenUrl || c.thumbnail || c.coverUrl || c.cover || 
+         (c.id ? `https://picsum.photos/seed/${encodeURIComponent(c.id)}/600/338` 
+               : `https://picsum.photos/seed/${encodeURIComponent(c.titulo||"curso")}/600/338`);
+}
+// Placeholder SVG en caso de error de imagen                                      // [CHANGE]
+function placeholderImg(label="Curso"){
+  const txt = encodeURIComponent((label||"Curso").slice(0,24));
+  return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='338'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='24' fill='%236b7280'>${txt}</text></svg>`;
+}
+function attachImageErrorHandlers(root){                                         // [CHANGE]
+  root.querySelectorAll("img").forEach(img=>{
+    img.addEventListener("error", ()=>{ img.src = placeholderImg(img.alt || "Curso"); }, { once:true });
+  });
+}
 
 /* =========================================================
-   MENÚ: FUSIÓN CON API + GARANTÍA DE "FORMULARIO" SIN BACKEND
+   MENÚ: FUSIÓN CON API + GARANTÍAS + LIMPIEZAS
    ========================================================= */
 const FALLBACK_MENU = [
-  { nombre: "Inicio",          url: "paginas/inicio.html",        orden: 1 },
-  { nombre: "Misión & Visión", url: "paginas/mision-vision.html", orden: 2 },
-  { nombre: "Contacto",        url: "paginas/contacto.html",      orden: 3 },
-  { nombre: "Formulario",      url: "paginas/formulario.html",    orden: 4 },
-  { nombre: "Registro",        url: "paginas/registro.html",      orden: 5 } // ← nuevo
+  { nombre: "Inicio",             url: "paginas/inicio.html",     orden: 1 },
+  { nombre: "Catálogo",           url: "paginas/catalogo.html",   orden: 2 },
+  { nombre: "Área de instructor", url: "paginas/instructor.html", orden: 3 },
+  { nombre: "Formulario",         url: "paginas/formulario.html", orden: 4 },
+  { nombre: "Registro",           url: "paginas/registro.html",   orden: 5 },
+  { nombre: "Documentación",      url: "paginas/documentacion.html", orden: 6 }
 ];
 
-
-// Asegura "Formulario" siempre y "Registro" solo si el archivo existe.
+// Normaliza + asegura items pedidos + elimina “Contacto”
 async function ensureMenuCompleto(apiItems = []) {
-  // Normaliza items del backend
-  const list = apiItems.map((it, i) => ({
-    nombre: it?.nombre ?? `Item ${i + 1}`,
+  // Normaliza
+  let list = apiItems.map((it, i) => ({
+    nombre: it?.nombre ?? `Item ${i+1}`,
     url:    it?.url    ?? "#",
-    orden:  Number.isFinite(it?.orden) ? it.orden : (i + 1)
+    orden:  Number.isFinite(it?.orden) ? it.orden : (i+1)
   }));
 
-  // 1) Garantizar "Formulario"
-  const FORM_URL = "paginas/formulario.html";
-  const tieneFormulario = list.some(x => (x.url || "").toLowerCase() === FORM_URL);
-  if (!tieneFormulario) {
-    const maxOrden = list.reduce((m, x) => Math.max(m, Number(x.orden) || 0), 0);
-    list.push({ nombre: "Formulario", url: FORM_URL, orden: (maxOrden || 0) + 1 });
+  // Filtra Contacto (por nombre/url)
+  list = list.filter(x => {
+    const n = (x.nombre||"").toLowerCase();
+    const u = (x.url||"").toLowerCase();
+    return !(n.includes("contacto") || u.includes("contacto.html"));
+  });
+
+  // Asegurar obligatorio: Inicio, Catálogo, Formulario, Instructor
+  const must = [
+    { nombre:"Inicio", url:"paginas/inicio.html" },
+    { nombre:"Catálogo", url:"paginas/catalogo.html" },
+    { nombre:"Formulario", url:"paginas/formulario.html" },
+    { nombre:"Área de instructor", url:"paginas/instructor.html" }
+  ];
+  for (const m of must) {
+    if (!list.some(x => (x.url||"").toLowerCase() === m.url)) {
+      const maxOrden = list.reduce((acc,x)=>Math.max(acc, Number(x.orden)||0), 0);
+      list.push({ ...m, orden: maxOrden+1 });
+    }
   }
 
-  // 2) Añadir "Registro" si el archivo existe
+  // Añadir "Registro" si existe el archivo
   const REG_URL = "paginas/registro.html";
   let tieneRegistro = list.some(x => (x.url || "").toLowerCase() === REG_URL);
   if (!tieneRegistro) {
     try {
       const u = new URL(REG_URL, document.baseURI);
-      // HEAD no siempre está habilitado; si falla, hacemos GET ligero
       let r = await fetch(u, { method: "HEAD", cache: "no-cache" });
       if (!r.ok) r = await fetch(u, { cache: "no-cache" });
       if (r.ok) {
-        const maxOrden = list.reduce((m, x) => Math.max(m, Number(x.orden) || 0), 0);
-        list.push({ nombre: "Registro", url: REG_URL, orden: (maxOrden || 0) + 1 });
+        const maxOrden = list.reduce((acc,x)=>Math.max(acc, Number(x.orden)||0), 0);
+        list.push({ nombre: "Registro", url: REG_URL, orden: maxOrden+1 });
       }
-    } catch { /* ignorar: si no existe el archivo, no se agrega */ }
+    } catch {}
   }
 
-  // Ordenar por 'orden' si todos lo traen; si no, por nombre
+  // Orden + dedup por URL
   const hasOrden = list.every(x => Number.isFinite(x.orden));
-  list.sort((a, b) => hasOrden ? (a.orden - b.orden)
-                               : a.nombre.localeCompare(b.nombre, "es"));
-
-  // Quitar duplicados por URL
-  const seen = new Set(); const dedup = [];
+  list.sort((a,b)=> hasOrden ? (a.orden - b.orden) : a.nombre.localeCompare(b.nombre,"es"));
+  const seen = new Set(), dedup = [];
   for (const it of list) {
-    const key = (it.url || "").toLowerCase();
+    const key = (it.url||"").toLowerCase();
     if (key && !seen.has(key)) { seen.add(key); dedup.push(it); }
   }
   return dedup;
 }
 
-
 /* ==========================
-   NAVEGACIÓN + MENÚ DINÁMICO
+   NAVEGACIÓN + MENU
    ========================== */
 const $menu = document.getElementById("menu_principal");
 const $btnMenuRefresh = document.getElementById("btn-menu-refresh");
 const $chkMenuAuto = document.getElementById("chk-menu-autorefresh");
 
+// AbortControllers + cache de parciales                                            // [CHANGE]
+let menuFetchCtrl = null;
+let pageFetchCtrl = null;
+const partialCache = new Map(); // url -> { html, ts }
+const PARTIAL_TTL_MS = 60_000;
+
+// Mini spinner
+function spinnerHTML(txt="Cargando…"){
+  return `<div role="status" aria-live="polite" style="padding:12px;display:flex;gap:10px;align-items:center">
+    <span class="spinner" style="width:16px;height:16px;border:2px solid #ddd;border-top-color:#111;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span>
+    <span>${escapeHtml(txt)}</span>
+  </div>`;
+}
+// inyecta keyframes del spinner una sola vez                                       // [CHANGE]
+(function ensureSpinnerKeyframes(){
+  if (document.getElementById("spin-style")) return;
+  const st = document.createElement("style");
+  st.id = "spin-style";
+  st.textContent = `@keyframes spin{to{transform:rotate(360deg)}}`;
+  document.head.appendChild(st);
+})();
+
 async function cargarPagina(pagina, pushState = true) {
   try {
     if (!/\.html(\?.*)?$/i.test(pagina)) throw new Error(`Solo .html (recibí: ${pagina})`);
+    const $root = document.getElementById("pagina");
+    $root.innerHTML = spinnerHTML("Cargando sección…");                           // [CHANGE]
+
+    // Cache TTL
     const resolved = new URL(pagina, document.baseURI).href;
-    const resp = await fetch(resolved, { cache: "no-cache" });
+    const cached = partialCache.get(resolved);
+    const now = Date.now();
+    if (cached && (now - cached.ts) < PARTIAL_TTL_MS) {
+      $root.innerHTML = cached.html;
+      postLoadHooks(pagina);
+      setActiveMenu(pagina);
+      if (pushState) history.pushState({ url: pagina }, "", `#${pagina}`);
+      return;
+    }
+
+    if (pageFetchCtrl) pageFetchCtrl.abort();                                     // [CHANGE]
+    pageFetchCtrl = new AbortController();
+
+    const resp = await fetch(resolved, { cache: "no-cache", signal: pageFetchCtrl.signal });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} al pedir ${resolved}`);
     const html = await resp.text();
-    document.getElementById("pagina").innerHTML = html;
+    partialCache.set(resolved, { html, ts: now });                                 // [CHANGE]
+    $root.innerHTML = html;
 
-    // Hooks: inicializar lógicas si la página cargada las tiene
-    if (typeof initFormularioSiExiste === "function")      initFormularioSiExiste();
-    if (typeof initRegistroFormSiExiste === "function")    initRegistroFormSiExiste();
-
+    postLoadHooks(pagina);                                                         // [CHANGE]
     setActiveMenu(pagina);
     if (pushState) history.pushState({ url: pagina }, "", `#${pagina}`);
   } catch (e) {
+    if (e.name === "AbortError") return;                                          // [CHANGE]
     document.getElementById("pagina").innerHTML =
 `<pre style="white-space:pre-wrap;color:#b00020;background:#fff3f3;border-radius:8px;padding:12px">
 Error: no se pudo cargar la página.
@@ -143,6 +208,15 @@ Ruta solicitada: ${pagina}
 </pre>`;
     console.error("[cargarPagina] fallo:", e);
   }
+}
+
+// Hooks por página centralizados                                                   // [CHANGE]
+function postLoadHooks(pagina){
+  if (/catalogo\.html$/i.test(pagina)) initCatalogoSiExiste();
+  if (/instructor\.html$/i.test(pagina)) initInstructorSiExiste();
+  if (/formulario\.html$/i.test(pagina)) initFormularioSiExiste();
+  if (/registro\.html$/i.test(pagina)) initRegistroFormSiExiste();
+  if (/inicio\.html$/i.test(pagina)) initInicioDemo();
 }
 
 function renderMenu(items) {
@@ -160,17 +234,19 @@ function renderMenu(items) {
 
 async function cargarMenu() {
   try {
-    const res = await fetch(MENU_API, { headers: authHeaders() });
+    if (menuFetchCtrl) menuFetchCtrl.abort();                                     // [CHANGE]
+    menuFetchCtrl = new AbortController();
+    const res = await fetch(MENU_API, { headers: authHeaders(), signal: menuFetchCtrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const apiItems = await res.json();
-    const items = await ensureMenuCompleto(apiItems);   // ← aquí
+    const items = await ensureMenuCompleto(apiItems);
     renderMenu(items);
   } catch (err) {
+    if (err?.name === "AbortError") return;                                       // [CHANGE]
     console.warn("Menu API no disponible, usando fallback.", err);
-    renderMenu(FALLBACK_MENU); // El fallback ya incluye "Registro"
+    renderMenu(FALLBACK_MENU);
   }
 }
-
 
 $menu.addEventListener("click", (ev) => {
   const liOrA = ev.target.closest("li, a[data-url]");
@@ -193,8 +269,8 @@ function initMenuToggle() {
   btn.addEventListener("click", () => $menu.classList.toggle("show"));
 }
 
-$btnMenuRefresh.addEventListener("click", cargarMenu);
-setInterval(() => { if ($chkMenuAuto.checked) cargarMenu(); }, 10000);
+$btnMenuRefresh?.addEventListener("click", cargarMenu);
+setInterval(() => { if ($chkMenuAuto?.checked) cargarMenu(); }, 10000);
 
 window.addEventListener("popstate", () => {
   const url = location.hash.replace(/^#/, "") || "paginas/inicio.html";
@@ -206,176 +282,243 @@ window.addEventListener("hashchange", () => {
 });
 
 /* ==========================
-   DOM + API CURSOS (ADAPTADO)
+   LISTADO GENERAL DE CURSOS (Catálogo)
    ========================== */
-// Selección (rubro de la rúbrica)
-const titulo       = document.getElementById("titulo-pagina");
-const descripcion  = document.querySelector(".descripcion");
-const listaCursos  = document.getElementById("lista-cursos");
-const nombreInput  = document.getElementById("curso-nombre");
-const descInput    = document.getElementById("curso-desc");
-const btnCrear     = document.getElementById("btn-crear");
-const btnEliminarU = document.getElementById("btn-eliminar-ultimo");
-const btnColor     = document.getElementById("btn-cambiar-color");
-const btnActualizar= document.getElementById("btn-actualizar");
-const btnToggleVis = document.getElementById("btn-toggle-visibility");
-const chkAuto      = document.getElementById("chk-autorefresh");
+const catalogPaging = { page: 0, size: 4, totalPages: 0, totalElements: 0 };
+let lastCatalogFilters = { q:"", categoria:"", nivel:"" };
+let catalogFetchCtrl = null;                                                      // [CHANGE]
+let categoriasCargadas = false;                                                   // [CHANGE]
 
-// Demostración de selección por tag/class
-const todosLosBotones = document.getElementsByTagName("button");
-const descripciones   = document.getElementsByClassName("descripcion");
-
-// Estilos dinámicos del título (mouseover/out)
-titulo.addEventListener("mouseover", () => { titulo.style.color = "yellow"; });
-titulo.addEventListener("mouseout",  () => { titulo.style.color = "white";  });
-if (descripcion) descripcion.style.fontSize = "16px";
-
-// Estado simple de paginación (coincide con tu PageResponse)
-const paging = {
-  page: 0,
-  size: 5,
-  totalPages: 0,
-  totalElements: 0
-};
-
-// Controles de paginación (creados dinámicamente)
-let $paginacion = null;
-function ensurePaginacionUI() {
-  if ($paginacion) return;
-  $paginacion = document.createElement("div");
-  $paginacion.style.marginTop = "10px";
-  $paginacion.style.display = "flex";
-  $paginacion.style.alignItems = "center";
-  $paginacion.style.gap = "8px";
-
-  const btnPrev = document.createElement("button");
-  btnPrev.textContent = "« Anterior";
-  btnPrev.addEventListener("click", async () => {
-    if (paging.page > 0) { paging.page--; await listarCursosAPI(); }
-  });
-
-  const btnNext = document.createElement("button");
-  btnNext.textContent = "Siguiente »";
-  btnNext.addEventListener("click", async () => {
-    if (paging.page < paging.totalPages - 1) { paging.page++; await listarCursosAPI(); }
-  });
-
-  const info = document.createElement("span");
-  info.id = "page-info";
-
-  $paginacion.appendChild(btnPrev);
-  $paginacion.appendChild(info);
-  $paginacion.appendChild(btnNext);
-  listaCursos.parentElement.appendChild($paginacion);
-}
-function renderInfoPaginacion() {
-  const info = document.getElementById("page-info");
-  if (!info) return;
-  info.textContent = `Página ${paging.page + 1} de ${Math.max(paging.totalPages, 1)} — ${paging.totalElements} curso(s)`;
-}
-
-// Título dinámico con total
-function actualizarTitulo() {
-  titulo.textContent = `Página de prueba (DOM + API de Cursos) — ${paging.totalElements} curso(s)`;
-}
-
-/** Renderiza cursos (con botones: Editar, Publicar, Archivar, Eliminar) */
-function renderCursos(cursos = []) {
-  listaCursos.innerHTML = "";
-  (cursos || []).forEach(c => {
-    const li = document.createElement("li");
-    li.classList.add("curso");
-
-    const texto = document.createElement("span");
-    const title = c.titulo ?? c.nombre ?? "(sin título)";
-    const desc  = c.descripcion ? ` — ${c.descripcion}` : "";
-    texto.innerText = `${title}${desc}`;
-
-    const badge = document.createElement("span");
-    badge.classList.add("badge-id");
-    badge.innerText = c.id ? `id: ${c.id}` : "";
-
-    const acciones = document.createElement("div");
-    acciones.classList.add("acciones");
-
-    // EDITAR (PUT)
-    const btnEdit = document.createElement("button");
-    btnEdit.innerText = "Editar (API)";
-    btnEdit.addEventListener("click", async () => {
-      await editarCursoUI(c);
-    });
-
-    // PUBLICAR (PATCH /{id}/publicar)
-    const btnPub = document.createElement("button");
-    btnPub.innerText = "Publicar (API)";
-    btnPub.addEventListener("click", async () => {
-      await publicarCursoAPI(c.id);
-      await listarCursosAPI();
-    });
-
-    // ARCHIVAR (PATCH /{id}/archivar)
-    const btnArc = document.createElement("button");
-    btnArc.innerText = "Archivar (API)";
-    btnArc.addEventListener("click", async () => {
-      await archivarCursoAPI(c.id);
-      await listarCursosAPI();
-    });
-
-    // ELIMINAR (DELETE)
-    const btnDel = document.createElement("button");
-    btnDel.innerText = "Eliminar (API)";
-    btnDel.addEventListener("click", async () => {
-      if (!c.id) return alert("No hay id para eliminar en la API.");
-      if (!confirm(`¿Eliminar curso "${title}"?`)) return;
-      await eliminarCursoAPI(c.id);
-      await listarCursosAPI();
-    });
-
-    acciones.appendChild(btnEdit);
-    acciones.appendChild(btnPub);
-    acciones.appendChild(btnArc);
-    acciones.appendChild(btnDel);
-    li.appendChild(texto);
-    li.appendChild(badge);
-    li.appendChild(acciones);
-    listaCursos.appendChild(li);
-  });
-
-  // Un pequeño estilo en los ítems
-  const lis = listaCursos.getElementsByTagName("li");
-  for (let i = 0; i < lis.length; i++) lis[i].style.borderColor = "#ccc";
-}
-
-/** GET cursos → PageResponse */
-async function listarCursosAPI() {
+async function listarCursosAPI({ page=0, size=4, categoria="", nivel="", q="" } = {}) {
   try {
-    ensurePaginacionUI();
-    const qs = new URLSearchParams({ page: String(paging.page), size: String(paging.size) });
-    const res = await fetch(`${CURSOS_API}?${qs.toString()}`, { headers: authHeaders() });
+    if (catalogFetchCtrl) catalogFetchCtrl.abort();                               // [CHANGE]
+    catalogFetchCtrl = new AbortController();
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("size", String(size));
+    if (categoria) qs.set("categoria", categoria);
+    if (nivel) qs.set("nivel", nivel);
+    if (q) qs.set("q", q);
+    const res = await fetch(`${CURSOS_API}?${qs.toString()}`, { headers: authHeaders(), signal: catalogFetchCtrl.signal });
     if (res.status === 204) {
-      paging.totalElements = 0; paging.totalPages = 1;
-      renderCursos([]); actualizarTitulo(); renderInfoPaginacion(); return;
+      return { content: [], page, size, totalElements: 0, totalPages: 1 };
     }
     if (!res.ok) throw new Error(`GET cursos: ${res.status}`);
     const data = await res.json();
 
-    const arr = Array.isArray(data?.content) ? data.content : [];
-    paging.page = Number.isFinite(data?.page) ? data.page : paging.page;
-    paging.size = Number.isFinite(data?.size) ? data.size : paging.size;
-    paging.totalElements = Number.isFinite(data?.totalElements) ? data.totalElements : arr.length;
-    paging.totalPages = Number.isFinite(data?.totalPages) ? data.totalPages : 1;
+    // Compat mapping number/size/totalPages/totalElements                             // [CHANGE]
+    const content = Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
+    const pageNum   = Number.isFinite(data?.page) ? data.page : (Number.isFinite(data?.number) ? data.number : page);
+    const pageSize  = Number.isFinite(data?.size) ? data.size : (Number.isFinite(data?.pageSize) ? data.pageSize : size);
+    const totalEl   = Number.isFinite(data?.totalElements) ? data.totalElements : (Number.isFinite(data?.total) ? data.total : content.length);
+    let totalPg     = Number.isFinite(data?.totalPages) ? data.totalPages : 1;
+    if (!Number.isFinite(totalPg) || totalPg <= 0) totalPg = Math.max(1, Math.ceil((totalEl||0) / Math.max(1,pageSize)));
 
-    actualizarTitulo();
-    renderCursos(arr);
-    renderInfoPaginacion();
+    return { content, page: pageNum, size: pageSize, totalElements: totalEl, totalPages: totalPg };
   } catch (e) {
-    console.error(e);
-    renderCursos([]);
+    if (e?.name !== "AbortError") console.error(e);
+    return { content: [], page, size, totalElements: 0, totalPages: 1 };
   }
 }
 
-/** POST curso (usa tu DTO CrearCursoRequest) */
-async function crearCursoAPI(nombre, descripcion) {
+function ensureCatalogoScaffold() {
+  // Si el parcial no trae contenedores, los creamos
+  const $root = document.getElementById("pagina");
+  if (!document.getElementById("catalogo-wrap")) {
+    const html = `
+      <section id="catalogo-wrap">
+        <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 12px">
+          <h2 style="margin:0">Catálogo</h2>
+          <form id="catalogo-filtros" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="search" id="f-q" placeholder="Buscar..." />
+            <select id="f-categoria">
+              <option value="">Todas las categorías</option>
+            </select>
+            <select id="f-nivel">
+              <option value="">Todos los niveles</option>
+              <option value="PRINCIPIANTE">Principiante</option>
+              <option value="INTERMEDIO">Intermedio</option>
+              <option value="AVANZADO">Avanzado</option>
+            </select>
+            <button id="f-apply">Filtrar</button>
+            <button id="f-clear" type="button">Limpiar</button>
+          </form>
+        </header>
+        <div id="catalogo-status" class="muted" role="status" aria-live="polite"></div>  <!-- [CHANGE] -->
+        <div id="catalogo-grid" class="grid4"></div>
+        <nav id="catalogo-pager" class="pager"></nav>
+      </section>`;
+    $root.innerHTML = html;
+  }
+}
+
+function setCatalogoStatus(txt){                                                  // [CHANGE]
+  const el = document.getElementById("catalogo-status");
+  if (el) el.innerHTML = txt ? escapeHtml(txt) : "";
+}
+
+function renderCatalogoGrid(cursos=[]) {
+  const $grid = document.getElementById("catalogo-grid");
+  const $pager = document.getElementById("catalogo-pager");
+  if (!$grid) return;
+
+  $grid.innerHTML = "";
+  (cursos||[]).forEach(c => {
+    const card = document.createElement("article");
+    card.className = "curso-card";
+    const title = c.titulo ?? c.nombre ?? "(sin título)";
+    card.innerHTML = `
+      <div class="curso-thumb"><img alt="${escapeHtml(title)}" src="${escapeHtml(courseImageUrl(c))}"></div>
+      <div class="curso-body">
+        <div class="title">${escapeHtml(title)}</div>
+        <div class="muted">${escapeHtml(truncate(c.descripcion || "", 120))}</div>
+        <div class="curso-meta">
+          <span class="badge">${escapeHtml(c.categoria || "GENERAL")}</span>
+          <span class="badge">${escapeHtml(c.nivel || "PRINCIPIANTE")}</span>
+          <span class="badge price">${(c.precio ?? 0) > 0 ? "$"+Number(c.precio).toFixed(2) : "Gratis"}</span>
+        </div>
+        <details class="curso-detalle">
+          <summary>Ver más</summary>
+          <div class="muted" style="margin-top:6px">
+            <div><strong>Idioma:</strong> ${escapeHtml(c.idioma || "es-EC")}</div>
+            ${c.idInstructor ? `<div><strong>Instructor:</strong> ${escapeHtml(c.idInstructor)}</div>` : ""}
+            ${c.estado ? `<div><strong>Estado:</strong> ${escapeHtml(String(c.estado))}</div>` : ""}
+            ${c.tags ? `<div><strong>Tags:</strong> ${escapeHtml(Array.isArray(c.tags)?c.tags.join(", "):String(c.tags))}</div>` : ""}
+            ${c.createdAt ? `<div><strong>Creado:</strong> ${escapeHtml(String(c.createdAt))}</div>` : ""}
+            ${c.updatedAt ? `<div><strong>Actualizado:</strong> ${escapeHtml(String(c.updatedAt))}</div>` : ""}
+          </div>
+        </details>
+      </div>
+    `;
+    $grid.appendChild(card);
+  });
+  attachImageErrorHandlers($grid);                                                // [CHANGE]
+
+  // Paginador accesible + rango mostrador                                           // [CHANGE]
+  if ($pager) {
+    const p = catalogPaging.page, tp = Math.max(catalogPaging.totalPages, 1);
+    const size = catalogPaging.size, total = catalogPaging.totalElements;
+    const from = total ? (p*size + 1) : 0;
+    const to = Math.min(total, (p+1)*size);
+
+    $pager.innerHTML = "";
+    const mkBtn = (txt, page, disabled=false, on=false, label="") => {
+      const b = document.createElement("button");
+      b.textContent = txt;
+      b.setAttribute("aria-label", label || txt);
+      if (on) b.classList.add("on");
+      if (!disabled) {
+        b.addEventListener("click", async () => {
+          catalogPaging.page = page;
+          await loadCatalogo();
+        });
+      } else {
+        b.disabled = true;
+      }
+      return b;
+    };
+    $pager.appendChild(mkBtn("«", 0, p===0, false, "Primera página"));
+    $pager.appendChild(mkBtn("‹", Math.max(0,p-1), p===0, false, "Página anterior"));
+
+    const info = document.createElement("span");
+    info.style.margin = "0 8px";
+    info.textContent = `Mostrando ${from}–${to} de ${total || 0} (Página ${p+1} de ${tp})`;
+    $pager.appendChild(info);
+
+    $pager.appendChild(mkBtn("›", Math.min(tp-1,p+1), p>=tp-1, false, "Página siguiente"));
+    $pager.appendChild(mkBtn("»", tp-1, p>=tp-1, false, "Última página"));
+  }
+}
+
+async function loadCatalogo() {
+  setCatalogoStatus("Cargando cursos…");                                          // [CHANGE]
+  const { q, categoria, nivel } = lastCatalogFilters;
+  const data = await listarCursosAPI({
+    page: catalogPaging.page,
+    size: catalogPaging.size,
+    q, categoria, nivel
+  });
+  catalogPaging.page = data.page;
+  catalogPaging.size = data.size;
+  catalogPaging.totalElements = data.totalElements;
+  catalogPaging.totalPages = data.totalPages;
+
+  // Llenado dinámico de categorías (una sola vez por sesión)                        // [CHANGE]
+  if (!categoriasCargadas) {
+    await tryPopulateCategorias(data.content);
+    categoriasCargadas = true;
+  }
+
+  renderCatalogoGrid(data.content);
+  setCatalogoStatus(data.totalElements ? "" : "No hay cursos para los filtros aplicados."); // [CHANGE]
+}
+
+// Intenta cargar categorías desde endpoint; si no, infiere del contenido            // [CHANGE]
+async function tryPopulateCategorias(content){
+  const $c = document.getElementById("f-categoria");
+  if (!$c) return;
+  // Evita duplicar si ya hay más de 1 opción
+  if ($c.options.length > 1) return;
+
+  let cats = new Set();
+  try {
+    const r = await fetch(CATEGORIAS_API, { headers: authHeaders() });
+    if (r.ok) {
+      const arr = await r.json();
+      (arr||[]).forEach(x => cats.add(String(x.nombre || x).trim()));
+    }
+  } catch {}
+  if (cats.size === 0) {
+    (content||[]).forEach(c => { if (c?.categoria) cats.add(String(c.categoria)); });
+  }
+  for (const cat of Array.from(cats).sort((a,b)=>a.localeCompare(b,"es"))) {
+    if (!cat) continue;
+    const opt = document.createElement("option");
+    opt.value = cat; opt.textContent = cat;
+    $c.appendChild(opt);
+  }
+}
+
+function initCatalogoSiExiste() {
+  ensureCatalogoScaffold();
+
+  const $f = document.getElementById("catalogo-filtros");
+  const $q = document.getElementById("f-q");
+  const $c = document.getElementById("f-categoria");
+  const $n = document.getElementById("f-nivel");
+  const $apply = document.getElementById("f-apply");
+  const $clear = document.getElementById("f-clear");
+
+  if ($apply) {
+    $apply.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      lastCatalogFilters = {
+        q: ($q?.value||"").trim(),
+        categoria: $c?.value || "",
+        nivel: $n?.value || ""
+      };
+      catalogPaging.page = 0;
+      loadCatalogo();
+    });
+  }
+  $clear?.addEventListener("click", () => {
+    if ($q) $q.value = "";
+    if ($c) $c.value = "";
+    if ($n) $n.value = "";
+    lastCatalogFilters = { q:"", categoria:"", nivel:"" };
+    catalogPaging.page = 0;
+    loadCatalogo();
+  });
+
+  // Primera carga
+  loadCatalogo();
+}
+
+/* ==========================
+   CRUD CURSOS (Instructor)
+   ========================== */
+async function crearCursoAPI(nombre, descripcion, categoria, nivel, idioma, precio, opts={autopublicar:false}) { // [CHANGE]
   try {
     if (!nombre || nombre.trim().length < 3) {
       alert("El título debe tener al menos 3 caracteres."); return null;
@@ -383,12 +526,11 @@ async function crearCursoAPI(nombre, descripcion) {
     const payload = {
       titulo: nombre.trim(),
       descripcion: (descripcion || "").trim() || null,
-      categoria: "GENERAL",
-      nivel: "PRINCIPIANTE",
-      idioma: "es-EC",
-      precio: 0
+      categoria: categoria?.trim() || "GENERAL",
+      nivel: nivel?.trim() || "PRINCIPIANTE",
+      idioma: idioma?.trim() || "es-EC",
+      precio: Number(precio) || 0
     };
-
     const res = await fetch(CURSOS_API, {
       method: "POST",
       headers: authHeaders(),
@@ -399,9 +541,8 @@ async function crearCursoAPI(nombre, descripcion) {
       throw new Error(`POST curso: ${res.status} ${txt}`);
     }
     const creado = await res.json();
-
-    if (AUTO_PUBLICAR_TRAS_CREAR && creado?.id) {
-      try { await publicarCursoAPI(creado.id); } catch (e) { console.warn("No se pudo publicar automáticamente:", e?.message || e); }
+    if (opts?.autopublicar && creado?.id) {                                     // [CHANGE]
+      try { await publicarCursoAPI(creado.id); } catch (e) { console.warn("No se pudo publicar automáticamente:", e?.message||e); }
     }
     return creado;
   } catch (e) {
@@ -410,9 +551,12 @@ async function crearCursoAPI(nombre, descripcion) {
     return null;
   }
 }
-
-/** PUT curso (Actualiza con tu DTO ActualizarCursoRequest) */
 async function actualizarCursoAPI(id, { titulo, descripcion, categoria, nivel, idioma, precio }) {
+  // Validación básica adicional                                                       // [CHANGE]
+  if (precio != null) {
+    const p = Number(precio);
+    if (!Number.isFinite(p) || p < 0) throw new Error("Precio inválido");
+  }
   const payload = { titulo, descripcion, categoria, nivel, idioma, precio };
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
     method: "PUT",
@@ -425,8 +569,6 @@ async function actualizarCursoAPI(id, { titulo, descripcion, categoria, nivel, i
   }
   return await res.json();
 }
-
-/** PATCH estado (genérico) -> /{id}/estado con {estado} */
 async function patchEstadoCursoAPI(id, estado) {
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/estado`, {
     method: "PATCH",
@@ -439,8 +581,6 @@ async function patchEstadoCursoAPI(id, estado) {
   }
   return await res.json();
 }
-
-/** PATCH publicar (sin body) -> /{id}/publicar */
 async function publicarCursoAPI(id) {
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/publicar`, {
     method: "PATCH",
@@ -452,8 +592,6 @@ async function publicarCursoAPI(id) {
   }
   return await res.json();
 }
-
-/** PATCH archivar (sin body) -> /{id}/archivar */
 async function archivarCursoAPI(id) {
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/archivar`, {
     method: "PATCH",
@@ -465,8 +603,6 @@ async function archivarCursoAPI(id) {
   }
   return await res.json();
 }
-
-/** DELETE */
 async function eliminarCursoAPI(id) {
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
     method: "DELETE",
@@ -476,6 +612,171 @@ async function eliminarCursoAPI(id) {
     const txt = await res.text().catch(() => "");
     throw new Error(`DELETE curso: ${res.status} ${txt}`);
   }
+}
+
+async function listarCursosPorInstructor({ page=0, size=6 } = {}) {
+  // Usa /buscar con idInstructor para tus propios cursos
+  const idInstructor = currentInstructorId();
+  const qs = new URLSearchParams({ page:String(page), size:String(size), idInstructor });
+  const url = `${CURSOS_BUSCAR_API}?${qs.toString()}`;
+  try {
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`GET buscar cursos por instructor: ${res.status}`);
+    const data = await res.json(); // PageResponse o similar
+    const content = Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
+    const pageNum   = Number.isFinite(data?.page) ? data.page : (Number.isFinite(data?.number) ? data.number : page); // [CHANGE]
+    const pageSize  = Number.isFinite(data?.size) ? data.size : (Number.isFinite(data?.pageSize) ? data.pageSize : size);
+    const totalEl   = Number.isFinite(data?.totalElements) ? data.totalElements : (Number.isFinite(data?.total) ? data.total : content.length);
+    let totalPg     = Number.isFinite(data?.totalPages) ? data.totalPages : Math.max(1, Math.ceil((totalEl||0)/Math.max(1,pageSize)));
+    return { content, page: pageNum, size: pageSize, totalElements: totalEl, totalPages: totalPg };
+  } catch (e) {
+    console.error(e);
+    return { content:[], page, size, totalElements:0, totalPages:1 };
+  }
+}
+
+function ensureInstructorScaffold() {
+  const root = document.getElementById("pagina");
+  if (!document.getElementById("inst-wrap")) {
+    root.innerHTML = `
+      <section id="inst-wrap">
+        <header class="view-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <h2 style="margin:0">Área de instructor</h2>
+          <p class="muted">Crea cursos y gestiona su publicación.</p>
+        </header>
+
+        <article class="card form" style="margin:10px 0 16px">
+          <h3>Crear nuevo curso</h3>
+          <form id="form-curso" class="two-col" autocomplete="off">
+            <label>Título
+              <input type="text" id="i-titulo" required minlength="3" placeholder="p.ej. Java desde Cero" />
+            </label>
+            <label>Descripción
+              <input type="text" id="i-desc" placeholder="Resumen breve" />
+            </label>
+            <label>Categoría
+              <input type="text" id="i-cat" required placeholder="GENERAL / Programación..." />
+            </label>
+            <label>Nivel
+              <select id="i-nivel">
+                <option value="PRINCIPIANTE">PRINCIPIANTE</option>
+                <option value="INTERMEDIO">INTERMEDIO</option>
+                <option value="AVANZADO">AVANZADO</option>
+              </select>
+            </label>
+            <label>Idioma
+              <input type="text" id="i-idioma" value="es-EC" />
+            </label>
+            <label>Precio
+              <input type="number" id="i-precio" min="0" step="0.01" value="0" />
+            </label>
+            <div class="col-span">
+              <label class="switch">
+                <input type="checkbox" id="i-autopub" checked />
+                <span>Publicar automáticamente tras crear</span>
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn primary" id="i-crear">Crear</button>
+            </div>
+            <p id="i-estado" class="form-state" role="status" aria-live="polite"></p>
+          </form>
+        </article>
+
+        <section>
+          <header class="view-header">
+            <h3>Mis cursos</h3>
+          </header>
+          <div id="inst-grid" class="grid4"></div>
+        </section>
+      </section>`;
+  }
+}
+
+function renderInstructorCursos(list=[]) {
+  const grid = document.getElementById("inst-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  (list||[]).forEach(c => {
+    const card = document.createElement("article");
+    card.className = "curso-card";
+    card.innerHTML = `
+      <div class="curso-thumb"><img alt="${escapeHtml(c.titulo ?? "(sin título)")}" src="${escapeHtml(courseImageUrl(c))}"></div>
+      <div class="curso-body">
+        <div class="title">${escapeHtml(c.titulo ?? "(sin título)")}</div>
+        <div class="muted">${escapeHtml(truncate(c.descripcion||"", 110))}</div>
+        <div class="curso-meta">
+          <span class="badge">${escapeHtml(c.categoria||"GENERAL")}</span>
+          <span class="badge">${escapeHtml(c.nivel||"PRINCIPIANTE")}</span>
+          <span class="badge price">${(c.precio ?? 0) > 0 ? "$"+Number(c.precio).toFixed(2) : "Gratis"}</span>
+        </div>
+        <div class="actions" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-primary" data-act="editar">Editar</button>
+          <button class="btn ghost" data-act="publicar">Publicar</button>
+          <button class="btn ghost" data-act="archivar">Archivar</button>
+          <button class="btn ghost" data-act="eliminar">Eliminar</button>
+        </div>
+      </div>
+    `;
+    attachImageErrorHandlers(card);                                              // [CHANGE]
+    card.querySelector('[data-act="editar"]').addEventListener("click", async () => editarCursoUI(c));
+    card.querySelector('[data-act="publicar"]').addEventListener("click", async () => { await publicarCursoAPI(c.id); await loadInstructorCursos(); });
+    card.querySelector('[data-act="archivar"]').addEventListener("click", async () => { await archivarCursoAPI(c.id); await loadInstructorCursos(); });
+    card.querySelector('[data-act="eliminar"]').addEventListener("click", async () => {
+      if (!confirm(`¿Eliminar curso "${c.titulo}"?`)) return;
+      await eliminarCursoAPI(c.id);
+      await loadInstructorCursos();
+    });
+    grid.appendChild(card);
+  });
+}
+
+async function loadInstructorCursos() {
+  const data = await listarCursosPorInstructor({ page:0, size:12 });
+  renderInstructorCursos(data.content);
+}
+
+function initInstructorSiExiste() {
+  ensureInstructorScaffold();
+
+  // Gate si no hay JWT (evita filtrar con instructor ficticio en producción)        // [CHANGE]
+  if (!getJwt() && !ALLOW_INSTRUCTOR_WITHOUT_JWT) {
+    const form = document.getElementById("form-curso");
+    const grid = document.getElementById("inst-grid");
+    if (form) {
+      form.querySelectorAll("input,select,button").forEach(el=>el.disabled = true);
+      const msg = document.getElementById("i-estado");
+      if (msg) msg.textContent = "Inicia sesión para crear y gestionar tus cursos.";
+    }
+    if (grid) grid.innerHTML = `<div class="muted">No disponible sin autenticación.</div>`;
+    return;
+  }
+
+  const $tit = document.getElementById("i-titulo");
+  const $des = document.getElementById("i-desc");
+  const $cat = document.getElementById("i-cat");
+  const $niv = document.getElementById("i-nivel");
+  const $idi = document.getElementById("i-idioma");
+  const $pre = document.getElementById("i-precio");
+  const $aut = document.getElementById("i-autopub");
+  const $btn = document.getElementById("i-crear");
+  const $msg = document.getElementById("i-estado");
+
+  if ($btn) {
+    $btn.addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      const creado = await crearCursoAPI(
+        $tit.value, $des.value, $cat.value, $niv.value, $idi.value, $pre.value,
+        { autopublicar: !!$aut?.checked }                                       // [CHANGE] (un solo lugar)
+      );
+      if (creado) {
+        $msg.textContent = "¡Curso creado!";
+        $tit.value = ""; $des.value = ""; $cat.value = ""; $pre.value = "0";
+        loadInstructorCursos();
+      }
+    });
+  }
+  loadInstructorCursos();
 }
 
 /* ===== UI para EDITAR (prompt rápido sin tocar HTML) ===== */
@@ -491,60 +792,26 @@ async function editarCursoUI(curso) {
     if (nivel == null) return;
     const idioma = prompt("Idioma (es o es-EC):", curso.idioma ?? "es-EC");
     if (idioma == null) return;
-    const precio = Number(prompt("Precio (>=0):", String(curso.precio ?? 0)));
+    const precioStr = prompt("Precio (>=0):", String(curso.precio ?? 0));
+    if (precioStr == null) return;
+    const precio = Number(precioStr);
     if (Number.isNaN(precio) || precio < 0) { alert("Precio inválido"); return; }
 
     await actualizarCursoAPI(curso.id, { titulo, descripcion, categoria, nivel, idioma, precio });
-    await listarCursosAPI();
+    await loadInstructorCursos();
   } catch (e) {
     console.error(e);
     alert("No se pudo actualizar. Verifica permisos/JWT y datos.");
   }
 }
 
-/* ===== Eventos UI ===== */
-btnCrear.addEventListener("click", async () => {
-  const nombre = (nombreInput.value || "").trim();
-  const desc   = (descInput.value || "").trim();
-  if (!getJwt()) {
-    console.warn("No hay JWT en localStorage. Si tu API exige token, añade uno con localStorage.setItem('jwt','TU_TOKEN_JWT').");
-  }
-  const creado = await crearCursoAPI(nombre, desc);
-  if (creado) {
-    paging.page = 0;
-    await listarCursosAPI();
-    nombreInput.value = ""; descInput.value = "";
-  }
-});
-
-nombreInput.addEventListener("keydown", (e) => { if (e.key === "Enter") btnCrear.click(); });
-
-btnEliminarU.addEventListener("click", () => {
-  if (listaCursos.lastElementChild) listaCursos.removeChild(listaCursos.lastElementChild);
-});
-
-btnColor.addEventListener("click", () => { descripcion.classList.toggle("resaltado"); });
-
-btnToggleVis.addEventListener("click", () => { listaCursos.classList.toggle("oculto"); });
-
-btnActualizar.addEventListener("click", async () => {
-  paging.page = 0;
-  await listarCursosAPI();
-});
-
-setInterval(() => { if (chkAuto.checked) listarCursosAPI(); }, 10000);
-
 /* ==========================
-   FORM CONTACTO: validación básica + envío
+   FORM CONTACTO: validación + envío
+   (se activa solo si existe el parcial)
    ========================== */
-/**
- * Inicializa validación del formulario de contacto si existe en la página.
- * Valida: nombre (>=3), email (formato), asunto (>=5), mensaje (>=10), aceptar términos.
- * Envío: POST JSON a FORM_API. Muestra estado en #form-estado.
- */
 function initFormularioSiExiste() {
   const $form = document.querySelector("#form-demo");
-  if (!$form) return; // La página actual no es el formulario
+  if (!$form) return;
 
   const $estado   = $form.querySelector("#form-estado");
   const $nombre   = $form.querySelector("#f-nombre");
@@ -644,23 +911,23 @@ function initFormularioSiExiste() {
 }
 
 /* ==========================
-   REGISTRO: validación + submit a /api/auth/register
-   ===========================
-
-   ✔ Validaciones: nombre>=3, email formato, password>=8, confirmación igual, aceptar términos.
-   ✔ Captura: input/blur para feedback + submit antes de enviar.
-*/
+   REGISTRO (opcional)
+   ========================== */
 function initRegistroFormSiExiste() {
   const $form = document.querySelector("#form-register");
-  if (!$form) return; // La página actual no tiene el formulario de registro
+  if (!$form) return;
 
   const $estado = $form.querySelector("#register-estado");
   const $btn    = $form.querySelector("#btn-register");
+  const $clear  = $form.querySelector("#btn-register-clear");
   const $nombre = $form.querySelector("#fr-nombre");
   const $email  = $form.querySelector("#fr-email");
   const $pass1  = $form.querySelector("#fr-password");
   const $pass2  = $form.querySelector("#fr-password2");
   const $acepto = $form.querySelector("#fr-acepto");
+  const $t1     = $form.querySelector("#toggle-pass1");
+  const $t2     = $form.querySelector("#toggle-pass2");
+  const $meter  = $form.querySelector("#pass-meter");
 
   function setError($input, msg, errId) {
     const $err = $form.querySelector(`#${errId}`);
@@ -670,7 +937,6 @@ function initRegistroFormSiExiste() {
       $input.classList.toggle("is-valid", !msg && ($input.value || "").trim() !== "");
     }
   }
-
   function validarNombre() {
     const v = ($nombre.value || "").trim();
     if (!v) return setError($nombre, "El nombre es obligatorio.", "errr-nombre");
@@ -705,19 +971,49 @@ function initRegistroFormSiExiste() {
     return ok;
   }
 
-  // Feedback en tiempo real
+  // ===== UX extra: medidor de fuerza + toggles =====
+  function strengthScore(s){
+    let sc = 0;
+    if (s.length >= 8) sc++;
+    if (/[A-Z]/.test(s)) sc++;
+    if (/[a-z]/.test(s)) sc++;
+    if (/\d/.test(s)) sc++;
+    if (/[^A-Za-z0-9]/.test(s)) sc++;
+    return Math.min(sc, 5); // 0..5
+  }
+  function renderMeter(){
+    if (!$meter) return;
+    const s = strengthScore($pass1.value || "");
+    const pct = s * 20; // 0..100%
+    $meter.style.width = pct + "%";
+  }
+  $t1?.addEventListener("click", ()=>{
+    if (!$pass1) return;
+    const show = $pass1.type === "password";
+    $pass1.type = show ? "text" : "password";
+    $t1.textContent = show ? "Ocultar" : "Mostrar";
+  });
+  $t2?.addEventListener("click", ()=>{
+    if (!$pass2) return;
+    const show = $pass2.type === "password";
+    $pass2.type = show ? "text" : "password";
+    $t2.textContent = show ? "Ocultar" : "Mostrar";
+  });
+
   $nombre.addEventListener("input", validarNombre);
   $email .addEventListener("input", validarEmail);
-  $pass1 .addEventListener("input", () => { validarPassword(); validarPassword2(); });
+  $pass1 .addEventListener("input", () => { validarPassword(); validarPassword2(); renderMeter(); });
   $pass2 .addEventListener("input", validarPassword2);
   $acepto.addEventListener("change", validarAcepto);
+  renderMeter();
 
-  $nombre.addEventListener("blur", validarNombre);
-  $email .addEventListener("blur", validarEmail);
-  $pass1 .addEventListener("blur", validarPassword);
-  $pass2 .addEventListener("blur", validarPassword2);
+  $clear?.addEventListener("click", () => {
+    // reset visual y medidor
+    $estado.textContent = "";
+    [$nombre,$email,$pass1,$pass2].forEach($i => $i.classList.remove("is-valid","is-invalid"));
+    renderMeter();
+  });
 
-  // Envío
   $form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
 
@@ -729,10 +1025,7 @@ function initRegistroFormSiExiste() {
       !$pass2 .classList.contains("is-invalid") &&
       validarAcepto();
 
-    if (!ok) {
-      $estado.textContent = "Corrige los campos marcados en rojo.";
-      return;
-    }
+    if (!ok) { $estado.textContent = "Corrige los campos marcados en rojo."; return; }
 
     const payload = {
       nombre:  $nombre.value.trim(),
@@ -762,6 +1055,7 @@ function initRegistroFormSiExiste() {
         $estado.textContent = "¡Registro exitoso! Ya puedes usar la app.";
         $form.reset();
         [$nombre,$email,$pass1,$pass2].forEach($i => $i.classList.remove("is-valid","is-invalid"));
+        renderMeter();
       } else {
         const txt = await res.text().catch(() => "");
         $estado.textContent = txt || "No se pudo registrar. Intenta más tarde.";
@@ -778,27 +1072,31 @@ function initRegistroFormSiExiste() {
   });
 }
 
+
 /* ==========================
    INICIALIZACIÓN
    ========================== */
 document.addEventListener("DOMContentLoaded", async () => {
+  // Mantiene tu header/título con hover (si existe)
+  const titulo = document.getElementById("titulo-pagina");
+  titulo?.addEventListener("mouseover", () => { titulo.style.color = "yellow"; });
+  titulo?.addEventListener("mouseout",  () => { titulo.style.color = "white";  });
+
   initMenuToggle();
   await cargarMenu();
 
   const initial = location.hash.replace(/^#/, "") || "paginas/inicio.html";
   await cargarPagina(initial, false);
-
-  await listarCursosAPI();
 });
 
 /* ===== Debug util (opcional) ===== */
 window.debugRutas = async function () {
   const rutas = [
     "paginas/inicio.html",
-    "paginas/mision-vision.html",
-    "paginas/contacto.html",
-    "paginas/formulario.html"
-    // ,"paginas/registro.html" // descomenta si creaste esa página
+    "paginas/catalogo.html",
+    "paginas/instructor.html",
+    "paginas/formulario.html",
+    "paginas/registro.html"
   ];
   for (const ruta of rutas) {
     try {
@@ -807,4 +1105,97 @@ window.debugRutas = async function () {
       console.log(r.status, u.href);
     } catch (err) { console.error("Fallo", ruta, err); }
   }
-};
+};    
+/* ==========================
+   DEMO INICIO: DOM + EVENTOS + ESTILOS
+   ========================== */
+function initInicioDemo(){
+  // Selecciones por id
+  const h1 = document.getElementById("home-title");
+  const input = document.getElementById("demo-input");
+  const form = document.getElementById("demo-form");
+  const list = document.getElementById("demo-list");
+  const count = document.getElementById("demo-count");
+
+  // Selecciones por class y tag (para la rúbrica)
+  const cards = document.getElementsByClassName("card");
+  const figures = document.getElementsByTagName("figure");
+
+  // querySelector (id + class combinados)
+  const btnAdd = document.querySelector("#btn-add");
+  const btnClear = document.querySelector("#btn-clear");
+  const btnColor = document.querySelector("#btn-color");
+  const btnSize = document.querySelector("#btn-size");
+  const btnToggle = document.querySelector("#btn-toggle");
+
+  // Documentación inline (innerHTML)
+  if (cards?.length) {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.innerHTML = "Tip: esta tarjeta (<code>.card</code>) fue localizada con <code>getElementsByClassName</code>.";
+    cards[0].appendChild(note);
+  }
+  if (figures?.length) {
+    figures[0].title = "Figura localizada con getElementsByTagName";
+  }
+
+  function updateCount(){
+    const n = list.querySelectorAll("li").length; // querySelectorAll por tag
+    count.innerText = `${n} ${n === 1 ? "ítem" : "ítems"}`;
+  }
+
+  function addItem(text){
+    const t = String(text||"").trim();
+    if (!t) return;
+
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${escapeHtml(t)}</span>`;
+    // Botón eliminar
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "demo-remove";
+    del.innerText = "Eliminar";
+    del.addEventListener("click", () => {
+      li.remove();
+      updateCount();
+    });
+
+    li.appendChild(del);
+    list.appendChild(li);
+    updateCount();
+  }
+
+  function toggleList(){
+    // Cambia visibilidad dinámicamente
+    list.classList.toggle("is-hidden");
+  }
+
+  // Eventos
+  h1?.addEventListener("mouseover", () => { h1.style.color = "yellow"; });
+  h1?.addEventListener("mouseout",  () => { h1.style.color = ""; });
+
+  form?.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    addItem(input?.value);
+    if (input) input.value = "";
+    input?.focus();
+  });
+
+  input?.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      addItem(input.value);
+      input.value = "";
+    }
+  });
+
+  btnAdd?.addEventListener("click", (ev)=>{ ev.preventDefault(); addItem(input?.value); input && (input.value=""); });
+  btnClear?.addEventListener("click", ()=>{ list.innerHTML = ""; updateCount(); });
+  btnColor?.addEventListener("click", ()=>{ h1?.classList.toggle("title-colored"); });
+  btnSize?.addEventListener("click", ()=>{ h1?.classList.toggle("title-big"); });
+  btnToggle?.addEventListener("click", toggleList);
+
+  // Estado inicial
+  updateCount();
+}
+
