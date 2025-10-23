@@ -13,8 +13,19 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.cursosonline.cursosonlinejs.Servicios.LocalStorageService;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cursos")
@@ -25,13 +36,20 @@ public class CursoControlador {
     private final CursoRepositorio cursoRepo;
     private final UsuarioRepositorio usuarioRepo;
 
+    // Servicio de almacenamiento local (ajusta a Cloudinary/S3 si corresponde)
+    private final com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage;
+
     public CursoControlador(CursoServicio cursoServicio,
                             CursoRepositorio cursoRepo,
-                            UsuarioRepositorio usuarioRepo) {
+                            UsuarioRepositorio usuarioRepo,
+                            com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage) {
         this.cursoServicio = cursoServicio;
         this.cursoRepo = cursoRepo;
         this.usuarioRepo = usuarioRepo;
+        this.storage = storage;
     }
+
+    /* ====================== Helpers seguridad ====================== */
 
     private static boolean isAdmin() {
         Authentication a = SecurityContextHolder.getContext().getAuthentication();
@@ -48,9 +66,12 @@ public class CursoControlador {
         return curso != null && userOpt.get().getId().equals(curso.getIdInstructor());
     }
 
+    /* ====================== Endpoints CRUD ====================== */
+
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> crearCurso(@RequestBody @Valid CrearCursoRequest body) {
         var creado = cursoServicio.crearCursoDesdeDto(body);
+        // Si el DTO trae imagenPortadaUrl y tu servicio lo aplica, quedará guardado.
         URI location = URI.create("/api/v1/cursos/" + creado.getId());
         return ResponseEntity.created(location).body(creado);
     }
@@ -63,10 +84,9 @@ public class CursoControlador {
             @RequestParam(required = false, name = "q") String query,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size,
-            @RequestParam(defaultValue = "fechaCreacion,desc") String sort
+            @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         if (!isAdmin()) estado = "PUBLICADO";
-
         var result = cursoServicio.buscar(categoria, nivel, estado, query, page, size, sort);
         var resp = new PageResponse<>(
                 result.getContent(), page, size, result.getTotalElements(), result.getTotalPages(), sort
@@ -136,6 +156,8 @@ public class CursoControlador {
                 : ResponseEntity.notFound().build();
     }
 
+    /* ====================== Búsqueda avanzada ====================== */
+
     @GetMapping(value = "/buscar", produces = "application/json")
     public ResponseEntity<PageResponse<Curso>> buscarAvanzado(
             @RequestParam(required = false) String id,
@@ -156,9 +178,9 @@ public class CursoControlador {
     ) {
         if (!isAdmin()) estado = "PUBLICADO";
 
-        java.util.List<String> tagList = null;
+        List<String> tagList = null;
         if (tags != null && !tags.isBlank()) {
-            tagList = java.util.Arrays.stream(tags.split(","))
+            tagList = Arrays.stream(tags.split(","))
                     .map(String::trim).filter(s -> !s.isEmpty()).toList();
         }
 
@@ -174,13 +196,83 @@ public class CursoControlador {
         return ResponseEntity.ok(resp);
     }
 
+    /* ====================== Portada: archivo y por URL ====================== */
+
+    @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
+@PostMapping(value = "/{id}/portada", consumes = "multipart/form-data", produces = "application/json")
+public ResponseEntity<?> subirPortada(@PathVariable String id,
+                                      @RequestParam("file") MultipartFile file) throws IOException {
+  var curso = cursoRepo.findById(id).orElse(null);
+  if (curso == null) return ResponseEntity.notFound().build();
+
+  if (file == null || file.isEmpty()) {
+    return ResponseEntity.badRequest().body(Map.of("message", "Archivo vacío"));
+  }
+  if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+    return ResponseEntity.badRequest().body(Map.of("message", "Tipo no permitido, debe ser imagen"));
+  }
+
+  String safeName = id.replaceAll("[^a-zA-Z0-9_-]", "");
+  String publicUrl = storage.save(file, "cursos", safeName);
+
+  curso.setImagenPortadaUrl(publicUrl);
+  cursoRepo.save(curso);
+
+  return ResponseEntity.ok(Map.of("imagenPortadaUrl", publicUrl));
+}
+
+
+   @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
+@PostMapping(value = "/{id}/portada/url", consumes = "application/json", produces = "application/json")
+public ResponseEntity<?> importarPortadaDesdeUrl(@PathVariable String id,
+                                                 @RequestBody Map<String, String> body) throws IOException {
+  var curso = cursoRepo.findById(id).orElse(null);
+  if (curso == null) return ResponseEntity.notFound().build();
+
+  String url = body.get("url");
+  if (url == null || !url.matches("^https?://.+")) {
+    return ResponseEntity.badRequest().body(Map.of("message", "URL inválida"));
+  }
+
+  // Descarga + validaciones mínimas
+  byte[] bytes;
+  try (InputStream in = new URL(url).openStream()) {
+    bytes = in.readAllBytes();
+  } catch (Exception ex) {
+    return ResponseEntity.badRequest().body(Map.of("message", "No se pudo descargar la URL"));
+  }
+  if (bytes.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Contenido vacío"));
+  if (bytes.length > 8_000_000) return ResponseEntity.status(413).body(Map.of("message", "Archivo demasiado grande"));
+
+  String mime;
+  try (var sniff = new java.io.ByteArrayInputStream(bytes)) {
+    mime = java.net.URLConnection.guessContentTypeFromStream(sniff);
+  }
+  if (mime == null || !mime.startsWith("image/")) {
+    return ResponseEntity.badRequest().body(Map.of("message", "La URL no parece ser una imagen"));
+  }
+
+  String safeId = id.replaceAll("[^a-zA-Z0-9_-]", "");
+  String publicUrl = storage.saveBytes(bytes, mime, "cursos", safeId);
+
+  curso.setImagenPortadaUrl(publicUrl);
+  cursoRepo.save(curso);
+
+  return ResponseEntity.ok(Map.of("imagenPortadaUrl", publicUrl));
+}
+
+
+    /* ====================== DTOs y Page wrapper ====================== */
+
     public static record CrearCursoRequest(
             @NotBlank String titulo,
             String descripcion,
             @NotBlank String categoria,
             @NotBlank String nivel,
             @NotBlank String idioma,
-            @Min(0) double precio
+            @Min(0) double precio,
+            // opcional: permitir crear con URL directa de portada si tu servicio lo soporta
+            String imagenPortadaUrl
     ) {}
 
     public static record ActualizarCursoRequest(
@@ -189,19 +281,20 @@ public class CursoControlador {
             @NotBlank String categoria,
             @NotBlank String nivel,
             @NotBlank String idioma,
-            @Min(0) double precio
+            @Min(0) double precio,
+            String imagenPortadaUrl
     ) {}
 
     public static record EstadoRequest(@NotBlank String estado) {}
 
     public static class PageResponse<T> {
-        public java.util.List<T> content;
+        public List<T> content;
         public int page;
         public int size;
         public long totalElements;
         public int totalPages;
         public String sort;
-        public PageResponse(java.util.List<T> content, int page, int size, long totalElements, int totalPages, String sort) {
+        public PageResponse(List<T> content, int page, int size, long totalElements, int totalPages, String sort) {
             this.content = content;
             this.page = page;
             this.size = size;

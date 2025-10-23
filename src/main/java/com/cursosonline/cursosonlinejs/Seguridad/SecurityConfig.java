@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/", "/index.html", "/favicon.ico",
                         "/estilo.css", "/codigo.js",
+                        "/uploads/**", 
                         "/paginas/**" // <- tus parciales HTML
                 ).permitAll()
 

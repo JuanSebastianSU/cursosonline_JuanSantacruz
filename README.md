@@ -4284,3 +4284,288 @@ Respuesta:
 7. Eliminar un certificado.
 
 DELETE "http://localhost:8080/api/v1/certificados/68eb2a4ef82a976577db97a6" ADMIN o INSTRUCTOR dueño del curso.
+
+
+CursosOnlineJS – Frontend (SPA HTML/CSS/JS)
+
+Este frontend implementa la interfaz de una plataforma de cursos en línea.
+Está construido con HTML5 semántico, CSS (tokens + Flexbox + Grid + responsive) y JavaScript vanilla con hash routing ligero.
+
+Incluye: navbar dinámico, catálogo paginado, detalle, área de instructor (CRUD), formularios con validación, y soporte para portadas de curso (por URL o subida de archivo al backend).
+
+1) Requisitos previos
+
+Navegador moderno (Chrome/Edge/Firefox/Safari).
+
+Backend corriendo en http://localhost:8080 (Spring Boot).
+
+Opcional para desarrollo separado: un servidor estático (Live Server / http-server) en http://localhost:9090.
+
+2) Arranque rápido
+# 1) Arranca el backend (sirve /static/index.html en 8080)
+mvn spring-boot:run
+
+# 2A) Usar el frontend servido por Spring:
+#     http://localhost:8080/
+
+# 2B) O usar un servidor estático (p.ej. en 9090):
+#     habilita CORS en el backend para 9090
+
+3) Estructura de archivos
+/src/main/resources/static/
+  index.html         # Shell de la SPA (rutas embebidas o carga de parciales)
+  styles.css         # Design tokens, layout, componentes y media queries
+  app.js             # Navegación, llamadas a API, DOM y eventos
+  /paginas/          # (opcional) parciales: inicio.html, catalogo.html, ...
+
+
+Si usas parciales, el router los carga con fetch() al contenedor #pagina o #app.
+Si NO usas parciales, el index.html ya contiene todas las vistas como secciones.
+
+4) HTML semántico + accesibilidad
+
+<header> + <nav> sticky y responsive (botón hamburguesa con aria-expanded).
+
+<main> agrupa las vistas:
+#view-inicio, #view-catalogo, #view-curso, #view-mi, #view-instructor, #view-formulario, #view-login, #view-registro.
+
+<section> / <article> para bloques de contenido (hero, tarjetas, forms).
+
+Jerarquía de títulos: h1 único en Inicio; h2 por vista; h3 en subsecciones.
+
+A11y:
+
+aria-label, aria-live="polite" en grillas dinámicas.
+
+label asociado a cada input.
+
+Clase .sr-only para texto solo-lector de pantalla.
+
+Comentarios en index.html documentan qué hace cada bloque JS y cada vista.
+
+5) Diseño: tokens, componentes y responsive
+
+Variables CSS en :root:
+
+:root{
+  --bg:#0b1020; --card:#0f162f; --text:#e7ecff; --muted:#93a1c1;
+  --primary:#5b8cff; --accent:#16d2aa; --danger:#ff6b6b;
+  --ring:0 0 0 3px rgba(91,140,255,.25);
+  --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.25);
+}
+
+
+Componentes principales:
+
+Botones: .btn, .btn.primary, .btn.ghost
+
+Tarjetas: .card (+ .title, .muted)
+
+Badges: .badge, .price
+
+Grillas: .grid-cursos (4→3→2→1 columnas)
+
+Form: .form, .two-col, .error, .form-state, .switch
+
+Pager: .pager (prev/next)
+
+Media queries: puntos en 1100px, 980px, 820px, 760px, 520px para Nav, Hero, Grids y Detalle.
+
+6) Configuración de API y JWT
+
+En app.js:
+
+// Endpoints base (mismo origen por defecto)
+const MENU_API   = "api/menu";
+const CURSOS_API = "api/v1/cursos";
+const CURSOS_BUSCAR_API = "api/v1/cursos/buscar";
+
+// JWT (si el backend lo exige para POST/PUT/PATCH/DELETE)
+function getJwt(){ return localStorage.getItem("jwt") || null; }
+function authHeaders(extra = {}){
+  const t = getJwt();
+  const base = { Accept:"application/json", "Content-Type":"application/json" };
+  return t ? { ...base, Authorization:`Bearer ${t}`, ...extra } : { ...base, ...extra };
+}
+
+
+Si el frontend está en 9090 y el backend en 8080, usa origen absoluto:
+
+const API_ORIGIN = "http://localhost:8080";
+const api = p => `${API_ORIGIN}/${p.replace(/^\/+/, "")}`;
+fetch(api(CURSOS_API), { headers: authHeaders() });
+
+7) Navegación (hash routing) + menú dinámico
+
+Enlaces href="#/ruta" con data-route.
+
+Listeners de hashchange/popstate.
+
+Carga de parciales o alterna secciones section.view con .current.
+
+Menú (GET /api/menu) fusionado con fallback y garantías:
+
+Se elimina “Contacto” si aparece.
+
+Se asegura la presencia de: Inicio, Catálogo, Formulario, Área de instructor, y Registro (si existe el parcial).
+
+8) Catálogo de cursos (listado + filtros + paginación)
+
+Paginación: 4 tarjetas por página (page/size contra API).
+
+Filtros: texto (q), categoria, nivel.
+
+Detalles: bloque expandible con <details><summary>Ver más</summary>…</details>.
+
+Imagen de portada (prioriza campo imagenPortadaUrl):
+
+function courseImageUrl(c){
+  return c.imagenPortadaUrl || c.portadaUrl || c.imagenUrl || c.thumbnail ||
+         c.coverUrl || c.cover ||
+         (c.id ? `https://picsum.photos/seed/${encodeURIComponent(c.id)}/600/338`
+               : `https://picsum.photos/seed/${encodeURIComponent(c.titulo||"curso")}/600/338`);
+}
+
+9) Área de instructor (CRUD + portadas)
+
+Crear curso (título, descripción, categoría, nivel, idioma, precio).
+
+Acciones: Publicar, Archivar, Eliminar, Editar.
+
+Mis cursos: filtrado por idInstructor obtenido del JWT (helper currentInstructorId()).
+
+Portadas: dos flujos soportados por backend:
+
+Subir archivo: POST /api/v1/cursos/{id}/portada (multipart).
+
+Importar por URL: POST /api/v1/cursos/{id}/portada/url (descarga validada y re-hospedada).
+
+El frontend solo muestra imagenPortadaUrl.
+Si no existe, caerá a una imagen de picsum.photos.
+
+10) Formularios y validaciones (JS)
+
+Contacto (#form-demo) y Registro (#form-register):
+
+Validaciones: no-vacío, email válido, longitudes mínimas, contraseñas iguales (≥ 8).
+
+Feedback visual con .is-valid / .is-invalid y mensajes en .error.
+
+Se evita envío por preventDefault() hasta que pase validación.
+
+Eventos cubiertos: input, change, blur, submit.
+
+11) DOM & eventos (técnicas usadas)
+
+Selección: getElementById, querySelector, querySelectorAll.
+
+Modificar contenido: innerText, innerHTML.
+
+Estilos dinámicos: element.style, .classList.add/remove/toggle.
+
+Crear/Eliminar: document.createElement, appendChild, remove().
+
+Eventos: click (botones, acciones CRUD), mouseover/mouseout (hero), keydown (extensible).
+
+En index.html hay comentarios inline que explican qué hace cada función principal del JS.
+
+12) Imágenes de portada: cómo probar
+
+Requiere JWT del instructor/ADMIN dueño del curso.
+
+# A) Importar por URL pública (máx. ~8 MB, content-type image/*)
+curl -X POST "http://localhost:8080/api/v1/cursos/<ID>/portada/url" \
+  -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" \
+  -d '{"url":"https://picsum.photos/seed/demo/1200/675.jpg"}'
+
+# B) Subir archivo (multipart); el backend la sirve como /uploads/**
+curl -X POST "http://localhost:8080/api/v1/cursos/<ID>/portada" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -F "file=@/ruta/mi_portada.jpg"
+
+
+Si el frontend corre en 9090, asegúrate de que la URL devuelta sea absoluta (http://localhost:8080/uploads/...) o de configurar API_ORIGIN.
+
+13) CORS (cuando front y back están en distintos puertos)
+
+Backend debe permitir el origen del front (p. ej. http://localhost:9090):
+
+registry.addMapping("/**")
+  .allowedOriginPatterns("http://localhost:9090")
+  .allowedMethods("GET","POST","PUT","PATCH","DELETE","OPTIONS")
+  .allowedHeaders("*")
+  .allowCredentials(true);
+
+
+Y en Seguridad, permitir /uploads/** para servir imágenes públicas.
+
+14) Pruebas rápidas de catálogo
+# Crear curso (BORRADOR)
+curl -X POST "http://localhost:8080/api/v1/cursos" \
+  -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" \
+  -d '{"titulo":"Curso Demo","descripcion":"...", "categoria":"Backend","nivel":"INTERMEDIO","idioma":"es-EC","precio":25}'
+
+# Publicar
+curl -X PATCH "http://localhost:8080/api/v1/cursos/<ID>/publicar" \
+  -H "Authorization: Bearer <TOKEN>"
+
+# Listar (público)
+curl "http://localhost:8080/api/v1/cursos?page=0&size=4"
+
+15) Troubleshooting
+
+Tarjeta en gris (sin imagen):
+
+Verifica que el curso tenga imagenPortadaUrl en GET /api/v1/cursos.
+
+Si la imagen la sirve el backend, confirma que /uploads/** no esté bloqueado por seguridad.
+
+Con front en 9090, usa URLs absolutas (o configura API_ORIGIN).
+
+404 al cargar paginas/instructor.html:
+Usa las vistas embebidas del index.html o coloca el parcial en /static/paginas/instructor.html.
+
+CORS bloquea peticiones desde 9090:
+Agrega el origen a la configuración CORS del backend.
+
+16) Capturas y checklist de entrega
+
+Guarda en docs/capturas/:
+
+Inicio (desktop 1440px)
+
+Catálogo (tablet 768px)
+
+Catálogo (mobile 375px)
+
+Detalle de curso
+
+Área de instructor (form y grilla)
+
+Registro con validaciones
+
+Checklist:
+
+ HTML5 semántico y jerarquía de títulos.
+
+ Tokens de diseño y estilos consistentes.
+
+ Flexbox + Grid + media queries.
+
+ JS: selección DOM, modificar texto/estilos, crear/eliminar nodos.
+
+ Eventos: click, mouseover, input/blur, submit.
+
+ Formularios completos + validaciones.
+
+ Portadas por URL o archivo, y render en catálogo.
+
+ Comentarios en HTML explicando las funciones JS clave.
+
+17) Notas de producción
+
+Considera usar Cloudinary/S3 para portadas (CDN + optimización).
+
+Mantén imagenPortadaUrl como fuente única de verdad para el front.
+
+Si cambias dominios, actualiza CORS y API_ORIGIN.

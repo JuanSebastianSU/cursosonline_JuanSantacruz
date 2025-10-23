@@ -67,7 +67,7 @@ public class Curso {
     @Field(targetType = FieldType.DECIMAL128)
     @PositiveOrZero
     private BigDecimal precio;
-
+    
     @Field(targetType = FieldType.DECIMAL128)
     @PositiveOrZero
     private BigDecimal precioLista;

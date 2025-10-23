@@ -55,10 +55,13 @@ function currentInstructorId() {
 function escapeHtml(s=""){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function truncate(s="", n=110){ return s.length>n ? s.slice(0,n-1)+"…" : s; }
 function courseImageUrl(c){
-  return c.portadaUrl || c.imagenUrl || c.thumbnail || c.coverUrl || c.cover || 
-         (c.id ? `https://picsum.photos/seed/${encodeURIComponent(c.id)}/600/338` 
+  return c.imagenPortadaUrl || c.portadaUrl ||
+         c.imagenUrl || c.thumbnail || c.coverUrl || c.cover ||
+         (c.id ? `https://picsum.photos/seed/${encodeURIComponent(c.id)}/600/338`
                : `https://picsum.photos/seed/${encodeURIComponent(c.titulo||"curso")}/600/338`);
 }
+
+
 // Placeholder SVG en caso de error de imagen                                      // [CHANGE]
 function placeholderImg(label="Curso"){
   const txt = encodeURIComponent((label||"Curso").slice(0,24));
@@ -518,46 +521,33 @@ function initCatalogoSiExiste() {
 /* ==========================
    CRUD CURSOS (Instructor)
    ========================== */
-async function crearCursoAPI(nombre, descripcion, categoria, nivel, idioma, precio, opts={autopublicar:false}) { // [CHANGE]
+async function crearCursoAPI(nombre, descripcion, categoria, nivel, idioma, precio, opts={autopublicar:false, imagenPortadaUrl:null}) {
   try {
-    if (!nombre || nombre.trim().length < 3) {
-      alert("El título debe tener al menos 3 caracteres."); return null;
-    }
+    if (!nombre || nombre.trim().length < 3) { alert("El título debe tener al menos 3 caracteres."); return null; }
     const payload = {
       titulo: nombre.trim(),
       descripcion: (descripcion || "").trim() || null,
       categoria: categoria?.trim() || "GENERAL",
       nivel: nivel?.trim() || "PRINCIPIANTE",
       idioma: idioma?.trim() || "es-EC",
-      precio: Number(precio) || 0
+      precio: Number(precio) || 0,
+      imagenPortadaUrl: opts?.imagenPortadaUrl || null   // ← aquí
     };
-    const res = await fetch(CURSOS_API, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`POST curso: ${res.status} ${txt}`);
-    }
+    const res = await fetch(CURSOS_API, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+    if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`POST curso: ${res.status} ${txt}`); }
     const creado = await res.json();
-    if (opts?.autopublicar && creado?.id) {                                     // [CHANGE]
-      try { await publicarCursoAPI(creado.id); } catch (e) { console.warn("No se pudo publicar automáticamente:", e?.message||e); }
-    }
+    // (Si autopublicas, hazlo tras el upload de archivo; el handler del form ya lo gestiona)
     return creado;
-  } catch (e) {
-    console.error(e);
-    alert("No se pudo crear el curso. Revisa JWT/seguridad y el payload.");
-    return null;
-  }
+  } catch (e) { console.error(e); alert("No se pudo crear el curso. Revisa JWT/seguridad y el payload."); return null; }
 }
-async function actualizarCursoAPI(id, { titulo, descripcion, categoria, nivel, idioma, precio }) {
+
+async function actualizarCursoAPI(id, { titulo, descripcion, categoria, nivel, idioma, precio, imagenPortadaUrl}) {
   // Validación básica adicional                                                       // [CHANGE]
   if (precio != null) {
     const p = Number(precio);
     if (!Number.isFinite(p) || p < 0) throw new Error("Precio inválido");
   }
-  const payload = { titulo, descripcion, categoria, nivel, idioma, precio };
+  const payload = { titulo, descripcion, categoria, nivel, idioma, precio, imagenPortadaUrl };
   const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: authHeaders(),
@@ -796,14 +786,35 @@ async function editarCursoUI(curso) {
     if (precioStr == null) return;
     const precio = Number(precioStr);
     if (Number.isNaN(precio) || precio < 0) { alert("Precio inválido"); return; }
+    const imagenPortadaUrl = prompt("URL de imagen (opcional):", curso.imagenPortadaUrl ?? curso.portadaUrl ?? "");
+    if (imagenPortadaUrl === null) return;
+    await actualizarCursoAPI(curso.id, { titulo, descripcion, categoria, nivel, idioma, precio, imagenPortadaUrl });
 
-    await actualizarCursoAPI(curso.id, { titulo, descripcion, categoria, nivel, idioma, precio });
+    await actualizarCursoAPI(curso.id, { titulo, descripcion, categoria, nivel, idioma, precio, imagenPortadaUrl });
     await loadInstructorCursos();
   } catch (e) {
     console.error(e);
     alert("No se pudo actualizar. Verifica permisos/JWT y datos.");
   }
 }
+async function subirPortadaArchivoAPI(id, file) {
+  if (!file) return null;
+  const fd = new FormData(); fd.append("file", file);
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/portada`, { method: "POST", headers: authUploadHeaders(), body: fd });
+  if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`Upload portada: ${res.status} ${txt}`); }
+  const out = await res.json().catch(()=> ({}));
+  return out.imagenPortadaUrl || out.portadaUrl || null;
+}
+
+async function subirPortadaDesdeUrlAPI(id, url){
+  const res = await fetch(`${CURSOS_API}/${encodeURIComponent(id)}/portada/url`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify({ url })
+  });
+  if (!res.ok) throw new Error(`Upload por URL: ${res.status}`);
+  const out = await res.json().catch(()=> ({}));
+  return out.imagenPortadaUrl || out.portadaUrl || null;
+}
+
 
 /* ==========================
    FORM CONTACTO: validación + envío
