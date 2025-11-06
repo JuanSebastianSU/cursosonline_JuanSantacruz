@@ -6,7 +6,7 @@ import "../assets/css/dashboard.css";
 
 const CursoNuevo = () => {
   const navigate = useNavigate();
-  const { user, actualizarUsuario } = useContext(AuthContext); // ✅ usamos tu función ya existente
+  const { user, updateUser } = useContext(AuthContext); // ✅ usamos el método oficial del contexto
 
   const [curso, setCurso] = useState({
     titulo: "",
@@ -66,13 +66,12 @@ const CursoNuevo = () => {
 
       alert("Curso creado correctamente.");
 
-      // ✅ Si el backend devuelve el nuevoRol (por ejemplo "ROLE_INSTRUCTOR")
+      // ✅ Si el backend devuelve nuevoRol, actualizamos el usuario local
       if (res.nuevoRol && !user?.roles?.includes(res.nuevoRol)) {
-        const actualizado = {
-          ...user,
+        updateUser({
           roles: [...(user?.roles || []), res.nuevoRol],
-        };
-        actualizarUsuario(actualizado); // 🧠 actualiza en memoria y localStorage
+        });
+
         alert("🎉 ¡Felicidades! Ahora eres instructor.");
       }
 
@@ -202,11 +201,7 @@ const CursoNuevo = () => {
           >
             {guardando ? "Guardando..." : "Crear curso"}
           </button>
-          <button
-            type="button"
-            className="btn-cancelar"
-            onClick={handleCancelar}
-          >
+          <button type="button" className="btn-cancelar" onClick={handleCancelar}>
             Cancelar
           </button>
         </div>

@@ -66,11 +66,11 @@ const Cursos = () => {
         <h2>Listado de Cursos</h2>
 
         {/* 🔹 Botón visible solo si el usuario está logueado y no es instructor */}
-        {isAuthenticated && !tieneRol("ROLE_INSTRUCTOR") && (
-          <button className="btn-crear-curso" onClick={handleCrearCurso}>
-            Crear mi primer curso
-          </button>
-        )}
+        {isAuthenticated && !tieneRol("ROLE_INSTRUCTOR") && !tieneRol("ROLE_ADMIN") && (
+  <button className="btn-crear-curso" onClick={handleCrearCurso}>
+    Crear mi primer curso
+  </button>
+)}
       </div>
 
       {loading && <p>Cargando cursos...</p>}
