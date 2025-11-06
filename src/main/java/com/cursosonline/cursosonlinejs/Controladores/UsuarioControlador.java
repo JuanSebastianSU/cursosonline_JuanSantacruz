@@ -6,7 +6,10 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
@@ -27,13 +30,14 @@ public class UsuarioControlador {
         return ResponseEntity.ok(usuarioServicio.listarTodos());
     }
 
-    @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN')")
+   @GetMapping(value = "/{id}", produces = "application/json")
+    @PreAuthorize("hasRole('ADMIN') or @seguridadUtil.esMismoUsuario(#id)")
     public ResponseEntity<Usuario> obtenerPorId(@PathVariable String id) {
         return usuarioServicio.obtenerPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
 
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
@@ -42,6 +46,46 @@ public class UsuarioControlador {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/{id}/foto")
+@PreAuthorize("hasRole('ADMIN') or @seguridadUtil.esMismoUsuario(#id)")
+public ResponseEntity<String> subirFoto(
+        @PathVariable String id,
+        @RequestParam("file") MultipartFile file) {
+    try {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("El archivo está vacío");
+        }
+
+        // Crear carpeta si no existe
+        String uploadDir = "uploads/fotos/";
+        java.io.File directorio = new java.io.File(uploadDir);
+        if (!directorio.exists()) {
+            directorio.mkdirs();
+        }
+
+        // Nombre único
+        String fileName = id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        java.nio.file.Path filePath = java.nio.file.Paths.get(uploadDir, fileName);
+        java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+        // URL accesible públicamente
+        String fotoUrl = "/uploads/fotos/" + fileName;
+
+        // Actualizar en BD mediante el servicio
+        boolean actualizado = usuarioServicio.actualizarFotoUrl(id, fotoUrl);
+        if (!actualizado) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(fotoUrl);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError().body("Error al subir la foto");
+    }
+}
+
 
     @PatchMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")

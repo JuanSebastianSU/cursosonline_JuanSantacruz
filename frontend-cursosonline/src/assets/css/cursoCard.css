@@ -1,0 +1,78 @@
+.curso-card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.curso-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.curso-card-img {
+  width: 100%;
+  border-radius: 8px;
+  height: 160px;
+  object-fit: cover;
+}
+
+.curso-card h3 {
+  color: #0d47a1;
+  margin: 10px 0 5px;
+}
+
+.curso-card p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.btn-ver {
+  background-color: #0d47a1;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ver:hover {
+  background-color: #1565c0;
+}
+/* ======= Etiquetas de estado (badges) ======= */
+.badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.badge-publicado {
+  background-color: #2e7d32; /* Verde */
+}
+
+.badge-borrador {
+  background-color: #fbc02d; /* Amarillo */
+  color: #333;
+}
+
+.badge-archivado {
+  background-color: #757575; /* Gris */
+}
+
+.badge-default {
+  background-color: #1565c0; /* Azul */
+}

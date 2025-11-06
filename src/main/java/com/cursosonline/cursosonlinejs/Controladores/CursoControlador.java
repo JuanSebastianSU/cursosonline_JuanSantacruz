@@ -14,15 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.cursosonline.cursosonlinejs.Servicios.LocalStorageService;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +29,6 @@ public class CursoControlador {
     private final CursoServicio cursoServicio;
     private final CursoRepositorio cursoRepo;
     private final UsuarioRepositorio usuarioRepo;
-
-    // Servicio de almacenamiento local (ajusta a Cloudinary/S3 si corresponde)
     private final com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage;
 
     public CursoControlador(CursoServicio cursoServicio,
@@ -71,28 +63,76 @@ public class CursoControlador {
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> crearCurso(@RequestBody @Valid CrearCursoRequest body) {
         var creado = cursoServicio.crearCursoDesdeDto(body);
-        // Si el DTO trae imagenPortadaUrl y tu servicio lo aplica, quedará guardado.
         URI location = URI.create("/api/v1/cursos/" + creado.getId());
         return ResponseEntity.created(location).body(creado);
     }
 
-    @GetMapping(produces = "application/json")
-    public ResponseEntity<PageResponse<Curso>> listarCursos(
-            @RequestParam(required = false) String categoria,
-            @RequestParam(required = false) String nivel,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false, name = "q") String query,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort
-    ) {
-        if (!isAdmin()) estado = "PUBLICADO";
-        var result = cursoServicio.buscar(categoria, nivel, estado, query, page, size, sort);
-        var resp = new PageResponse<>(
-                result.getContent(), page, size, result.getTotalElements(), result.getTotalPages(), sort
+@GetMapping(produces = "application/json")
+public ResponseEntity<?> listarCursos(
+        @RequestParam(required = false) String categoria,
+        @RequestParam(required = false) String nivel,
+        @RequestParam(required = false) String estado,
+        @RequestParam(required = false, name = "q") String query,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "10") @Min(1) int size,
+        @RequestParam(defaultValue = "createdAt,desc") String sort,
+        @RequestParam(defaultValue = "false") boolean mis // 👈 nuevo
+) {
+    try {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean admin = isAdmin();
+
+        String userId = null;
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+            userId = usuarioRepo.findByEmail(auth.getName().trim().toLowerCase())
+                    .map(u -> u.getId())
+                    .orElse(null);
+        }
+
+        String filtroInstructor = null;
+        String filtroEstado = null;
+
+        if (admin) {
+            filtroEstado = estado;
+        } 
+        else if (userId != null) {
+            if (mis) {
+                // 👨‍🏫 Panel de instructor → ve sus propios cursos
+                filtroInstructor = userId;
+            } else {
+                // 👨‍🏫 Sección pública → ve solo los publicados
+                filtroEstado = "PUBLICADO";
+            }
+        } 
+        else {
+            // Usuario no autenticado → solo publicados
+            filtroEstado = "PUBLICADO";
+        }
+
+        var result = cursoServicio.buscarAvanzado(
+                null, filtroInstructor, categoria, query,
+                null, nivel, filtroEstado,
+                null, null, null, null, null,
+                page, size, sort
         );
+
+        var resp = new PageResponse<>(
+                result.getContent(), page, size,
+                result.getTotalElements(), result.getTotalPages(), sort
+        );
+
         return ResponseEntity.ok(resp);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of(
+                "message", "Error interno al listar cursos",
+                "error", e.getMessage()
+        ));
     }
+}
+
+
 
     @GetMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> obtenerCurso(@PathVariable String id) {
@@ -118,6 +158,18 @@ public class CursoControlador {
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> actualizarCurso(@PathVariable("id") @P("id") String id,
                                              @RequestBody @Valid ActualizarCursoRequest body) {
+        var cursoOpt = cursoRepo.findById(id);
+        if (cursoOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        var curso = cursoOpt.get();
+
+        // 🔒 Bloqueo total si está PUBLICADO (solo admin puede editar)
+        if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "message", "No se puede editar un curso publicado. Archívalo antes de modificarlo."
+            ));
+        }
+
         return cursoServicio.actualizarDesdeDto(id, body)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -156,111 +208,62 @@ public class CursoControlador {
                 : ResponseEntity.notFound().build();
     }
 
-    /* ====================== Búsqueda avanzada ====================== */
-
-    @GetMapping(value = "/buscar", produces = "application/json")
-    public ResponseEntity<PageResponse<Curso>> buscarAvanzado(
-            @RequestParam(required = false) String id,
-            @RequestParam(required = false) String idInstructor,
-            @RequestParam(required = false) String categoria,
-            @RequestParam(required = false, name = "q") String q,
-            @RequestParam(required = false) String idioma,
-            @RequestParam(required = false) String nivel,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false) java.math.BigDecimal minPrecio,
-            @RequestParam(required = false) java.math.BigDecimal maxPrecio,
-            @RequestParam(required = false) Boolean destacado,
-            @RequestParam(required = false) Boolean gratuito,
-            @RequestParam(required = false) String tags,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort
-    ) {
-        if (!isAdmin()) estado = "PUBLICADO";
-
-        List<String> tagList = null;
-        if (tags != null && !tags.isBlank()) {
-            tagList = Arrays.stream(tags.split(","))
-                    .map(String::trim).filter(s -> !s.isEmpty()).toList();
-        }
-
-        var result = cursoServicio.buscarAvanzado(
-                id, idInstructor, categoria, q, idioma, nivel, estado,
-                minPrecio, maxPrecio, destacado, gratuito, tagList,
-                page, size, sort
-        );
-
-        var resp = new PageResponse<>(
-                result.getContent(), page, size, result.getTotalElements(), result.getTotalPages(), sort
-        );
-        return ResponseEntity.ok(resp);
-    }
-
     /* ====================== Portada: archivo y por URL ====================== */
 
     @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
-@PostMapping(value = "/{id}/portada", consumes = "multipart/form-data", produces = "application/json")
-public ResponseEntity<?> subirPortada(@PathVariable String id,
-                                      @RequestParam("file") MultipartFile file) throws IOException {
-  var curso = cursoRepo.findById(id).orElse(null);
-  if (curso == null) return ResponseEntity.notFound().build();
+    @PostMapping(value = "/{id}/portada", consumes = "multipart/form-data", produces = "application/json")
+    public ResponseEntity<?> subirPortada(@PathVariable String id,
+                                          @RequestParam("file") MultipartFile file) throws IOException {
+        var curso = cursoRepo.findById(id).orElse(null);
+        if (curso == null) return ResponseEntity.notFound().build();
 
-  if (file == null || file.isEmpty()) {
-    return ResponseEntity.badRequest().body(Map.of("message", "Archivo vacío"));
-  }
-  if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-    return ResponseEntity.badRequest().body(Map.of("message", "Tipo no permitido, debe ser imagen"));
-  }
+        // 🔒 Bloqueo si está PUBLICADO
+        if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "message", "No se puede modificar la imagen de un curso publicado."
+            ));
+        }
 
-  String safeName = id.replaceAll("[^a-zA-Z0-9_-]", "");
-  String publicUrl = storage.save(file, "cursos", safeName);
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Archivo vacío"));
+        }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Tipo no permitido, debe ser imagen"));
+        }
 
-  curso.setImagenPortadaUrl(publicUrl);
-  cursoRepo.save(curso);
+        String safeName = id.replaceAll("[^a-zA-Z0-9_-]", "");
+        String publicUrl = storage.save(file, "cursos", safeName);
 
-  return ResponseEntity.ok(Map.of("imagenPortadaUrl", publicUrl));
-}
+        curso.setImagenPortadaUrl(publicUrl);
+        cursoRepo.save(curso);
 
+        return ResponseEntity.ok(Map.of("imagenPortadaUrl", publicUrl));
+    }
 
-   @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
-@PostMapping(value = "/{id}/portada/url", consumes = "application/json", produces = "application/json")
-public ResponseEntity<?> importarPortadaDesdeUrl(@PathVariable String id,
-                                                 @RequestBody Map<String, String> body) throws IOException {
-  var curso = cursoRepo.findById(id).orElse(null);
-  if (curso == null) return ResponseEntity.notFound().build();
+    @PreAuthorize("@cursoPermisos.esDueno(#id) or hasRole('ADMIN')")
+    @PostMapping(value = "/{id}/portada/url", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> asignarPortadaDesdeUrl(@PathVariable String id,
+                                                    @RequestBody Map<String, String> body) {
+        var curso = cursoRepo.findById(id).orElse(null);
+        if (curso == null) return ResponseEntity.notFound().build();
 
-  String url = body.get("url");
-  if (url == null || !url.matches("^https?://.+")) {
-    return ResponseEntity.badRequest().body(Map.of("message", "URL inválida"));
-  }
+        // 🔒 Bloqueo si está PUBLICADO
+        if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "message", "No se puede modificar la imagen de un curso publicado."
+            ));
+        }
 
-  // Descarga + validaciones mínimas
-  byte[] bytes;
-  try (InputStream in = new URL(url).openStream()) {
-    bytes = in.readAllBytes();
-  } catch (Exception ex) {
-    return ResponseEntity.badRequest().body(Map.of("message", "No se pudo descargar la URL"));
-  }
-  if (bytes.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Contenido vacío"));
-  if (bytes.length > 8_000_000) return ResponseEntity.status(413).body(Map.of("message", "Archivo demasiado grande"));
+        String url = body.get("url");
+        if (url == null || !url.matches("^https?://.+")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "URL inválida"));
+        }
 
-  String mime;
-  try (var sniff = new java.io.ByteArrayInputStream(bytes)) {
-    mime = java.net.URLConnection.guessContentTypeFromStream(sniff);
-  }
-  if (mime == null || !mime.startsWith("image/")) {
-    return ResponseEntity.badRequest().body(Map.of("message", "La URL no parece ser una imagen"));
-  }
+        curso.setImagenPortadaUrl(url);
+        cursoRepo.save(curso);
 
-  String safeId = id.replaceAll("[^a-zA-Z0-9_-]", "");
-  String publicUrl = storage.saveBytes(bytes, mime, "cursos", safeId);
-
-  curso.setImagenPortadaUrl(publicUrl);
-  cursoRepo.save(curso);
-
-  return ResponseEntity.ok(Map.of("imagenPortadaUrl", publicUrl));
-}
-
+        return ResponseEntity.ok(Map.of("imagenPortadaUrl", url));
+    }
 
     /* ====================== DTOs y Page wrapper ====================== */
 
@@ -271,7 +274,6 @@ public ResponseEntity<?> importarPortadaDesdeUrl(@PathVariable String id,
             @NotBlank String nivel,
             @NotBlank String idioma,
             @Min(0) double precio,
-            // opcional: permitir crear con URL directa de portada si tu servicio lo soporta
             String imagenPortadaUrl
     ) {}
 

@@ -1,0 +1,62 @@
+/* ==== Estilos globales base ==== */
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+  background-color: #f8fafc;
+  color: #1f2937;
+}
+
+/* Contenedor general */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header y Footer */
+header {
+  background-color: #003366;
+  color: white;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+footer {
+  background-color: #003366;
+  color: #ffffff;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+/* Main: contenido principal */
+main {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Links */
+a {
+  color: #0055aa;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover,
+a:focus {
+  text-decoration: underline;
+}
+
+/* Diseño responsivo */
+@media (max-width: 768px) {
+  main {
+    padding: 1rem;
+  }
+  header,
+  footer {
+    font-size: 0.9rem;
+  }
+}

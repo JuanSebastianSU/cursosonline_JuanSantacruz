@@ -12,11 +12,13 @@ import java.util.Optional;
 @Service
 public class LocalStorageService {
 
-    // Carpeta base donde se guardan los archivos (configurable en application.properties)
     @Value("${app.uploads-dir:uploads}")
     private String uploadsDir;
 
-    /** Guarda un MultipartFile en {uploadsDir}/{subfolder}/ y devuelve la URL pública /uploads/... */
+    // Nueva propiedad configurable para el dominio base
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
+
     public String save(MultipartFile file, String subfolder, String fileNameSafe) throws IOException {
         if (file == null || file.isEmpty()) throw new IOException("Archivo vacío");
 
@@ -37,10 +39,10 @@ public class LocalStorageService {
             Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return "/uploads/" + subfolder.replace("\\","/") + "/" + finalName;
+        // ✅ URL absoluta (base del backend + ruta del archivo)
+        return baseUrl + "/uploads/" + subfolder.replace("\\", "/") + "/" + finalName;
     }
 
-    /** Guarda bytes crudos con contentType en {uploadsDir}/{subfolder}/ y devuelve la URL pública /uploads/... */
     public String saveBytes(byte[] bytes, String contentType, String subfolder, String fileNameSafe) throws IOException {
         if (bytes == null || bytes.length == 0) throw new IOException("Archivo vacío");
 
@@ -53,13 +55,11 @@ public class LocalStorageService {
 
         String finalName = clean + "-" + System.currentTimeMillis() + ext.toLowerCase();
         Path dest = base.resolve(finalName);
-
         Files.write(dest, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-        return "/uploads/" + subfolder.replace("\\","/") + "/" + finalName;
+        // ✅ URL absoluta
+        return baseUrl + "/uploads/" + subfolder.replace("\\", "/") + "/" + finalName;
     }
-
-    /* ---------------- helpers ---------------- */
 
     private static String sanitize(String s) {
         if (s == null || s.isBlank()) return "file";

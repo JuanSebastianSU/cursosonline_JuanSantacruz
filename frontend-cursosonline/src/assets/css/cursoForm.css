@@ -1,0 +1,88 @@
+.curso-form-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.curso-form-container h2 {
+  text-align: center;
+  color: #0d47a1;
+  margin-bottom: 20px;
+}
+
+.curso-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.curso-form label {
+  font-weight: bold;
+  color: #333;
+}
+
+.curso-form input,
+.curso-form select,
+.curso-form textarea {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 1rem;
+}
+
+.curso-form input:focus,
+.curso-form select:focus,
+.curso-form textarea:focus {
+  border-color: #0d47a1;
+  outline: none;
+}
+
+.preview-container {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.preview-img {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 8px;
+  margin-top: 5px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button {
+  background-color: #0d47a1;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background-color: #1565c0;
+}
+
+button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.msg-success {
+  color: #2e7d32;
+  text-align: center;
+  font-weight: bold;
+}
+
+.msg-error {
+  color: #d32f2f;
+  text-align: center;
+  font-weight: bold;
+}

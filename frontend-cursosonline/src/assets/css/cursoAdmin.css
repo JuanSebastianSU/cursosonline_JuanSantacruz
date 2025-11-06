@@ -1,0 +1,136 @@
+.admin-container {
+  background-color: #f7f9fc;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.admin-title {
+  text-align: center;
+  color: #0a2b57;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.admin-actions {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.btn-crear {
+  background-color: #1565c0;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-crear:hover {
+  background-color: #0d47a1;
+}
+
+.tabla-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  padding: 15px;
+}
+
+.tabla-cursos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-cursos th {
+  background: #e3f2fd;
+  color: #0a2b57;
+  padding: 10px;
+}
+
+.tabla-cursos td {
+  padding: 10px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-publicado {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.badge-borrador {
+  background: #fff9c4;
+  color: #f57f17;
+}
+
+.badge-archivado {
+  background: #ffe0b2;
+  color: #e65100;
+}
+
+.acciones button {
+  margin: 0 3px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 16px;
+}
+
+.btn-editar {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-eliminar {
+  background: #c62828;
+  color: white;
+}
+
+.btn-publicar {
+  background: #2e7d32;
+  color: white;
+}
+
+.btn-archivar {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-editar:hover,
+.btn-eliminar:hover,
+.btn-publicar:hover,
+.btn-archivar:hover {
+  opacity: 0.85;
+}
+
+.actividad-card {
+  margin-top: 40px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.actividad-card h2 {
+  color: #0a2b57;
+  margin-bottom: 15px;
+}
+
+.actividad-item {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 0;
+}
+
+.actividad-item:last-child {
+  border-bottom: none;
+}

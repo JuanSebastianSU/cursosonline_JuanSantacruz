@@ -109,6 +109,18 @@ public class UsuarioServicio {
         }).orElse(false);
     }
 
+    public boolean actualizarFotoUrl(String id, String fotoUrl) {
+    if (fotoUrl == null || fotoUrl.isBlank()) return false;
+
+    return usuarioRepositorio.findById(id).map(u -> {
+        u.setFotoUrl(fotoUrl);
+        u.setUpdatedAt(Instant.now());
+        usuarioRepositorio.save(u);
+        return true;
+    }).orElse(false);
+}
+
+
     public boolean eliminar(String id) {
         if (!usuarioRepositorio.existsById(id)) return false;
         usuarioRepositorio.deleteById(id);

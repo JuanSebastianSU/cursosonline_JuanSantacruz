@@ -199,27 +199,29 @@ public class CursoServicio {
     }
 
     public Curso crearCursoDesdeDto(Object dtoGenerico) {
-        Map<String, Object> m = toMap(dtoGenerico);
+    Map<String, Object> m = toMap(dtoGenerico);
 
-        Curso c = new Curso();
-        c.setTitulo(reqStr(m, "titulo"));
-        c.setDescripcion(optStr(m, "descripcion"));
-        c.setCategoria(reqStr(m, "categoria"));
-        c.setNivel(parseNivel(optStr(m, "nivel")));
-        c.setIdioma(reqStr(m, "idioma"));
-        c.setPrecio(optBigDecimal(m, "precio", BigDecimal.ZERO));
-        c.setEstado(EstadoCurso.BORRADOR);
-        c.setCreatedAt(Instant.now());
-        c.setIdInstructor(usuarioActualId());
+    Curso c = new Curso();
+    c.setTitulo(reqStr(m, "titulo"));
+    c.setDescripcion(optStr(m, "descripcion"));
+    c.setCategoria(reqStr(m, "categoria"));
+    c.setNivel(parseNivel(optStr(m, "nivel")));
+    c.setIdioma(reqStr(m, "idioma"));
+    c.setPrecio(optBigDecimal(m, "precio", BigDecimal.ZERO));
+    c.setImagenPortadaUrl(optStr(m, "imagenPortadaUrl")); // ✅ <---- esta línea soluciona el problema
+    c.setEstado(EstadoCurso.BORRADOR);
+    c.setCreatedAt(Instant.now());
+    c.setIdInstructor(usuarioActualId());
 
-        normalizarTexto(c);
-        Curso guardado = cursoRepositorio.save(c);
+    normalizarTexto(c);
+    Curso guardado = cursoRepositorio.save(c);
 
-        asegurarRolInstructorPorNombre(c.getIdInstructor());
-        usuarioServicio.syncCursosDelInstructor(c.getIdInstructor());
+    asegurarRolInstructorPorNombre(c.getIdInstructor());
+    usuarioServicio.syncCursosDelInstructor(c.getIdInstructor());
 
-        return guardado;
-    }
+    return guardado;
+}
+
 
     private void asegurarRolInstructorPorNombre(String userId) {
         usuarioRepositorio.findById(userId).ifPresent(u -> {
@@ -265,27 +267,39 @@ public class CursoServicio {
     public Optional<Curso> obtenerPorId(String id) { return cursoRepositorio.findById(id); }
 
     public Optional<Curso> actualizarDesdeDto(String id, Object dtoGenerico) {
-        Map<String, Object> m = toMap(dtoGenerico);
-        return cursoRepositorio.findById(id).map(actual -> {
-            String titulo = reqStr(m, "titulo");
-            String categoria = reqStr(m, "categoria");
-            String idioma = reqStr(m, "idioma");
+    Map<String, Object> m = toMap(dtoGenerico);
 
-            actual.setTitulo(titulo);
-            actual.setDescripcion(optStr(m, "descripcion"));
-            actual.setCategoria(categoria);
-            actual.setNivel(parseNivel(optStr(m, "nivel")));
-            actual.setIdioma(idioma);
-            actual.setPrecio(optBigDecimal(m, "precio", BigDecimal.ZERO));
+    return cursoRepositorio.findById(id).map(actual -> {
+        // 🚫 Bloquear si está PUBLICADO
+        if (actual.getEstado() == Curso.EstadoCurso.PUBLICADO) {
+            throw new IllegalStateException("No se puede modificar un curso publicado. Archívalo antes de editarlo.");
+        }
 
-            normalizarTexto(actual);
-            Curso saved = cursoRepositorio.save(actual);
+        String titulo = reqStr(m, "titulo");
+        String categoria = reqStr(m, "categoria");
+        String idioma = reqStr(m, "idioma");
 
-            usuarioServicio.reflejarCambioTituloCurso(saved.getId());
+        actual.setTitulo(titulo);
+        actual.setDescripcion(optStr(m, "descripcion"));
+        actual.setCategoria(categoria);
+        actual.setNivel(parseNivel(optStr(m, "nivel")));
+        actual.setIdioma(idioma);
+        actual.setPrecio(optBigDecimal(m, "precio", BigDecimal.ZERO));
 
-            return saved;
-        });
-    }
+        // ✅ Imagen portada (opcional)
+        if (m.containsKey("imagenPortadaUrl")) {
+            String nuevaUrl = optStr(m, "imagenPortadaUrl");
+            if (nuevaUrl != null && !nuevaUrl.isBlank()) {
+                actual.setImagenPortadaUrl(nuevaUrl.trim());
+            }
+        }
+
+        normalizarTexto(actual);
+        Curso saved = cursoRepositorio.save(actual);
+        usuarioServicio.reflejarCambioTituloCurso(saved.getId());
+        return saved;
+    });
+}
 
     public Optional<Curso> cambiarEstado(String id, String nuevoEstado) {
         if (!isNotBlank(nuevoEstado)) return Optional.empty();
@@ -406,85 +420,114 @@ public class CursoServicio {
     }
 
     private static EstadoCurso parseEstado(String raw) {
-        String v = raw.trim().toLowerCase();
-        switch (v) {
-            case "publicado": return EstadoCurso.PUBLICADO;
-            case "borrador":  return EstadoCurso.BORRADOR;
-            case "oculto":    return EstadoCurso.OCULTO;
-            default: throw new IllegalArgumentException("Estado inválido: " + raw);
-        }
+    String v = raw.trim().toLowerCase();
+    switch (v) {
+        case "publicado": return EstadoCurso.PUBLICADO;
+        case "borrador":  return EstadoCurso.BORRADOR;
+        case "oculto":    return EstadoCurso.OCULTO;
+        case "archivado": return EstadoCurso.ARCHIVADO; // ✅ <--- agrega esto
+        default: throw new IllegalArgumentException("Estado inválido: " + raw);
     }
+}
+
 
     public Page<Curso> buscarAvanzado(
-            String id,
-            String idInstructor,
-            String categoria,
-            String q,
-            String idioma,
-            String nivel,
-            String estado,
-            java.math.BigDecimal minPrecio,
-            java.math.BigDecimal maxPrecio,
-            Boolean destacado,
-            Boolean gratuito,
-            java.util.List<String> tags,
-            int page,
-            int size,
-            String sort
-    ) {
-        Query query = new Query();
-        List<Criteria> ands = new ArrayList<>();
+        String id,
+        String idInstructor,
+        String categoria,
+        String q,
+        String idioma,
+        String nivel,
+        String estado,
+        java.math.BigDecimal minPrecio,
+        java.math.BigDecimal maxPrecio,
+        Boolean destacado,
+        Boolean gratuito,
+        java.util.List<String> tags,
+        int page,
+        int size,
+        String sort
+) {
+    Query query = new Query();
+    List<Criteria> ands = new ArrayList<>();
 
-        if (isNotBlank(id)) ands.add(Criteria.where("_id").is(id.trim()));
-        if (isNotBlank(idInstructor)) ands.add(Criteria.where("idInstructor").is(idInstructor.trim()));
-        if (isNotBlank(categoria)) ands.add(Criteria.where("categoria").is(categoria.trim()));
-        if (isNotBlank(q)) {
-            String regex = ".*" + escapeRegex(q.trim()) + ".*";
+    // ✅ Comprobaciones seguras contra nulos y vacíos
+    if (id != null && !id.isBlank()) {
+        ands.add(Criteria.where("_id").is(id.trim()));
+    }
+    if (idInstructor != null && !idInstructor.isBlank()) {
+        ands.add(Criteria.where("idInstructor").is(idInstructor.trim()));
+    }
+    if (categoria != null && !categoria.isBlank()) {
+        ands.add(Criteria.where("categoria").is(categoria.trim()));
+    }
+
+    if (q != null && !q.isBlank()) {
+        String regex = ".*" + escapeRegex(q.trim()) + ".*";
+        ands.add(new Criteria().orOperator(
+                Criteria.where("titulo").regex(regex, "i"),
+                Criteria.where("descripcion").regex(regex, "i")
+        ));
+    }
+
+    if (idioma != null && !idioma.isBlank()) {
+        ands.add(Criteria.where("idioma").is(idioma.trim()));
+    }
+
+    if (nivel != null && !nivel.isBlank()) {
+        ands.add(Criteria.where("nivel").is(parseNivel(nivel)));
+    }
+
+    if (estado != null && !estado.isBlank()) {
+        ands.add(Criteria.where("estado").is(parseEstado(estado)));
+    }
+
+    if (minPrecio != null || maxPrecio != null) {
+        Criteria c = Criteria.where("precio");
+        if (minPrecio != null && maxPrecio != null)
+            ands.add(c.gte(minPrecio).lte(maxPrecio));
+        else if (minPrecio != null)
+            ands.add(c.gte(minPrecio));
+        else
+            ands.add(c.lte(maxPrecio));
+    }
+
+    if (destacado != null) {
+        ands.add(Criteria.where("destacado").is(destacado));
+    }
+
+    if (gratuito != null) {
+        if (gratuito) {
             ands.add(new Criteria().orOperator(
-                    Criteria.where("titulo").regex(regex, "i"),
-                    Criteria.where("descripcion").regex(regex, "i")
+                    Criteria.where("gratuito").is(true),
+                    Criteria.where("precio").is(java.math.BigDecimal.ZERO)
+            ));
+        } else {
+            ands.add(new Criteria().orOperator(
+                    Criteria.where("gratuito").is(false),
+                    Criteria.where("precio").gt(java.math.BigDecimal.ZERO)
             ));
         }
-        if (isNotBlank(idioma)) ands.add(Criteria.where("idioma").is(idioma.trim()));
-        if (isNotBlank(nivel)) ands.add(Criteria.where("nivel").is(parseNivel(nivel)));
-        if (isNotBlank(estado)) ands.add(Criteria.where("estado").is(parseEstado(estado)));
-
-        if (minPrecio != null || maxPrecio != null) {
-            Criteria c = Criteria.where("precio");
-            if (minPrecio != null && maxPrecio != null) ands.add(c.gte(minPrecio).lte(maxPrecio));
-            else if (minPrecio != null) ands.add(c.gte(minPrecio));
-            else ands.add(c.lte(maxPrecio));
-        }
-
-        if (destacado != null) ands.add(Criteria.where("destacado").is(destacado));
-
-        if (gratuito != null) {
-            if (gratuito) {
-                ands.add(new Criteria().orOperator(
-                        Criteria.where("gratuito").is(true),
-                        Criteria.where("precio").is(java.math.BigDecimal.ZERO)
-                ));
-            } else {
-                ands.add(new Criteria().orOperator(
-                        Criteria.where("gratuito").is(false),
-                        Criteria.where("precio").gt(java.math.BigDecimal.ZERO)
-                ));
-            }
-        }
-
-        if (tags != null && !tags.isEmpty()) ands.add(Criteria.where("etiquetas").all(tags));
-
-        if (!ands.isEmpty()) query.addCriteria(new Criteria().andOperator(ands.toArray(new Criteria[0])));
-
-        Sort sortSpec = parseSort(sort, "createdAt", Sort.Direction.DESC);
-        query.with(sortSpec);
-        query.skip((long) page * size).limit(size);
-
-        List<Curso> content = mongoTemplate.find(query, Curso.class, "cursos");
-        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Curso.class, "cursos");
-
-        return new PageImpl<>(content,
-                org.springframework.data.domain.PageRequest.of(page, size, sortSpec),
-                total);
     }
+
+    if (tags != null && !tags.isEmpty()) {
+        ands.add(Criteria.where("etiquetas").all(tags));
+    }
+
+    if (!ands.isEmpty()) {
+        query.addCriteria(new Criteria().andOperator(ands.toArray(new Criteria[0])));
+    }
+
+    Sort sortSpec = parseSort(sort, "createdAt", Sort.Direction.DESC);
+    query.with(sortSpec);
+    query.skip((long) page * size).limit(size);
+
+    List<Curso> content = mongoTemplate.find(query, Curso.class, "cursos");
+    long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Curso.class, "cursos");
+
+    return new PageImpl<>(content,
+            org.springframework.data.domain.PageRequest.of(page, size, sortSpec),
+            total);
+}
+
 }

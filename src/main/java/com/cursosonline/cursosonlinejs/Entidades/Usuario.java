@@ -60,6 +60,8 @@ public class Usuario {
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
 
+    private String fotoUrl;
+    
     @CreatedDate
     private Instant fechaRegistro;
 

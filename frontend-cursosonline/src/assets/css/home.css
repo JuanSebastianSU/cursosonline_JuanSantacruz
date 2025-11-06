@@ -1,0 +1,142 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+  padding-bottom: 60px;
+}
+
+/* ===== HERO ===== */
+.hero {
+  background: linear-gradient(to right, #0d47a1, #1976d2);
+  color: white;
+  text-align: center;
+  padding: 80px 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.hero-content h1 {
+  font-size: 2.4rem;
+  margin-bottom: 15px;
+}
+
+.hero-content p {
+  font-size: 1.1rem;
+  margin-bottom: 25px;
+}
+
+.btn-cta {
+  background-color: #ffb300;
+  color: #0d47a1;
+  padding: 12px 28px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.btn-cta:hover {
+  background-color: #ffc947;
+}
+
+/* ===== CURSOS DESTACADOS ===== */
+.featured-courses {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.featured-courses h2 {
+  text-align: center;
+  margin-bottom: 35px;
+  color: #0d47a1;
+  font-size: 1.8rem;
+}
+
+/* Aquí forzamos 3 columnas visibles */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  justify-items: center;
+}
+
+@media (max-width: 992px) {
+  .course-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== BENEFICIOS ===== */
+.benefits-section {
+  background-color: #f4f8ff;
+  padding: 70px 20px;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.benefits-section h2 {
+  color: #0d47a1;
+  font-size: 1.9rem;
+  margin-bottom: 45px;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  justify-items: center;
+}
+
+.benefit-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 25px;
+  max-width: 320px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.benefit-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.benefit-card i {
+  font-size: 2.4rem;
+  color: #1976d2;
+  margin-bottom: 15px;
+}
+
+.benefit-card h3 {
+  color: #0d47a1;
+  margin-bottom: 10px;
+}
+
+.benefit-card p {
+  font-size: 0.95rem;
+  color: #333;
+}
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  justify-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.benefit-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 25px;
+  max-width: 320px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
