@@ -1,0 +1,51 @@
+/* --- Ancla que se mueve con el scroll sin reservar espacio --- */
+.a11y-anchor{
+  position: sticky;   /* sigue al scroll */
+  top: 112px;         /* distancia bajo el header */
+  height: 0;          /* NO deja hueco */
+  z-index: 900;       /* por encima del contenido */
+}
+
+/* El panel ya no es sticky: es absoluto respecto al ancla */
+.a11y-anchor .accesibilidad-panel{
+  position: absolute;
+  left: 16px;
+  width: 260px;
+
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  padding: 12px;
+
+  display: grid;
+  grid-auto-flow: row;
+  gap: 12px;
+  font-size: .95rem;
+}
+
+.a11y-anchor .accesibilidad-panel label{ display: grid; gap: 6px; }
+.a11y-anchor .accesibilidad-panel select,
+.a11y-anchor .accesibilidad-panel input[type="range"]{ width: 100%; }
+.a11y-anchor .accesibilidad-panel button{
+  border: 0; border-radius: 8px; padding: 8px 10px;
+  background: var(--brand-2); color: var(--brand-contrast); cursor: pointer;
+}
+
+/* En móvil: que no estorbe y sea fijo al borde inferior */
+@media (max-width: 680px){
+  .a11y-anchor{
+    position: fixed;
+    top: auto; left: 0; right: 0; bottom: 8px;
+    height: auto;
+    z-index: 900;
+  }
+  .a11y-anchor .accesibilidad-panel{
+    position: static;            /* deja de ser absolute dentro del ancla */
+    width: calc(100vw - 16px);
+    margin: 0 8px;
+    max-height: 60vh;
+    overflow: auto;
+  }
+}

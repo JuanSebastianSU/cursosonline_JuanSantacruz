@@ -4,6 +4,7 @@ import com.cursosonline.cursosonlinejs.Entidades.Curso;
 import com.cursosonline.cursosonlinejs.Repositorios.CursoRepositorio;
 import com.cursosonline.cursosonlinejs.Repositorios.UsuarioRepositorio;
 import com.cursosonline.cursosonlinejs.Servicios.CursoServicio;
+import com.cursosonline.cursosonlinejs.Servicios.JWTService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -17,28 +18,30 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cursos")
-@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
+@CrossOrigin(origins = { "http://localhost:3000" }, allowCredentials = "true")
 public class CursoControlador {
 
     private final CursoServicio cursoServicio;
     private final CursoRepositorio cursoRepo;
     private final UsuarioRepositorio usuarioRepo;
     private final com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage;
+    private final JWTService jwtService;
 
     public CursoControlador(CursoServicio cursoServicio,
                             CursoRepositorio cursoRepo,
                             UsuarioRepositorio usuarioRepo,
-                            com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage) {
+                            com.cursosonline.cursosonlinejs.Servicios.LocalStorageService storage,
+                            JWTService jwtService) {
         this.cursoServicio = cursoServicio;
         this.cursoRepo = cursoRepo;
         this.usuarioRepo = usuarioRepo;
         this.storage = storage;
+        this.jwtService = jwtService;
     }
 
     /* ====================== Helpers seguridad ====================== */
@@ -62,77 +65,89 @@ public class CursoControlador {
 
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> crearCurso(@RequestBody @Valid CrearCursoRequest body) {
+        // 1) Crea el curso (el servicio ya promueve a Instructor si es su primer curso)
         var creado = cursoServicio.crearCursoDesdeDto(body);
-        URI location = URI.create("/api/v1/cursos/" + creado.getId());
-        return ResponseEntity.created(location).body(creado);
-    }
 
-@GetMapping(produces = "application/json")
-public ResponseEntity<?> listarCursos(
-        @RequestParam(required = false) String categoria,
-        @RequestParam(required = false) String nivel,
-        @RequestParam(required = false) String estado,
-        @RequestParam(required = false, name = "q") String query,
-        @RequestParam(defaultValue = "0") @Min(0) int page,
-        @RequestParam(defaultValue = "10") @Min(1) int size,
-        @RequestParam(defaultValue = "createdAt,desc") String sort,
-        @RequestParam(defaultValue = "false") boolean mis // 👈 nuevo
-) {
-    try {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean admin = isAdmin();
+        // 2) Genera un JWT fresco con el rol actualizado
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "No autenticado"));
+        }
+        var usuario = usuarioRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
 
-        String userId = null;
-        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
-            userId = usuarioRepo.findByEmail(auth.getName().trim().toLowerCase())
-                    .map(u -> u.getId())
-                    .orElse(null);
+        String tokenNuevo;
+        try {
+            tokenNuevo = jwtService.generateToken(usuario);
+        } catch (Exception ex) {
+            // No romper la creación del curso si fallara el token por alguna razón
+            tokenNuevo = null;
         }
 
-        String filtroInstructor = null;
-        String filtroEstado = null;
+        URI location = URI.create("/api/v1/cursos/" + creado.getId());
+        return ResponseEntity.created(location)
+                .body(new CrearCursoResponse(creado, tokenNuevo, usuario.getRol()));
+    }
 
-        if (admin) {
-            filtroEstado = estado;
-        } 
-        else if (userId != null) {
-            if (mis) {
-                // 👨‍🏫 Panel de instructor → ve sus propios cursos
-                filtroInstructor = userId;
+    @GetMapping(produces = "application/json")
+    public ResponseEntity<?> listarCursos(
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String nivel,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false, name = "q") String query,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(defaultValue = "false") boolean mis
+    ) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean admin = isAdmin();
+
+            String userId = null;
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                userId = usuarioRepo.findByEmail(auth.getName().trim().toLowerCase())
+                        .map(u -> u.getId())
+                        .orElse(null);
+            }
+
+            String filtroInstructor = null;
+            String filtroEstado = null;
+
+            if (admin) {
+                filtroEstado = estado;
+            } else if (userId != null) {
+                if (mis) {
+                    filtroInstructor = userId;
+                } else {
+                    filtroEstado = "PUBLICADO";
+                }
             } else {
-                // 👨‍🏫 Sección pública → ve solo los publicados
                 filtroEstado = "PUBLICADO";
             }
-        } 
-        else {
-            // Usuario no autenticado → solo publicados
-            filtroEstado = "PUBLICADO";
+
+            var result = cursoServicio.buscarAvanzado(
+                    null, filtroInstructor, categoria, query,
+                    null, nivel, filtroEstado,
+                    null, null, null, null, null,
+                    page, size, sort
+            );
+
+            var resp = new PageResponse<>(
+                    result.getContent(), page, size,
+                    result.getTotalElements(), result.getTotalPages(), sort
+            );
+
+            return ResponseEntity.ok(resp);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                    "message", "Error interno al listar cursos",
+                    "error", e.getMessage()
+            ));
         }
-
-        var result = cursoServicio.buscarAvanzado(
-                null, filtroInstructor, categoria, query,
-                null, nivel, filtroEstado,
-                null, null, null, null, null,
-                page, size, sort
-        );
-
-        var resp = new PageResponse<>(
-                result.getContent(), page, size,
-                result.getTotalElements(), result.getTotalPages(), sort
-        );
-
-        return ResponseEntity.ok(resp);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(500).body(Map.of(
-                "message", "Error interno al listar cursos",
-                "error", e.getMessage()
-        ));
     }
-}
-
-
 
     @GetMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> obtenerCurso(@PathVariable String id) {
@@ -163,7 +178,6 @@ public ResponseEntity<?> listarCursos(
 
         var curso = cursoOpt.get();
 
-        // 🔒 Bloqueo total si está PUBLICADO (solo admin puede editar)
         if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
             return ResponseEntity.status(403).body(Map.of(
                     "message", "No se puede editar un curso publicado. Archívalo antes de modificarlo."
@@ -217,7 +231,6 @@ public ResponseEntity<?> listarCursos(
         var curso = cursoRepo.findById(id).orElse(null);
         if (curso == null) return ResponseEntity.notFound().build();
 
-        // 🔒 Bloqueo si está PUBLICADO
         if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
             return ResponseEntity.status(403).body(Map.of(
                     "message", "No se puede modificar la imagen de un curso publicado."
@@ -247,7 +260,6 @@ public ResponseEntity<?> listarCursos(
         var curso = cursoRepo.findById(id).orElse(null);
         if (curso == null) return ResponseEntity.notFound().build();
 
-        // 🔒 Bloqueo si está PUBLICADO
         if (curso.getEstado() == Curso.EstadoCurso.PUBLICADO && !isAdmin()) {
             return ResponseEntity.status(403).body(Map.of(
                     "message", "No se puede modificar la imagen de un curso publicado."
@@ -275,6 +287,13 @@ public ResponseEntity<?> listarCursos(
             @NotBlank String idioma,
             @Min(0) double precio,
             String imagenPortadaUrl
+    ) {}
+
+    // Devolvemos el curso completo + token + rol para no romper el front actual
+    public static record CrearCursoResponse(
+            Curso curso,
+            String token,
+            String rol
     ) {}
 
     public static record ActualizarCursoRequest(

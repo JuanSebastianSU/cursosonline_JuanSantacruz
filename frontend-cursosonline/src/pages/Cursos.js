@@ -8,9 +8,8 @@ import "../assets/css/cursos.css";
 /**
  * Cursos.js
  * Lista los cursos publicados y muestra el botón "Crear curso"
- * a usuarios autenticados que aún no son instructores.
+ * solo a usuarios autenticados sin rol de instructor ni admin.
  */
-
 const Cursos = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -65,12 +64,14 @@ const Cursos = () => {
       <div className="cursos-header">
         <h2>Listado de Cursos</h2>
 
-        {/* 🔹 Botón visible solo si el usuario está logueado y no es instructor */}
-        {isAuthenticated && !tieneRol("ROLE_INSTRUCTOR") && !tieneRol("ROLE_ADMIN") && (
-  <button className="btn-crear-curso" onClick={handleCrearCurso}>
-    Crear mi primer curso
-  </button>
-)}
+        {/* 🔹 Solo visible si es usuario logueado y NO es instructor ni admin */}
+        {isAuthenticated &&
+          !tieneRol("ROLE_INSTRUCTOR") &&
+          !tieneRol("ROLE_ADMIN") && (
+            <button className="btn-crear-curso" onClick={handleCrearCurso}>
+              Crear mi primer curso
+            </button>
+          )}
       </div>
 
       {loading && <p>Cargando cursos...</p>}

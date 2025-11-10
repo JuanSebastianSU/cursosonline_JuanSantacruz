@@ -1,15 +1,18 @@
 .main-header {
-  background-color: #0d47a1;
-  color: white;
-  padding: 10px 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  box-shadow: var(--shadow);
 }
 
 .header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: wrap; /* evita desbordes al estrechar la ventana */
 }
 
 .logo {
@@ -17,13 +20,16 @@
   align-items: center;
   gap: 10px;
 }
-
 .logo img {
-  width: 40px;
-  height: 40px;
+  width: 32px; height: 32px;
+}
+.logo h1 {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  margin: 0;
+  color: var(--brand-contrast);
 }
 
-.logo h1 {
-  font-size: 1.3rem;
-  font-weight: bold;
+/* Deja que la navbar se adapte en varias filas si no cabe */
+.header-container nav .nav-list {
+  flex-wrap: wrap;
 }

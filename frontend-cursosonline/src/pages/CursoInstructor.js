@@ -101,51 +101,28 @@ const CursoInstructor = () => {
             </tr>
           </thead>
           <tbody>
-            {cursos.map((curso) => (
-              <tr key={curso.id}>
-                <td>{curso.titulo}</td>
-                <td>{curso.categoria}</td>
-                <td>{curso.nivel}</td>
-                <td>
-                  <span className={getBadgeClass(curso.estado)}>
-                    {curso.estado}
-                  </span>
-                </td>
-                <td>{curso.precio} USD</td>
-                <td className="acciones">
-                  <button
-                    className="btn-editar"
-                    onClick={() =>
-                      navigate(`/instructor/cursos/editar/${curso.id}`)
-                    }
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className="btn-eliminar"
-                    onClick={() => handleEliminar(curso.id)}
-                  >
-                    🗑️
-                  </button>
-                  {curso.estado === "PUBLICADO" ? (
-                    <button
-                      className="btn-archivar"
-                      onClick={() => handleArchivar(curso.id)}
-                    >
-                      📦
-                    </button>
-                  ) : (
-                    <button
-                      className="btn-publicar"
-                      onClick={() => handlePublicar(curso.id)}
-                    >
-                      🚀
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+  {cursos.map((curso) => (
+    <tr key={curso.id}>
+      <td data-label="Título">{curso.titulo}</td>
+      <td data-label="Categoría">{curso.categoria}</td>
+      <td data-label="Nivel">{curso.nivel}</td>
+      <td data-label="Estado">
+        <span className={getBadgeClass(curso.estado)}>{curso.estado}</span>
+      </td>
+      <td data-label="Precio">{curso.precio} USD</td>
+      <td data-label="Acciones" className="acciones">
+        <button className="btn-editar" onClick={() => navigate(`/instructor/cursos/editar/${curso.id}`)}>✏️</button>
+        <button className="btn-eliminar" onClick={() => handleEliminar(curso.id)}>🗑️</button>
+        {curso.estado === "PUBLICADO" ? (
+          <button className="btn-archivar" onClick={() => handleArchivar(curso.id)}>📦</button>
+        ) : (
+          <button className="btn-publicar" onClick={() => handlePublicar(curso.id)}>🚀</button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
         </table>
       </div>
     </div>

@@ -33,19 +33,21 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/perfil" element={<Dashboard />} />
         <Route path="/mi-perfil" element={<Perfil />} />
+
+        {/* ✅ Permitir que usuarios sin rol creen su primer curso */}
+        <Route path="/instructor/cursos/nuevo" element={<CursoNuevo />} />
       </Route>
 
       {/* ======== PANEL DEL INSTRUCTOR ======== */}
       <Route element={<ProtectedRoute roles={["ROLE_INSTRUCTOR", "ROLE_ADMIN"]} />}>
         <Route path="/instructor/cursos" element={<CursoInstructor />} />
-        <Route path="/instructor/cursos/nuevo" element={<CursoNuevo />} />
         <Route path="/instructor/cursos/editar/:id" element={<CursoEditar />} />
       </Route>
 
       {/* ======== PANEL DEL ADMINISTRADOR ======== */}
       <Route element={<ProtectedRoute roles={["ROLE_ADMIN"]} />}>
         <Route path="/admin/cursos" element={<CursoAdmin />} />
-        <Route path="/admin/cursos/nuevo" element={<CursoNuevo />} /> {/* ✅ FIX: Ruta restaurada */}
+        <Route path="/admin/cursos/nuevo" element={<CursoNuevo />} /> {/* ✅ FIX */}
         <Route path="/admin/cursos/editar/:id" element={<CursoEditar />} />
       </Route>
 

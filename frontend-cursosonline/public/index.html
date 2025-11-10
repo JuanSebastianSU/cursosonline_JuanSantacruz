@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -11,78 +11,150 @@
       name="description"
       content="Plataforma de cursos online con autenticación JWT, gestión de usuarios, cursos y evaluaciones."
     />
-
     <title>Cursos Online</title>
 
     <!-- Favicon -->
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
 
-    <!-- Fuente Google Fonts -->
+    <!-- Fuente -->
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Estilos globales opcionales -->
+    <!-- Estilos base + variables de tema (sin tocar tus hojas existentes) -->
     <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: "Roboto", sans-serif;
-        background-color: #f7f9fb;
-        color: #222;
+      :root{
+        /* Colores base */
+        --bg:#f7f9fb;
+        --text:#222;
+        --brand:#0d47a1;
+        --brand-2:#1976d2;
+        --brand-contrast:#ffffff;
+        --card:#ffffff;
+        --border:#e5e9f2;
+        --muted:#667085;
+        --accent:#ffb300;
+        --shadow:0 6px 20px rgba(0,0,0,.08);
+
+        /* Accesibilidad */
+        --focus:#ff9800;
+      }
+      html[data-theme="dark"]{
+        --bg:#111418;
+        --text:#e7eaf0;
+        --brand:#0b3a82;
+        --brand-2:#1565c0;
+        --brand-contrast:#ffffff;
+        --card:#1a1f24;
+        --border:#2a2f36;
+        --muted:#98a2b3;
+        --accent:#ffb300;
+        background: var(--bg);
+        color: var(--text);
+      }
+      html[data-theme="hc"]{ /* Alto contraste */
+        --bg:#000;
+        --text:#fff;
+        --brand:#000;
+        --brand-2:#000;
+        --brand-contrast:#fff;
+        --card:#000;
+        --border:#fff;
+        --accent:#ffff00;
+        background:#000; color:#fff;
+      }
+
+      /* Mapeo de filtros de daltonismo (el SVG está en <body>) */
+
+      /* Daltonismo: aplica el filtro sobre el body, no sobre html */
+html[data-cvd] body { filter: none; }
+
+html[data-cvd="deuteranopia"] body { filter: url("#cvd-deuteranopia"); }
+html[data-cvd="protanopia"]  body  { filter: url("#cvd-protanopia");  }
+html[data-cvd="tritanopia"]  body  { filter: url("#cvd-tritanopia");  }
+
+
+      /* Para evitar que afecte overlays del navegador */
+      html[data-cvd] { background: var(--bg); }
+
+      /* Menos animación (también respeta prefers-reduced-motion) */
+      @media (prefers-reduced-motion: reduce) {
+        * { animation: none !important; transition: none !important; }
+      }
+      html[data-reduce-motion="true"] * {
+        animation: none !important; transition: none !important;
+      }
+
+      /* Espaciado de texto accesible */
+      html[data-text-spacing="wide"] body {
+        line-height: 1.7 !important;
+        letter-spacing: .12em !important;
+        word-spacing: .16em !important;
+      }
+
+      html, body {
+        margin: 0; padding: 0;
+        font-family: "Roboto", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
         height: 100%;
       }
-
       #root {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
+        display: flex; flex-direction: column; min-height: 100vh;
       }
 
-      header,
-      footer {
-        background-color: #003366;
-        color: white;
-        text-align: center;
-        padding: 1rem;
+      /* Skip link visible al enfocar */
+      .skip-link{
+        position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;
+      }
+      .skip-link:focus{
+        left:12px; top:12px; width:auto; height:auto; padding:.5rem .75rem;
+        background:#000; color:#fff; z-index:10000; border-radius:8px;
+        outline:2px solid var(--focus);
       }
 
-      main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 1.5rem;
-      }
+      a{ color:#0055aa; text-decoration:none; }
+      a:hover, a:focus{ text-decoration:underline; outline: none; }
 
-      a {
-        color: #0055aa;
-        text-decoration: none;
-      }
+      /* Contenedor genérico usado en App.js */
+      .container{ width:100%; max-width:1280px; margin:0 auto; padding:16px; }
 
-      a:hover,
-      a:focus {
-        text-decoration: underline;
-      }
-
-      /* Diseño responsive */
-      @media (max-width: 768px) {
-        main {
-          padding: 1rem;
-        }
-      }
+      /* Foco visible por accesibilidad si algo no trae estilos propios */
+      :focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
     </style>
   </head>
 
   <body>
-    <noscript>
-      Debes habilitar JavaScript para ejecutar esta aplicación.
-    </noscript>
+    <!-- Filtros SVG para simulación de daltonismo -->
+    <svg class="cvd-filters" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;pointer-events:none;">
+      <defs>
+        <filter id="cvd-deuteranopia">
+          <feColorMatrix type="matrix" values="
+            0.367 0.861 -0.228 0 0
+            0.280 0.673  0.047 0 0
+           -0.012 0.043  0.969 0 0
+            0     0      0     1 0" />
+        </filter>
+        <filter id="cvd-protanopia">
+          <feColorMatrix type="matrix" values="
+            0.152 1.053 -0.205 0 0
+            0.115 0.786  0.099 0 0
+           -0.004 -0.048 1.052 0 0
+            0     0      0      1 0" />
+        </filter>
+        <filter id="cvd-tritanopia">
+          <feColorMatrix type="matrix" values="
+            1.255 -0.078 -0.177 0 0
+           -0.078  0.931  0.147 0 0
+            0.012  0.243  0.745 0 0
+            0      0      0     1 0" />
+        </filter>
+      </defs>
+    </svg>
 
-    <!-- Contenedor raíz de React -->
+    <noscript>Debes habilitar JavaScript para ejecutar esta aplicación.</noscript>
+
     <div id="root"></div>
   </body>
 </html>

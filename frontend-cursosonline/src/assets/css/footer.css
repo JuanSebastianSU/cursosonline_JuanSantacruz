@@ -1,6 +1,6 @@
 .main-footer {
-  background-color: #0d47a1;
-  color: white;
+  background-color: var(--brand);
+  color: var(--brand-contrast);
   padding: 30px 20px 10px;
   margin-top: 40px;
   font-size: 0.95rem;
@@ -15,15 +15,12 @@
   margin: auto;
 }
 
-.footer-section {
-  flex: 1;
-  min-width: 250px;
-}
+.footer-section { flex: 1; min-width: 250px; }
 
 .footer-section h4 {
   font-size: 1.1rem;
   margin-bottom: 10px;
-  border-bottom: 2px solid white;
+  border-bottom: 2px solid var(--brand-contrast);
   display: inline-block;
 }
 
@@ -32,19 +29,13 @@
   padding: 0;
   margin: 0;
 }
-
-.footer-section ul li {
-  margin: 5px 0;
-}
+.footer-section ul li { margin: 5px 0; }
 
 .footer-section ul li a {
-  color: white;
+  color: var(--brand-contrast);
   text-decoration: none;
 }
-
-.footer-section ul li a:hover {
-  text-decoration: underline;
-}
+.footer-section ul li a:hover { text-decoration: underline; }
 
 .footer-bottom {
   text-align: center;

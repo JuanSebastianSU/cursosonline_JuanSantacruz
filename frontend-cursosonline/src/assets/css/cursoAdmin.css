@@ -1,136 +1,129 @@
+:root{
+  --brand: var(--brand, #0d47a1);
+  --brand-2: var(--brand-2, #1976d2);
+  --brand-contrast: var(--brand-contrast, #ffffff);
+  --card: var(--card, #ffffff);
+  --text: var(--text, var(--a11y-fg, #222));
+  --border: var(--border, #e5e7eb);
+  --muted: var(--muted, #6b7280);
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+/* ===== Contenedor y título ===== */
 .admin-container {
-  background-color: #f7f9fc;
-  min-height: 100vh;
-  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
 }
-
 .admin-title {
+  color: var(--brand);
   text-align: center;
-  color: #0a2b57;
-  font-weight: 700;
-  margin-bottom: 25px;
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  margin: 10px 0 18px;
 }
 
+/* ===== Acciones ===== */
 .admin-actions {
-  text-align: right;
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
-
 .btn-crear {
-  background-color: #1565c0;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
+  background: var(--brand-2);
+  color: var(--brand-contrast);
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 600;
 }
 
-.btn-crear:hover {
-  background-color: #0d47a1;
-}
-
-.tabla-wrapper {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  overflow-x: auto;
-  padding: 15px;
-}
+/* ===== Tabla fluida ===== */
+.tabla-wrapper { width: 100%; overflow-x: auto; }
 
 .tabla-cursos {
   width: 100%;
+  min-width: 720px;                 /* si falta ancho, scroll local */
   border-collapse: collapse;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
-
-.tabla-cursos th {
-  background: #e3f2fd;
-  color: #0a2b57;
-  padding: 10px;
-}
-
+.tabla-cursos th,
 .tabla-cursos td {
-  padding: 10px;
-  border-top: 1px solid #e0e0e0;
-  text-align: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  color: var(--text);
+  vertical-align: middle;
 }
+.tabla-cursos th {
+  background: var(--brand);
+  color: var(--brand-contrast);
+  text-transform: uppercase;
+  font-size: .85rem;
+  letter-spacing: .02em;
+}
+.tabla-cursos tr:hover { background: color-mix(in srgb, var(--brand) 4%, #fff); }
 
+/* ===== Badges ===== */
 .badge {
+  display: inline-block;
   padding: 5px 12px;
   border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
 }
+.badge-publicado { background-color: #2e7d32; }
+.badge-borrador  { background-color: #fbc02d; color: #333; }
+.badge-archivado { background-color: #757575; }
 
-.badge-publicado {
-  background: #c8e6c9;
-  color: #2e7d32;
-}
-
-.badge-borrador {
-  background: #fff9c4;
-  color: #f57f17;
-}
-
-.badge-archivado {
-  background: #ffe0b2;
-  color: #e65100;
-}
-
+/* ===== Acciones (iconos) ===== */
 .acciones button {
-  margin: 0 3px;
+  background: none;
   border: none;
-  border-radius: 6px;
+  font-size: 1.1rem;
   cursor: pointer;
-  padding: 6px 10px;
-  font-size: 16px;
+  margin-right: 6px;
 }
 
-.btn-editar {
-  background: #1976d2;
-  color: white;
+/* ===== MODO TARJETA en móviles =====
+   Sin tocar el JSX: usamos :nth-child para rotular cada celda */
+@media (max-width: 560px) {
+  .tabla-cursos { min-width: unset; }
+  .tabla-cursos thead { display: none; }
+
+  .tabla-cursos tbody tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabla-cursos tbody td {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    padding: 6px 0;
+  }
+  .tabla-cursos tbody td::before {
+    content: "";
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 110px;
+  }
+  .tabla-cursos tbody td:nth-child(1)::before { content: "Título"; }
+  .tabla-cursos tbody td:nth-child(2)::before { content: "Categoría"; }
+  .tabla-cursos tbody td:nth-child(3)::before { content: "Nivel"; }
+  .tabla-cursos tbody td:nth-child(4)::before { content: "Estado"; }
+  .tabla-cursos tbody td:nth-child(5)::before { content: "Precio"; }
+  .tabla-cursos tbody td:nth-child(6)::before { content: "Acciones"; }
+
+  .acciones { grid-column: 1 / -1; }
 }
 
-.btn-eliminar {
-  background: #c62828;
-  color: white;
-}
-
-.btn-publicar {
-  background: #2e7d32;
-  color: white;
-}
-
-.btn-archivar {
-  background: #ff9800;
-  color: white;
-}
-
-.btn-editar:hover,
-.btn-eliminar:hover,
-.btn-publicar:hover,
-.btn-archivar:hover {
-  opacity: 0.85;
-}
-
-.actividad-card {
-  margin-top: 40px;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.actividad-card h2 {
-  color: #0a2b57;
-  margin-bottom: 15px;
-}
-
-.actividad-item {
-  border-bottom: 1px solid #e0e0e0;
-  padding: 8px 0;
-}
-
-.actividad-item:last-child {
-  border-bottom: none;
-}
+/* Respeto “menos animación” global */
+html.a11y--reduce-motion .btn-crear { transition: none !important; }

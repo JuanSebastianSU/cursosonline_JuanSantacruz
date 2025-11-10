@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { crearCurso } from "../services/cursoService";
 import { AuthContext } from "../context/AuthContext";
 import "../assets/css/dashboard.css";
+import api from "../services/api";
 
 const CursoNuevo = () => {
   const navigate = useNavigate();
@@ -55,34 +56,55 @@ const CursoNuevo = () => {
   };
 
   const handleGuardar = async () => {
-    if (!validarCampos()) return;
+  if (!validarCampos()) return;
 
-    setGuardando(true);
-    try {
-      const res = await crearCurso({
-        ...curso,
-        precio: parseFloat(curso.precio.toString().replace(",", ".")),
-      });
+  setGuardando(true);
+  try {
+    const res = await crearCurso({
+      ...curso,
+      precio: parseFloat(curso.precio.toString().replace(",", ".")),
+    });
 
-      alert("Curso creado correctamente.");
+    // El backend devuelve { curso, token, rol }
+    const { token, rol } = res || {};
 
-      // ✅ Si el backend devuelve nuevoRol, actualizamos el usuario local
-      if (res.nuevoRol && !user?.roles?.includes(res.nuevoRol)) {
-        updateUser({
-          roles: [...(user?.roles || []), res.nuevoRol],
-        });
-
-        alert("🎉 ¡Felicidades! Ahora eres instructor.");
-      }
-
-      navigate("/instructor/cursos");
-    } catch (err) {
-      console.error("Error al crear curso:", err);
-      alert("No se pudo crear el curso.");
-    } finally {
-      setGuardando(false);
+    // ✅ Si llega token nuevo: guárdalo y setea el header para próximas requests
+    if (token) {
+      localStorage.setItem("token", token);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
-  };
+
+    // ✅ Si llega 'rol' (por ejemplo "INSTRUCTOR"), agrega/normaliza en user.roles
+    if (rol) {
+      // normaliza a "ROLE_INSTRUCTOR"
+      const roleNorm = rol.toUpperCase().startsWith("ROLE_") ? rol.toUpperCase() : `ROLE_${rol.toUpperCase()}`;
+
+      // arma una lista única de roles existentes + nuevo rol
+      const actuales = Array.isArray(user?.roles)
+        ? user.roles.map((r) => (typeof r === "string" ? r : r?.nombre)).filter(Boolean)
+        : [];
+
+      const set = new Set([...actuales, roleNorm]);
+      updateUser({
+        // mantenemos el 'rol' original (para tu página de perfil)
+        rol: rol, 
+        // y además garantizamos un array 'roles' compatible con Navbar
+        roles: Array.from(set),
+      });
+    }
+
+    // UX
+    alert("Curso creado correctamente.");
+    // 🚀 Ya con el contexto refrescado, la Navbar muestra "Mis Cursos"
+    navigate("/instructor/cursos");
+  } catch (err) {
+    console.error("Error al crear curso:", err);
+    alert("No se pudo crear el curso.");
+  } finally {
+    setGuardando(false);
+  }
+};
+
 
   const handleCancelar = () => navigate("/instructor/cursos");
 
