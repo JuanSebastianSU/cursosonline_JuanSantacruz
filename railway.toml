@@ -1,0 +1,11 @@
+[build]
+builder = "NIXPACKS"
+
+[phases.setup]
+nixPkgs = ["maven", "jdk"]
+
+[phases.build]
+cmds = ["mvn clean install -DskipTests"]
+
+[start]
+cmd = "java -jar target/*.jar"
