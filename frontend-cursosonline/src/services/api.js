@@ -1,15 +1,8 @@
+// src/services/api.js
 import axios from "axios";
 
-/**
- * Configuración central de Axios para comunicar el frontend React
- * con el backend Spring Boot (API REST con JWT).
- */
-
-// 🚀 PRODUCCIÓN (Vercel → Railway)
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
-// 🖥️ DESARROLLO LOCAL (cuando estés probando localmente)
-// Si REACT_APP_API_URL no existe, usa localhost automáticamente
 const BASE_URL =
   API_BASE_URL && API_BASE_URL.trim() !== ""
     ? API_BASE_URL
@@ -17,15 +10,13 @@ const BASE_URL =
 
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true,
+  // ❌ ya no necesitamos cookies, solo Authorization header
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/**
- * Interceptor: agrega el token JWT a todas las peticiones.
- */
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -35,9 +26,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/**
- * Interceptor: maneja errores globales sin romper la navegación.
- */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -51,7 +39,6 @@ api.interceptors.response.use(
         console.warn("Sesión inválida o expirada.");
       }
     }
-
     return Promise.reject(error);
   }
 );
