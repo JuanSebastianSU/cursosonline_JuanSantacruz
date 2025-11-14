@@ -113,20 +113,27 @@ const Navbar = () => {
 
                     {/* PANEL INSTRUCTOR */}
                     {tieneRol("ROLE_INSTRUCTOR") && (
-                      <li>
-                        <Link
-                          to="/instructor/cursos"
-                          className={baseLink}
-                        >
-                          Instructor
-                        </Link>
-                      </li>
+                      <>
+                        <li>
+                          <Link to="/instructor/cursos" className={baseLink}>
+                            Instructor
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            to="/instructor/calificaciones"
+                            className={baseLink}
+                          >
+                            Calificaciones
+                          </Link>
+                        </li>
+                      </>
                     )}
 
-                    {/* PANEL ADMIN */}
+                    {/* PANEL ADMIN (solo un botón, lleva al hub /admin) */}
                     {tieneRol("ROLE_ADMIN") && (
                       <li>
-                        <Link to="/admin/cursos" className={baseLink}>
+                        <Link to="/admin" className={baseLink}>
                           Admin
                         </Link>
                       </li>

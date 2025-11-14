@@ -33,6 +33,14 @@ import InscripcionesCursoGestion from "./pages/InscripcionesCursoGestion";
 // 👇 panel para ver intentos (instructor)
 import EvaluacionIntentosGestion from "./pages/EvaluacionIntentosGestion";
 
+// 👇 paneles de calificaciones
+import CalificacionesInstructor from "./pages/CalificacionesInstructor";
+import CalificacionesAdmin from "./pages/CalificacionesAdmin";
+
+// 👇 NUEVOS: panel hub admin + gestión usuarios
+import AdminPanel from "./pages/AdminPanel";
+import AdminUsuariosGestion from "./pages/AdminUsuariosGestion";
+
 function AppRoutes() {
   return (
     <Routes>
@@ -77,10 +85,7 @@ function AppRoutes() {
         element={<ProtectedRoute roles={["ROLE_INSTRUCTOR", "ROLE_ADMIN"]} />}
       >
         <Route path="/instructor/cursos" element={<CursoInstructor />} />
-        <Route
-          path="/instructor/cursos/editar/:id"
-          element={<CursoEditar />}
-        />
+        <Route path="/instructor/cursos/editar/:id" element={<CursoEditar />} />
         <Route
           path="/instructor/cursos/:id/modulos"
           element={<CursoModulosGestion />}
@@ -108,6 +113,12 @@ function AppRoutes() {
           element={<EvaluacionIntentosGestion />}
         />
 
+        {/* panel global de calificaciones del instructor */}
+        <Route
+          path="/instructor/calificaciones"
+          element={<CalificacionesInstructor />}
+        />
+
         {/* revisar pagos de una inscripción (INSTRUCTOR) */}
         <Route
           path="/instructor/inscripciones/:idInscripcion/pagos"
@@ -117,6 +128,9 @@ function AppRoutes() {
 
       {/* ======== PANEL ADMIN ======== */}
       <Route element={<ProtectedRoute roles={["ROLE_ADMIN"]} />}>
+        {/* HUB ADMIN */}
+        <Route path="/admin" element={<AdminPanel />} />
+
         <Route path="/admin/cursos" element={<CursoAdmin />} />
         <Route path="/admin/cursos/nuevo" element={<CursoNuevo />} />
         <Route path="/admin/cursos/editar/:id" element={<CursoEditar />} />
@@ -126,6 +140,12 @@ function AppRoutes() {
           path="/admin/cursos/:id/inscripciones"
           element={<InscripcionesCursoGestion />}
         />
+
+        {/* panel global de calificaciones para admin */}
+        <Route path="/admin/calificaciones" element={<CalificacionesAdmin />} />
+
+        {/* NUEVO: gestión de usuarios */}
+        <Route path="/admin/usuarios" element={<AdminUsuariosGestion />} />
 
         <Route
           path="/admin/inscripciones/:idInscripcion/pagos"
