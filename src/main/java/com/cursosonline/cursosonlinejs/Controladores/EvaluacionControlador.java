@@ -25,7 +25,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/lecciones/{idLeccion}/evaluaciones")
-@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
+@CrossOrigin(
+        origins = {
+                "http://localhost:9090",
+                "https://cursosonline-juan-santacruz.vercel.app"
+        },
+        allowCredentials = "true"
+)
 public class EvaluacionControlador {
 
     private final EvaluacionServicio evaluacionServicio;

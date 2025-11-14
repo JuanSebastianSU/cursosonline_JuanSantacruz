@@ -23,7 +23,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/inscripciones/{idInscripcion}/pagos")
-@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
+@CrossOrigin(
+        origins = {
+                "http://localhost:9090",
+                "https://cursosonline-juan-santacruz.vercel.app"
+        },
+        allowCredentials = "true"
+)
 public class PagoControlador {
 
     private final PagoServicio pagoServicio;
