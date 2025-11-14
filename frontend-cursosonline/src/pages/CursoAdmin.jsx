@@ -1,3 +1,4 @@
+// src/pages/CursoAdmin.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,39 +9,43 @@ import {
 } from "../services/cursoService";
 
 /**
- * CursoAdmin
- * Panel de administración de cursos con diseño Tailwind
- * Estilo limpio, clásico y elegante.
+ * CursoAdmin.js
+ * Panel de administración global de cursos (rol ADMIN).
  */
 const CursoAdmin = () => {
   const [cursos, setCursos] = useState([]);
   const [recientes, setRecientes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filtro, setFiltro] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    cargarCursos();
-  }, []);
-
   const cargarCursos = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const data = await listarCursos();
-      const lista = data.content || [];
+      const data = await listarCursos(); // todos los cursos
+      const lista = data?.content || data || [];
       setCursos(lista);
-      setRecientes(
-        lista.slice(0, 5).map((c) => ({
-          titulo: c.titulo,
-          estado: c.estado,
-          fecha: c.fechaCreacion || "N/D",
-        }))
-      );
+
+      const ultimos = lista.slice(0, 5).map((c) => ({
+        id: c.id,
+        titulo: c.titulo,
+        estado: c.estado,
+        fecha: c.fechaCreacion || c.fechaPublicacion || "N/D",
+      }));
+      setRecientes(ultimos);
     } catch (err) {
-      console.error("Error al cargar cursos:", err);
-      alert("Error al cargar los cursos.");
+      console.error("Error al cargar cursos (admin):", err);
+      setError("No se pudieron cargar los cursos.");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    cargarCursos();
+  }, []);
 
   const handlePublicar = async (id) => {
     try {
@@ -61,21 +66,21 @@ const CursoAdmin = () => {
   };
 
   const handleEliminar = async (id) => {
-    if (window.confirm("¿Seguro que deseas eliminar este curso?")) {
-      try {
-        await eliminarCurso(id);
-        cargarCursos();
-      } catch {
-        alert("Error al eliminar el curso.");
-      }
+    if (!window.confirm("¿Seguro que deseas eliminar este curso?")) return;
+    try {
+      await eliminarCurso(id);
+      cargarCursos();
+    } catch {
+      alert("Error al eliminar el curso.");
     }
   };
 
   const estadoStyles = {
-    PUBLICADO: "bg-emerald-600/90 text-emerald-50",
-    BORRADOR: "bg-amber-500/90 text-amber-950",
-    ARCHIVADO: "bg-slate-500/90 text-slate-50",
-    DEFAULT: "bg-slate-800/90 text-slate-50",
+    PUBLICADO:
+      "bg-emerald-400/90 text-slate-950 shadow-[0_8px_22px_rgba(52,211,153,0.7)]",
+    BORRADOR: "bg-amber-300/95 text-slate-950",
+    ARCHIVADO: "bg-slate-500/95 text-slate-50",
+    DEFAULT: "bg-slate-700/95 text-slate-50",
   };
 
   const getEstadoClass = (estado) => {
@@ -84,177 +89,293 @@ const CursoAdmin = () => {
     return estadoStyles[key] || estadoStyles.DEFAULT;
   };
 
+  const cursosFiltrados = cursos.filter((c) => {
+    if (!filtro.trim()) return true;
+    const q = filtro.toLowerCase();
+    return (
+      c.titulo?.toLowerCase().includes(q) ||
+      c.categoria?.toLowerCase().includes(q) ||
+      c.estado?.toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-8 bg-slate-50/60 rounded-3xl shadow-[0_20px_60px_rgba(15,23,42,0.25)]">
-      {/* Encabezado */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-4">
-        <div className="text-center md:text-left space-y-1">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
-            Administración de cursos
-          </h1>
-          <p className="text-xs md:text-sm text-slate-500">
-            Gestiona la creación, publicación, archivado y eliminación de los
-            cursos de la plataforma.
-          </p>
-        </div>
+    <main className="flex-1 bg-slate-950/80 text-slate-50">
+      {/* Halos / garabatos de fondo */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-28 left-1/2 h-64 w-72 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(248,250,252,0.12),_transparent_60%)] blur-3xl opacity-80" />
+        <div className="absolute -right-24 bottom-16 h-60 w-60 rounded-full bg-sky-500/18 blur-3xl" />
+        <div className="absolute -left-32 top-40 h-60 w-80 -rotate-6 bg-gradient-to-r from-amber-400/18 via-transparent to-rose-500/22 blur-2xl" />
+      </div>
 
-        <button
-          onClick={() => navigate("/admin/cursos/nuevo")}
-          className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-amber-100 px-4 py-2 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-800 active:translate-y-px transition"
-        >
-          <span className="text-base leading-none">＋</span>
-          <span>Crear nuevo curso</span>
-        </button>
-      </header>
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-7">
+        {/* ENCABEZADO */}
+        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-2">
+            <p className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-950/80 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400">
+              <span className="h-1.5 w-8 -skew-x-12 rounded-full bg-gradient-to-r from-amber-300/90 via-rose-300/90 to-sky-300/90" />
+              Panel admin
+            </p>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-50">
+              Administración de cursos
+            </h1>
+            <p className="text-xs md:text-sm text-slate-400 max-w-xl">
+              Supervisa todos los cursos de la plataforma, gestiona su estado,
+              precios y controla la actividad reciente.
+            </p>
+          </div>
 
-      {/* Tabla de cursos */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between text-xs md:text-sm text-slate-500">
-          <span className="font-medium text-slate-700">Listado de cursos</span>
-          {!loading && (
-            <span>
-              {cursos.length} curso{cursos.length !== 1 && "s"} registrados
-            </span>
-          )}
-        </div>
+          <div className="flex flex-col items-stretch sm:items-end gap-3">
+            <button
+              onClick={() => navigate("/admin/cursos/nuevo")}
+              className="inline-flex items-center justify-center rounded-full bg-slate-50 px-4 py-2 text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-slate-950 shadow-[0_14px_45px_rgba(248,250,252,0.7)] hover:bg-amber-200 hover:text-slate-950 transition-colors"
+              type="button"
+            >
+              <span className="mr-1 text-base leading-none">＋</span>
+              Crear curso
+            </button>
 
-        <div className="mt-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
-          {loading ? (
-            <div className="px-4 py-6 text-sm text-slate-500">
-              Cargando cursos...
+            <p className="text-[0.7rem] text-slate-500">
+              {cursos.length === 0 ? (
+                <>No hay cursos registrados todavía.</>
+              ) : (
+                <>
+                  {cursos.length} curso
+                  {cursos.length !== 1 && "s"} en la plataforma
+                </>
+              )}
+            </p>
+          </div>
+        </header>
+
+        {/* FILTRO / BUSCADOR */}
+        <section className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="w-full lg:max-w-sm">
+            <label className="block text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500 mb-1.5">
+              Buscar cursos
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-500 text-xs">
+                🔎
+              </span>
+              <input
+                type="text"
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                placeholder="Título, categoría o estado..."
+                className="w-full rounded-full border border-slate-700/70 bg-slate-950/70 pl-8 pr-3 py-1.5 text-xs md:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-50/40"
+              />
             </div>
-          ) : cursos.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-slate-500">
-              No hay cursos registrados.
-            </div>
-          ) : (
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-slate-900 text-slate-50">
-                  <th className="px-4 py-3 text-left text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Título
-                  </th>
-                  <th className="px-4 py-3 text-left text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Categoría
-                  </th>
-                  <th className="px-4 py-3 text-left text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Nivel
-                  </th>
-                  <th className="px-4 py-3 text-left text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-left text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Precio
-                  </th>
-                  <th className="px-4 py-3 text-right text-[0.7rem] font-semibold tracking-wide uppercase">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {cursos.map((curso) => (
-                  <tr
-                    key={curso.id}
-                    className="border-t border-slate-100 hover:bg-slate-50/80 transition-colors"
-                  >
-                    <td className="px-4 py-3 align-middle text-slate-900 font-semibold">
-                      <div className="max-w-xs truncate">{curso.titulo}</div>
-                    </td>
-                    <td className="px-4 py-3 align-middle text-slate-700">
-                      {curso.categoria || "—"}
-                    </td>
-                    <td className="px-4 py-3 align-middle text-slate-700">
-                      {curso.nivel || "—"}
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <span
-                        className={
-                          "inline-flex items-center rounded-full px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide " +
-                          getEstadoClass(curso.estado)
-                        }
-                      >
-                        {curso.estado || "N/D"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 align-middle text-slate-800">
-                      {curso.precio != null ? `${curso.precio} USD` : "N/D"}
-                    </td>
-                    <td className="px-4 py-3 align-middle">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          title="Editar curso"
-                          onClick={() =>
-                            navigate(`/admin/cursos/editar/${curso.id}`)
-                          }
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-[0.85rem] text-slate-700 hover:border-slate-900 hover:bg-slate-900 hover:text-amber-100 transition"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          title="Eliminar curso"
-                          onClick={() => handleEliminar(curso.id)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 text-[0.85rem] text-rose-600 hover:border-rose-700 hover:bg-rose-700 hover:text-rose-50 transition"
-                        >
-                          🗑️
-                        </button>
-                        {curso.estado === "PUBLICADO" ? (
-                          <button
-                            title="Archivar curso"
-                            onClick={() => handleArchivar(curso.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-[0.85rem] text-slate-700 hover:border-slate-700 hover:bg-slate-700 hover:text-slate-50 transition"
-                          >
-                            📦
-                          </button>
-                        ) : (
-                          <button
-                            title="Publicar curso"
-                            onClick={() => handlePublicar(curso.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 text-[0.85rem] text-emerald-700 hover:border-emerald-700 hover:bg-emerald-700 hover:text-emerald-50 transition"
-                          >
-                            🚀
-                          </button>
-                        )}
-                      </div>
-                    </td>
+          </div>
+
+          <button
+            type="button"
+            onClick={cargarCursos}
+            className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/80 px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-300 hover:border-slate-300 hover:text-slate-50 transition-colors self-start lg:self-auto"
+          >
+            ↻ Recargar
+          </button>
+        </section>
+
+        {/* TABLA / LISTADO PRINCIPAL */}
+        <section className="mt-2">
+          <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-950/90 shadow-[0_22px_70px_rgba(15,23,42,1)]">
+            {loading ? (
+              <div className="px-4 py-6 text-sm text-slate-300">
+                Cargando cursos...
+              </div>
+            ) : error ? (
+              <div className="px-4 py-6 text-sm text-red-200 bg-red-900/40 border-b border-red-500/50">
+                {error}
+              </div>
+            ) : cursosFiltrados.length === 0 ? (
+              <div className="px-4 py-6 text-sm text-slate-300">
+                {cursos.length === 0 ? (
+                  <>No hay cursos registrados.</>
+                ) : (
+                  <>No se encontraron cursos para el criterio de búsqueda.</>
+                )}
+              </div>
+            ) : (
+              <table className="min-w-full text-xs md:text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 text-slate-100 border-b border-slate-800/80">
+                    <th className="px-4 py-3 text-left text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Curso
+                    </th>
+                    <th className="px-4 py-3 text-left text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Categoría
+                    </th>
+                    <th className="px-4 py-3 text-left text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Nivel
+                    </th>
+                    <th className="px-4 py-3 text-left text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Precio
+                    </th>
+                    <th className="px-4 py-3 text-right text-[0.65rem] md:text-[0.7rem] font-semibold tracking-[0.2em] uppercase">
+                      Acciones
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
+                </thead>
+                <tbody>
+                  {cursosFiltrados.map((curso) => (
+                    <tr
+                      key={curso.id}
+                      className="border-t border-slate-800/70 hover:bg-slate-900/70 transition-colors"
+                    >
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-slate-50 font-semibold line-clamp-1">
+                            {curso.titulo}
+                          </span>
+                          <span className="text-[0.7rem] text-slate-500">
+                            ID #{curso.id}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-middle text-slate-200">
+                        {curso.categoria || "—"}
+                      </td>
+                      <td className="px-4 py-3 align-middle text-slate-200">
+                        {curso.nivel || "—"}
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          className={
+                            "inline-flex items-center rounded-full px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] " +
+                            getEstadoClass(curso.estado)
+                          }
+                        >
+                          {curso.estado || "N/D"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-middle text-slate-100">
+                        {curso.precio != null
+                          ? `${curso.precio} USD`
+                          : "Por definir"}
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {/* Inscripciones / pagos (admin) */}
+                          <button
+                            type="button"
+                            title="Ver inscripciones y pagos del curso"
+                            onClick={() =>
+                              navigate(
+                                `/admin/cursos/${curso.id}/inscripciones`
+                              )
+                            }
+                            className="inline-flex items-center justify-center rounded-full border border-emerald-400/70 bg-slate-900 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-emerald-200 hover:border-emerald-300 hover:bg-slate-800 active:translate-y-px transition"
+                          >
+                            Inscripciones / pagos
+                          </button>
 
-      {/* Actividad reciente */}
-      <section className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm space-y-3">
-        <h2 className="text-sm md:text-base font-semibold text-slate-900">
-          Actividad reciente
-        </h2>
-        {recientes.length === 0 ? (
-          <p className="text-xs md:text-sm text-slate-500">
-            No hay actividad reciente disponible.
+                          {/* PANEL DE MÓDULOS (usa ruta de instructor) */}
+                          <button
+                            type="button"
+                            title="Ir al panel de módulos del curso"
+                            onClick={() =>
+                              navigate(`/instructor/cursos/${curso.id}/modulos`)
+                            }
+                            className="inline-flex items-center justify-center rounded-full border border-purple-400/80 bg-slate-900 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-purple-200 hover:bg-purple-500/15 hover:border-purple-300 active:translate-y-px transition"
+                          >
+                            Panel módulos
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Editar curso"
+                            onClick={() =>
+                              navigate(`/admin/cursos/editar/${curso.id}`)
+                            }
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-600/80 text-[0.85rem] text-slate-100 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            title="Eliminar curso"
+                            onClick={() => handleEliminar(curso.id)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-700/80 text-[0.9rem] text-rose-300 hover:border-rose-400 hover:bg-rose-600 hover:text-rose-50 transition-colors"
+                          >
+                            🗑️
+                          </button>
+                          {curso.estado === "PUBLICADO" ? (
+                            <button
+                              type="button"
+                              title="Archivar curso"
+                              onClick={() => handleArchivar(curso.id)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-600/80 text-[0.9rem] text-slate-200 hover:border-slate-300 hover:bg-slate-700 hover:text-slate-50 transition-colors"
+                            >
+                              📦
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Publicar curso"
+                              onClick={() => handlePublicar(curso.id)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/70 text-[0.9rem] text-emerald-300 hover:border-emerald-300 hover:bg-emerald-500 hover:text-emerald-50 transition-colors"
+                            >
+                              🚀
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+
+        {/* ACTIVIDAD RECIENTE */}
+        <section className="rounded-3xl border border-slate-800 bg-slate-950/80 px-4 md:px-5 py-4 shadow-[0_16px_45px_rgba(15,23,42,0.9)] space-y-3">
+          <h2 className="text-sm md:text-base font-semibold tracking-tight text-slate-50">
+            Actividad reciente
+          </h2>
+          {recientes.length === 0 ? (
+            <p className="text-xs md:text-sm text-slate-400">
+              Aún no hay actividad registrada en los cursos.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {recientes.map((act) => (
+                <li
+                  key={act.id}
+                  className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 border-b last:border-b-0 border-slate-800 pb-2 last:pb-0"
+                >
+                  <div className="text-xs md:text-sm text-slate-200">
+                    <span className="font-semibold text-slate-50">
+                      {act.titulo}
+                    </span>{" "}
+                    —{" "}
+                    <span className="uppercase tracking-[0.18em] text-[0.7rem] text-slate-400">
+                      {act.estado || "N/D"}
+                    </span>
+                  </div>
+                  <span className="text-[0.7rem] md:text-xs text-slate-500">
+                    {act.fecha}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* NOTA FINAL */}
+        <section className="pt-1">
+          <p className="text-[0.7rem] text-slate-500 max-w-md">
+            Como administrador puedes intervenir cualquier curso. Procura
+            mantener un equilibrio entre la libertad creativa de los
+            instructores y la coherencia académica de la plataforma.
           </p>
-        ) : (
-          <ul className="space-y-2">
-            {recientes.map((act, i) => (
-              <li
-                key={i}
-                className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 border-b last:border-b-0 border-slate-100 pb-2 last:pb-0"
-              >
-                <div className="text-xs md:text-sm text-slate-800">
-                  <strong className="font-semibold text-slate-900">
-                    {act.titulo}
-                  </strong>{" "}
-                  — {act.estado}
-                </div>
-                <span className="text-[0.7rem] md:text-xs text-slate-500">
-                  {act.fecha}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 };
 

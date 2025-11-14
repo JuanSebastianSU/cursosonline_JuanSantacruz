@@ -3,6 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 
+/**
+ * CursoEditar.jsx
+ * Edición de datos básicos del curso + acceso a gestión de módulos.
+ */
 const CursoEditar = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -65,6 +69,10 @@ const CursoEditar = () => {
     navigate("/instructor/cursos");
   };
 
+  const irAGestionModulos = () => {
+    navigate(`/instructor/cursos/${id}/modulos`);
+  };
+
   if (error && !curso) {
     return (
       <div className="max-w-xl mx-auto px-4 py-10 text-center text-sm text-rose-600">
@@ -82,11 +90,56 @@ const CursoEditar = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10">
-      <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-6 text-center md:text-left tracking-tight">
-        Editar curso
-      </h1>
+    <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-6">
+      {/* ====== HEADER ====== */}
+      <header className="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-6 py-6 md:px-8 md:py-7 shadow-[0_20px_60px_rgba(15,23,42,0.9)] border border-slate-800/80">
+        <p className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-950/80 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400">
+          <span className="h-1.5 w-8 -skew-x-12 rounded-full bg-gradient-to-r from-amber-300/90 via-emerald-300/90 to-sky-300/90" />
+          Edición de curso
+        </p>
+        <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-slate-50">
+          {curso.titulo || "Editar curso"}
+        </h1>
+        <p className="mt-2 text-xs md:text-sm text-slate-300 max-w-xl">
+          Ajusta los datos básicos de tu curso y accede a la gestión de módulos
+          y contenido interno.
+        </p>
+      </header>
 
+      {/* ====== PANEL: ¿QUÉ DESEAS EDITAR? ====== */}
+      <section className="rounded-3xl border border-slate-200 bg-white/95 shadow-[0_16px_45px_rgba(15,23,42,0.15)] px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
+            Qué deseas editar
+          </p>
+          <p className="text-xs md:text-sm text-slate-600 max-w-lg">
+            Desde aquí puedes modificar la información general del curso
+            (título, categoría, precio…) o entrar al panel para gestionar
+            módulos, lecciones y estructura interna.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {/* “Pestaña” activa: datos del curso */}
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-1.5 text-[0.7rem] md:text-xs font-semibold tracking-[0.18em] uppercase text-amber-100 shadow-sm"
+          >
+            Datos del curso
+          </button>
+
+          {/* Botón ir a módulos */}
+          <button
+            type="button"
+            onClick={irAGestionModulos}
+            className="inline-flex items-center justify-center rounded-full border border-amber-400/80 bg-amber-100/5 px-4 py-1.5 text-[0.7rem] md:text-xs font-semibold tracking-[0.18em] uppercase text-amber-600 hover:bg-amber-200/15 hover:border-amber-300 transition-colors"
+          >
+            Editar módulos
+          </button>
+        </div>
+      </section>
+
+      {/* ====== TARJETA PRINCIPAL DE EDICIÓN ====== */}
       <div className="bg-white/95 rounded-3xl border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.15)] px-5 md:px-8 py-6 md:py-8 space-y-6">
         {/* Alerta si está publicado */}
         {esPublicado && (
@@ -140,7 +193,7 @@ const CursoEditar = () => {
             />
           </div>
 
-          {/* Grid de datos básicos */}
+          {/* Grid datos básicos */}
           <div className="grid gap-4 md:gap-6 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">

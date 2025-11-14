@@ -1,4 +1,3 @@
-// src/components/Footer.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -6,35 +5,33 @@ const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 border-t border-slate-800 bg-slate-950 text-slate-100">
-      {/* contenido principal */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 md:flex-row md:justify-between">
-        {/* Sobre nosotros */}
-        <div className="md:max-w-sm space-y-3">
-          <h4 className="text-sm font-semibold tracking-[0.16em] uppercase text-amber-300">
-            Sobre nosotros
-          </h4>
-          <p className="text-sm leading-relaxed text-slate-300">
-            <span className="font-semibold text-slate-50">
-              CursosOnlineJS
-            </span>{" "}
-            es una plataforma educativa desarrollada en{" "}
-            <span className="font-semibold">React</span> y{" "}
-            <span className="font-semibold">Spring Boot</span>, orientada al
-            aprendizaje interactivo en línea.
+    <footer className="mt-10 border-t border-slate-900 bg-slate-950 text-slate-200">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 grid gap-8 md:grid-cols-3">
+        {/* Columna 1: Marca */}
+        <div className="space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase text-slate-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            <span>CursosOnlineJS</span>
+          </div>
+          <p className="text-sm text-slate-300">
+            Plataforma educativa construida en{" "}
+            <span className="font-semibold text-amber-300">React</span> y{" "}
+            <span className="font-semibold text-amber-300">Spring Boot</span>,
+            pensada para aprender de forma flexible, moderna y cuidada al
+            detalle.
           </p>
         </div>
 
-        {/* Enlaces útiles */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold tracking-[0.16em] uppercase text-amber-300">
-            Enlaces útiles
+        {/* Columna 2: enlaces */}
+        <div>
+          <h4 className="text-sm font-semibold tracking-wide text-slate-100 mb-3">
+            Navegación
           </h4>
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-2 text-sm text-slate-300">
             <li>
               <Link
                 to="/"
-                className="text-slate-300 hover:text-amber-300 transition-colors"
+                className="hover:text-amber-300 transition-colors"
               >
                 Inicio
               </Link>
@@ -42,7 +39,7 @@ const Footer = () => {
             <li>
               <Link
                 to="/cursos"
-                className="text-slate-300 hover:text-amber-300 transition-colors"
+                className="hover:text-amber-300 transition-colors"
               >
                 Cursos
               </Link>
@@ -50,7 +47,7 @@ const Footer = () => {
             <li>
               <Link
                 to="/contacto"
-                className="text-slate-300 hover:text-amber-300 transition-colors"
+                className="hover:text-amber-300 transition-colors"
               >
                 Contacto
               </Link>
@@ -58,7 +55,7 @@ const Footer = () => {
             <li>
               <Link
                 to="/login"
-                className="text-slate-300 hover:text-amber-300 transition-colors"
+                className="hover:text-amber-300 transition-colors"
               >
                 Iniciar sesión
               </Link>
@@ -66,28 +63,40 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* Contacto */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold tracking-[0.16em] uppercase text-amber-300">
+        {/* Columna 3: contacto */}
+        <div className="space-y-2 text-sm">
+          <h4 className="text-sm font-semibold tracking-wide text-slate-100 mb-3">
             Contacto
           </h4>
-          <div className="space-y-1 text-sm text-slate-300">
-            <p>📧 info@cursosonlinejs.com</p>
-            <p>📍 Quito, Ecuador</p>
-            <p>📞 +593 99 999 9999</p>
-          </div>
+          <p className="flex items-center gap-2 text-slate-300">
+            <span>📧</span>
+            <a
+              href="mailto:info@cursosonlinejs.com"
+              className="hover:text-amber-300 transition-colors"
+            >
+              info@cursosonlinejs.com
+            </a>
+          </p>
+          <p className="flex items-center gap-2 text-slate-300">
+            <span>📍</span>
+            <span>Quito, Ecuador</span>
+          </p>
+          <p className="flex items-center gap-2 text-slate-300">
+            <span>📞</span>
+            <span>+593 99 999 9999</span>
+          </p>
         </div>
       </div>
 
-      {/* franja inferior retro */}
-      <div className="border-t border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
-        <p className="mx-auto max-w-6xl px-4 py-3 text-center text-[0.8rem] text-slate-400">
-          © {year}{" "}
-          <span className="font-semibold text-slate-200">
-            CursosOnlineJS
-          </span>
-          . Todos los derechos reservados.
-        </p>
+      <div className="border-t border-slate-900/80 bg-slate-950">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[0.75rem] md:text-xs text-slate-500">
+          <p>© {year} CursosOnlineJS. Todos los derechos reservados.</p>
+          <p className="flex items-center gap-1">
+            <span className="text-slate-400">Hecho con</span>
+            <span className="text-rose-400">♥</span>
+            <span className="text-slate-400">para aprender cada día.</span>
+          </p>
+        </div>
       </div>
     </footer>
   );

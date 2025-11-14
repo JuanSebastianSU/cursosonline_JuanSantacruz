@@ -2,11 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Opcional: pequeños ajustes globales */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================
+   Fondo general + tipografía
+   ============================ */
+
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  @apply antialiased;
+  margin: 0;
+  min-height: 100vh;
+  color: rgb(248 250 252); /* slate-50 */
+
+  /* Fondo: noir suave con halos de luz arriba/abajo */
+  background:
+    radial-gradient(circle at top, rgba(248, 250, 252, 0.12), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(248, 250, 252, 0.06), transparent 55%),
+    #020617; /* slate-950 */
 }
 
 #root {
   @apply min-h-screen flex flex-col;
+}
+
+/* ===========================
+   Componentes personalizados
+   =========================== */
+@layer components {
+  /* Pastilla ovalada del header para el navbar */
+  .header-nav-pill {
+    @apply bg-gradient-to-br from-slate-900 via-slate-950 to-black
+      rounded-full border border-slate-700/70
+      px-5 py-2
+      shadow-lg
+      flex items-center;
+  }
+
+  /* El nav dentro de la pastilla */
+  .header-nav-pill nav {
+    @apply flex items-center gap-4 flex-wrap justify-center;
+  }
+
+  /* Links del menú */
+  .header-nav-pill a {
+    @apply text-xs md:text-sm font-medium
+      text-slate-100
+      px-3 py-1
+      rounded-full
+      transition duration-150 ease-out;
+  }
+
+  /* Hover efecto retro suave */
+  .header-nav-pill a:hover {
+    @apply bg-slate-100/10 text-orange-400
+      -translate-y-px transform;
+  }
+
+  /* Estado activo (si usas .active en el Navbar) */
+  .header-nav-pill a.active {
+    @apply bg-orange-400 text-slate-900;
+  }
 }

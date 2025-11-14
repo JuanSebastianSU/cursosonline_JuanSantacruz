@@ -41,8 +41,7 @@ const CursoNuevo = () => {
     if (!curso.titulo.trim()) nuevosErrores.titulo = "El título es obligatorio";
     if (!curso.categoria.trim())
       nuevosErrores.categoria = "La categoría es obligatoria";
-    if (!curso.nivel.trim())
-      nuevosErrores.nivel = "Selecciona un nivel";
+    if (!curso.nivel.trim()) nuevosErrores.nivel = "Selecciona un nivel";
     if (!curso.idioma.trim())
       nuevosErrores.idioma = "El idioma es obligatorio";
 
@@ -108,12 +107,41 @@ const CursoNuevo = () => {
   const handleCancelar = () => navigate("/instructor/cursos");
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10">
-      <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-6 text-center md:text-left tracking-tight">
-        Crear nuevo curso
-      </h1>
+    <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-7">
+      {/* HEADER ARTÍSTICO */}
+      <section className="relative overflow-hidden rounded-3xl border border-slate-800/60 bg-slate-950 text-amber-50 shadow-[0_22px_60px_rgba(15,23,42,0.85)] px-5 md:px-8 py-7 md:py-8">
+        {/* manchas / garabatos */}
+        <div className="pointer-events-none absolute -top-10 -left-10 h-32 w-32 rounded-full bg-amber-400/15 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-14 -right-10 h-40 w-40 rounded-[40%] bg-cyan-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent opacity-70" />
 
-      <div className="bg-white/95 rounded-3xl border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.15)] px-5 md:px-8 py-6 md:py-8">
+        <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[0.7rem] uppercase tracking-[0.3em] text-amber-200/80">
+              Panel del instructor
+            </p>
+            <h1 className="mt-1 text-2xl md:text-3xl font-semibold tracking-tight">
+              Crear nuevo curso
+            </h1>
+            <p className="mt-2 text-xs md:text-sm text-slate-200/85 max-w-xl">
+              Define el título, la descripción, el nivel, el idioma y el precio
+              de tu curso. Podrás editarlo luego desde “Mis cursos”.
+            </p>
+          </div>
+
+          <div className="mt-2 flex flex-col items-end gap-2 text-right">
+            <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-100/5 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-amber-200">
+              Nuevo · Borrador
+            </span>
+            <p className="text-[0.7rem] text-slate-300/80 max-w-[14rem]">
+              La imagen de portada es opcional, pero ayuda a destacar tu curso.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* TARJETA DEL FORMULARIO */}
+      <section className="bg-white/95 rounded-3xl border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.15)] px-5 md:px-8 py-6 md:py-8">
         <form
           className="space-y-6"
           onSubmit={(e) => {
@@ -300,7 +328,7 @@ const CursoNuevo = () => {
             </button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
   );
 };

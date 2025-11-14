@@ -1,61 +1,149 @@
+// src/AppRoutes.js
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Cursos from "./pages/Cursos";
 import CursoDetalle from "./components/CursoDetalle";
+
 import CursoAdmin from "./pages/CursoAdmin";
 import CursoInstructor from "./pages/CursoInstructor";
 import CursoEditar from "./pages/CursoEditar";
 import CursoNuevo from "./pages/CursoNuevo";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import Perfil from "./pages/Perfil";
 import Contacto from "./pages/Contacto";
+import MisCursos from "./pages/MisCursos";
 
-/**
- * AppRoutes.js
- * Define todas las rutas del frontend (públicas, autenticadas y por rol).
- */
+import CursoModulosGestion from "./pages/CursoModulosGestion";
+import ModuloLeccionesGestion from "./pages/ModuloLeccionesGestion";
+import LeccionEvaluacionesGestion from "./pages/LeccionEvaluacionesGestion";
+import EvaluacionTomar from "./pages/EvaluacionTomar";
+import PagoInscripcion from "./pages/PagoInscripcion";
+import PagoRevision from "./pages/PagoRevision";
+import ModuloContenidoAlumno from "./pages/ModuloContenidoAlumno";
+
+// 👉 gestión de inscripciones de un curso (admin/instructor)
+import InscripcionesCursoGestion from "./pages/InscripcionesCursoGestion";
+
+// 👇 panel para ver intentos (instructor)
+import EvaluacionIntentosGestion from "./pages/EvaluacionIntentosGestion";
+
 function AppRoutes() {
   return (
     <Routes>
-      {/* ======== RUTAS PÚBLICAS ======== */}
+      {/* ======== PÚBLICAS ======== */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/cursos" element={<Cursos />} />
-      <Route path="/curso/:id" element={<CursoDetalle />} />
+      <Route path="/cursos/:id" element={<CursoDetalle />} />
       <Route path="/contacto" element={<Contacto />} />
 
-      {/* ======== RUTAS DE USUARIO AUTENTICADO ======== */}
+      {/* ======== USUARIO LOGUEADO ======== */}
       <Route element={<ProtectedRoute />}>
         <Route path="/perfil" element={<Dashboard />} />
         <Route path="/mi-perfil" element={<Perfil />} />
+        <Route path="/mis-cursos" element={<MisCursos />} />
 
-        {/* ✅ Permitir que usuarios sin rol creen su primer curso */}
+        {/* crear primer curso aunque aún no tenga rol */}
         <Route path="/instructor/cursos/nuevo" element={<CursoNuevo />} />
+
+        {/* tomar evaluación como estudiante */}
+        <Route
+          path="/lecciones/:idLeccion/evaluaciones/:idEvaluacion/tomar"
+          element={<EvaluacionTomar />}
+        />
+
+        {/* pago de inscripción (ALUMNO) */}
+        <Route
+          path="/inscripciones/:idInscripcion/pago"
+          element={<PagoInscripcion />}
+        />
+
+        {/* contenido de módulo para alumno */}
+        <Route
+          path="/cursos/:idCurso/modulos/:idModulo"
+          element={<ModuloContenidoAlumno />}
+        />
       </Route>
 
-      {/* ======== PANEL DEL INSTRUCTOR ======== */}
-      <Route element={<ProtectedRoute roles={["ROLE_INSTRUCTOR", "ROLE_ADMIN"]} />}>
+      {/* ======== PANEL INSTRUCTOR ======== */}
+      <Route
+        element={<ProtectedRoute roles={["ROLE_INSTRUCTOR", "ROLE_ADMIN"]} />}
+      >
         <Route path="/instructor/cursos" element={<CursoInstructor />} />
-        <Route path="/instructor/cursos/editar/:id" element={<CursoEditar />} />
+        <Route
+          path="/instructor/cursos/editar/:id"
+          element={<CursoEditar />}
+        />
+        <Route
+          path="/instructor/cursos/:id/modulos"
+          element={<CursoModulosGestion />}
+        />
+
+        {/* inscripciones de un curso (instructor) */}
+        <Route
+          path="/instructor/cursos/:id/inscripciones"
+          element={<InscripcionesCursoGestion />}
+        />
+
+        <Route
+          path="/instructor/modulos/:idModulo/lecciones"
+          element={<ModuloLeccionesGestion />}
+        />
+
+        <Route
+          path="/instructor/lecciones/:idLeccion/evaluaciones"
+          element={<LeccionEvaluacionesGestion />}
+        />
+
+        {/* ver intentos de una evaluación concreta */}
+        <Route
+          path="/instructor/evaluaciones/:idEvaluacion/intentos"
+          element={<EvaluacionIntentosGestion />}
+        />
+
+        {/* revisar pagos de una inscripción (INSTRUCTOR) */}
+        <Route
+          path="/instructor/inscripciones/:idInscripcion/pagos"
+          element={<PagoRevision />}
+        />
       </Route>
 
-      {/* ======== PANEL DEL ADMINISTRADOR ======== */}
+      {/* ======== PANEL ADMIN ======== */}
       <Route element={<ProtectedRoute roles={["ROLE_ADMIN"]} />}>
         <Route path="/admin/cursos" element={<CursoAdmin />} />
-        <Route path="/admin/cursos/nuevo" element={<CursoNuevo />} /> {/* ✅ FIX */}
+        <Route path="/admin/cursos/nuevo" element={<CursoNuevo />} />
         <Route path="/admin/cursos/editar/:id" element={<CursoEditar />} />
+
+        {/* inscripciones de un curso (admin) */}
+        <Route
+          path="/admin/cursos/:id/inscripciones"
+          element={<InscripcionesCursoGestion />}
+        />
+
+        <Route
+          path="/admin/inscripciones/:idInscripcion/pagos"
+          element={<PagoRevision />}
+        />
       </Route>
 
-      {/* ======== RUTA 404 ======== */}
+      {/* ======== 404 ======== */}
       <Route
         path="*"
         element={
-          <h2 style={{ textAlign: "center", marginTop: "50px", color: "#0d47a1" }}>
+          <h2
+            style={{
+              textAlign: "center",
+              marginTop: "50px",
+              color: "#0d47a1",
+            }}
+          >
             Página no encontrada
           </h2>
         }

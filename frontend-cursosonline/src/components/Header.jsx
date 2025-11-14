@@ -3,26 +3,18 @@ import Navbar from "./Navbar";
 
 /**
  * Header.js
- * Contiene el logotipo y la barra de navegación principal.
+ * Banda superior con fondo oscuro y halos de color.
  */
-
 const Header = () => {
   return (
-    <header className="bg-slate-900 text-slate-50 shadow-md">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <img
-            src="/logo192.png"
-            alt="Logo Cursos Online"
-            className="h-8 w-8 rounded-md shadow-sm"
-          />
-          <h1 className="text-sm md:text-base font-semibold tracking-tight">
-            Cursos Online
-          </h1>
-        </div>
+    <header className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      {/* Halos / garabatos de luz */}
+      <div className="pointer-events-none absolute inset-x-0 -top-24 h-40 bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.18),_transparent_70%)]" />
+      <div className="pointer-events-none absolute -right-20 -top-10 h-40 w-40 rounded-full bg-fuchsia-500/14 blur-3xl" />
+      <div className="pointer-events-none absolute -left-28 bottom-[-4rem] h-40 w-56 rotate-[-12deg] bg-gradient-to-r from-sky-500/18 via-transparent to-transparent blur-2xl" />
 
-        <Navbar />
-      </div>
+      {/* Contenido principal del header */}
+      <Navbar />
     </header>
   );
 };

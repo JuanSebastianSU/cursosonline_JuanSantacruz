@@ -1,3 +1,4 @@
+// src/components/AccesibilidadPanel.jsx
 import React, { useEffect, useState } from "react";
 
 const htmlEl =
@@ -18,27 +19,19 @@ const get = (k, def) => {
 const set = (k, v) => {
   try {
     localStorage.setItem(k, v);
-  } catch {}
+  } catch {
+    // ignore
+  }
 };
 
 export default function AccesibilidadPanel() {
+  // Evitar duplicados
   const [visible, setVisible] = useState(true);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.__A11Y_PANEL_MOUNTED__) {
-      setVisible(false);
-      return;
-    }
-    window.__A11Y_PANEL_MOUNTED__ = true;
-    return () => {
-      window.__A11Y_PANEL_MOUNTED__ = false;
-    };
-  }, []);
-
-  const [theme, setTheme] = useState(get("a11y.theme", "light"));
-  const [cvd, setCvd] = useState(get("a11y.cvd", ""));
+  // ===== Estados persistentes =====
+  const [theme, setTheme] = useState(get("a11y.theme", "dark")); // light|dark|hc
+  const [cvd, setCvd] = useState(get("a11y.cvd", "")); // "", deuteranopia, protanopia, tritanopia
   const [fontSize, setFontSize] = useState(
     parseInt(get("a11y.font", "100"), 10)
   );
@@ -50,27 +43,49 @@ export default function AccesibilidadPanel() {
   );
   const [speech, setSpeech] = useState(get("a11y.speech", "off") === "on");
 
+  // ===== Montaje único (no duplicar panel) =====
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.__A11Y_PANEL_MOUNTED__) {
+      setVisible(false);
+      return;
+    }
+    window.__A11Y_PANEL_MOUNTED__ = true;
+
+    return () => {
+      window.__A11Y_PANEL_MOUNTED__ = false;
+    };
+  }, []);
+
+  // ===== Aplicar configuración guardada al cargar =====
   useEffect(() => {
     if (!htmlEl) return;
 
     const clamp = (n, mn, mx) => Math.max(mn, Math.min(mx, n));
-    const t = ["light", "dark", "hc"].includes(theme) ? theme : "light";
+
+    // Tema
+    const t = ["light", "dark", "hc"].includes(theme) ? theme : "dark";
     htmlEl.setAttribute("data-theme", t);
 
+    // Daltonismo
     if (cvd) htmlEl.setAttribute("data-cvd", cvd);
     else htmlEl.removeAttribute("data-cvd");
 
+    // Tamaño de fuente
     const f = clamp(parseInt(fontSize || 100, 10), 80, 180);
     htmlEl.style.fontSize = `${f}%`;
 
+    // Espaciado de texto
     if (textSpacing) htmlEl.setAttribute("data-text-spacing", "wide");
     else htmlEl.removeAttribute("data-text-spacing");
 
+    // Menos animación
     if (reduceMotion) htmlEl.setAttribute("data-reduce-motion", "true");
     else htmlEl.removeAttribute("data-reduce-motion");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ===== Lectura por voz (hover global) =====
   useEffect(() => {
     if (!speech || !synth) return;
 
@@ -89,8 +104,9 @@ export default function AccesibilidadPanel() {
     return () => document.removeEventListener("mouseover", handler);
   }, [speech]);
 
+  // ===== Handlers =====
   const applyTheme = (val) => {
-    const v = ["light", "dark", "hc"].includes(val) ? val : "light";
+    const v = ["light", "dark", "hc"].includes(val) ? val : "dark";
     htmlEl?.setAttribute("data-theme", v);
     set("a11y.theme", v);
     setTheme(v);
@@ -135,55 +151,74 @@ export default function AccesibilidadPanel() {
 
   return (
     <>
-      {/* Botón flotante */}
+      {/* FAB flotante */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-4 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 shadow-xl hover:-translate-y-0.5 hover:bg-slate-900 hover:text-amber-200 transition-transform transition-colors"
         aria-label="Abrir opciones de accesibilidad"
+        className="fixed bottom-5 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/90 text-sky-400 shadow-[0_12px_40px_rgba(8,47,73,0.7)] backdrop-blur hover:border-sky-400 hover:text-sky-300 hover:shadow-[0_16px_50px_rgba(8,47,73,0.9)] transition-all"
       >
-        <span aria-hidden="true">♿</span>
+        <span aria-hidden="true" className="text-xl">
+          ♿
+        </span>
       </button>
 
       {/* Panel flotante */}
       {open && (
         <aside
-          className="fixed bottom-20 right-4 z-50 w-[min(18rem,calc(100vw-2.5rem))] max-h-[70vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white/95 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.55)] px-3.5 py-3 text-[0.78rem] space-y-2"
           aria-label="Panel de accesibilidad"
+          className="fixed bottom-20 right-4 z-40 w-[min(20rem,calc(100%-2rem))] overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-xs text-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.95)] backdrop-blur-md"
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-slate-700">
-              Accesibilidad
-            </span>
+          {/* Garabatos de fondo */}
+          <div className="pointer-events-none absolute -right-10 top-6 h-28 w-28 rounded-[40%] border border-slate-700/40 blur-[0.5px]" />
+          <div className="pointer-events-none absolute -left-10 bottom-0 h-24 w-24 translate-y-8 rounded-[45%] border border-slate-700/30" />
+          <div className="pointer-events-none absolute -bottom-12 right-4 h-24 w-24 rounded-full bg-sky-500/10 blur-2" />
+
+          {/* Cabecera */}
+          <div className="relative mb-3 flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                Accesibilidad
+              </p>
+              <p className="mt-1 text-[0.7rem] text-slate-400/90">
+                Ajusta la visualización y lectura de la plataforma.
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800"
               aria-label="Cerrar panel de accesibilidad"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-slate-50 hover:border-slate-500 transition-colors"
             >
               ✕
             </button>
           </div>
 
-          <div className="space-y-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {/* Controles */}
+          <div className="relative flex flex-col gap-3">
+            {/* Tema */}
+            <div className="space-y-1">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
                 Tema
               </span>
               <select
                 value={theme}
                 onChange={(e) => applyTheme(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[0.75rem] text-slate-100 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500/60"
               >
                 <option value="light">Claro</option>
                 <option value="dark">Oscuro</option>
                 <option value="hc">Alto contraste</option>
               </select>
-            </label>
+            </div>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Tamaño de texto: {fontSize}%
+            {/* Tamaño texto */}
+            <div className="space-y-1">
+              <span className="flex items-center justify-between text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <span>Tamaño de texto</span>
+                <span className="text-[0.65rem] text-slate-300">
+                  {fontSize}%
+                </span>
               </span>
               <input
                 type="range"
@@ -192,50 +227,58 @@ export default function AccesibilidadPanel() {
                 step="5"
                 value={fontSize}
                 onChange={(e) => applyFont(e.target.value)}
-                className="w-full"
+                className="w-full accent-sky-400"
               />
-            </label>
+            </div>
 
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={textSpacing}
-                onChange={(e) => applyTextSpacing(e.target.checked)}
-              />
-              <span>Espaciado amplio</span>
-            </label>
+            {/* Checkboxes */}
+            <div className="grid grid-cols-1 gap-2">
+              <label className="inline-flex items-center gap-2 text-[0.75rem] text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={textSpacing}
+                  onChange={(e) => applyTextSpacing(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
+                />
+                <span>Espaciado amplio</span>
+              </label>
 
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={reduceMotion}
-                onChange={(e) => applyReduceMotion(e.target.checked)}
-              />
-              <span>Menos animación</span>
-            </label>
+              <label className="inline-flex items-center gap-2 text-[0.75rem] text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={reduceMotion}
+                  onChange={(e) => applyReduceMotion(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
+                />
+                <span>Menos animación</span>
+              </label>
+            </div>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {/* Daltonismo */}
+            <div className="space-y-1">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
                 Daltonismo
               </span>
               <select
                 value={cvd}
                 onChange={(e) => applyCvd(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[0.75rem] text-slate-100 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500/60"
               >
                 <option value="">Sin filtro</option>
                 <option value="deuteranopia">Deuteranopia</option>
                 <option value="protanopia">Protanopia</option>
                 <option value="tritanopia">Tritanopia</option>
               </select>
-            </label>
+            </div>
 
+            {/* Voz */}
             <button
               type="button"
               onClick={toggleSpeech}
-              className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-3 py-1.5 text-[0.75rem] font-semibold text-amber-100 shadow-sm hover:bg-slate-800"
+              className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-full border border-sky-500/60 bg-sky-500/10 px-4 py-2 text-[0.8rem] font-semibold text-sky-200 shadow-[0_10px_30px_rgba(8,47,73,0.7)] hover:bg-sky-500/20 hover:text-sky-100 transition-colors"
             >
-              {speech ? "🔇 Desactivar voz" : "🔊 Activar voz"}
+              <span>{speech ? "🔇" : "🔊"}</span>
+              <span>{speech ? "Desactivar voz" : "Activar voz"}</span>
             </button>
           </div>
         </aside>
