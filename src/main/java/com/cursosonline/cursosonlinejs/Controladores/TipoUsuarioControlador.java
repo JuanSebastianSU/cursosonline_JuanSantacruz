@@ -17,13 +17,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/tipousuario")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
+
 public class TipoUsuarioControlador {
 
     private final TipoUsuarioServicio svc;

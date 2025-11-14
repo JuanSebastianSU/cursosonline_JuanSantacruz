@@ -20,13 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
+
 public class CalificacionControlador {
 
     private final CalificacionServicio calificacionServicio;

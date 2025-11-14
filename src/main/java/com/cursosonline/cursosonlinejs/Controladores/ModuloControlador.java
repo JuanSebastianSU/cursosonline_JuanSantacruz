@@ -21,13 +21,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/cursos/{idCurso}/modulos")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
+
 public class ModuloControlador {
 
     private final ModuloServicio moduloServicio;

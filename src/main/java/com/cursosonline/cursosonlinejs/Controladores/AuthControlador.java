@@ -29,13 +29,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
 public class AuthControlador {
 
     private final AuthenticationManager authenticationManager;

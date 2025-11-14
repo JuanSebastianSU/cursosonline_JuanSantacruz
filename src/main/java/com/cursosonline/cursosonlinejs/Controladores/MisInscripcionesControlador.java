@@ -11,13 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/mi/inscripciones")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
+
 public class MisInscripcionesControlador {
 
     private final InscripcionServicio inscripcionServicio;

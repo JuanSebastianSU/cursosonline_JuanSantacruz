@@ -23,13 +23,7 @@ import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/v1/modulos/{idModulo}/lecciones")
-@CrossOrigin(
-        origins = {
-                "http://localhost:9090",
-                "https://cursosonline-juan-santacruz.vercel.app"
-        },
-        allowCredentials = "true"
-)
+
 public class LeccionControlador {
 
     private final LeccionServicio leccionServicio;
