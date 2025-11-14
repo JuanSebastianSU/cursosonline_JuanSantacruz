@@ -5,11 +5,18 @@ import axios from "axios";
  * con el backend Spring Boot (API REST con JWT).
  */
 
-const API_BASE_URL = "http://localhost:8080/api"; // ✅ NECESARIO para el login
+// 🚀 PRODUCCIÓN (Vercel → Railway)
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
-// Instancia principal de Axios
+// 🖥️ DESARROLLO LOCAL (cuando estés probando localmente)
+// Si REACT_APP_API_URL no existe, usa localhost automáticamente
+const BASE_URL =
+  API_BASE_URL && API_BASE_URL.trim() !== ""
+    ? API_BASE_URL
+    : "http://localhost:8080";
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BASE_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -29,8 +36,7 @@ api.interceptors.request.use(
 );
 
 /**
- * Interceptor: maneja errores globales (401 o 403)
- * ⚠️ NO recarga la página. Deja que React maneje los errores.
+ * Interceptor: maneja errores globales sin romper la navegación.
  */
 api.interceptors.response.use(
   (response) => response,
@@ -43,7 +49,6 @@ api.interceptors.response.use(
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         console.warn("Sesión inválida o expirada.");
-        // 🚫 NO hacer window.location.href aquí
       }
     }
 
