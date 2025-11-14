@@ -34,33 +34,40 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .cors(Customizer.withDefaults())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(reg -> reg
-            // 1) Recursos estáticos
-            .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-            .requestMatchers(
-                    "/", "/index.html", "/favicon.ico",
-                    "/estilo.css", "/codigo.js",
-                    "/uploads/**",
-                    "/uploads/cursos/**",
-                    "/paginas/**"
-            ).permitAll()
+    // Archivos estáticos y raíz del dominio
+    .requestMatchers(
+        "/", "/error",
+        "/index.html",
+        "/**/*.html",
+        "/**/*.css",
+        "/**/*.js",
+        "/favicon.ico",
+        "/**/*.png",
+        "/**/*.jpg",
+        "/**/*.jpeg",
+        "/**/*.svg",
+        "/**/*.webp",
+        "/uploads/**"
+    ).permitAll()
 
-            // *** 👇 LÍNEA NUEVA: ENDPOINT PÚBLICO PARA RAILWAY ***
-            .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
+    // Endpoint health
+    .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 
-            // 2) Endpoints públicos existentes
-            .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
+    // Endpoints públicos
+    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+    .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
+    .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
+    .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
+    .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
 
-            // 3) Swagger y OPTIONS
-            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+    // Swagger y OPTIONS
+    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-            // 4) Todo lo demás requiere JWT
-            .anyRequest().authenticated()
-        )
+    // Todo lo demás con JWT
+    .anyRequest().authenticated()
+)
+
 
         .httpBasic(AbstractHttpConfigurer::disable)
         .userDetailsService(userDetailsService);
