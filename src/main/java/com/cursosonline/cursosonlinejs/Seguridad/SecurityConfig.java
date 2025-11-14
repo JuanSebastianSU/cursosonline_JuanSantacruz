@@ -28,54 +28,48 @@ public class SecurityConfig {
     }
 
     @Bean
-SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(AbstractHttpConfigurer::disable)
-        .cors(Customizer.withDefaults())
-        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(reg -> reg
-    // Archivos estáticos y raíz del dominio
-    .requestMatchers(
-        "/", "/error",
-        "/index.html",
-        "/**/*.html",
-        "/**/*.css",
-        "/**/*.js",
-        "/favicon.ico",
-        "/**/*.png",
-        "/**/*.jpg",
-        "/**/*.jpeg",
-        "/**/*.svg",
-        "/**/*.webp",
-        "/uploads/**"
-    ).permitAll()
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(Customizer.withDefaults())
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(reg -> reg
 
-    // Endpoint health
-    .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
+                // Recursos estáticos válidos en Spring Security 6
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                .requestMatchers(
+                    "/", "/index.html",
+                    "/error",
+                    "/favicon.ico",
+                    "/estilo.css", "/codigo.js",
+                    "/uploads/**"
+                ).permitAll()
 
-    // Endpoints públicos
-    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-    .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
-    .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
-    .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
-    .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
+                // Endpoint health público
+                .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 
-    // Swagger y OPTIONS
-    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Endpoints públicos
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
 
-    // Todo lo demás con JWT
-    .anyRequest().authenticated()
-)
+                // Swagger
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
+                // OPTIONS (CORS)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-        .httpBasic(AbstractHttpConfigurer::disable)
-        .userDetailsService(userDetailsService);
+                // Todo lo demás requiere JWT
+                .anyRequest().authenticated()
+            )
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .userDetailsService(userDetailsService);
 
-    http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-    return http.build();
-}
-
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
 
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
