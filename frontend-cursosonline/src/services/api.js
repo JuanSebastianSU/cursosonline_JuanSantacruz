@@ -13,7 +13,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL;
 const BASE_URL =
   API_BASE_URL && API_BASE_URL.trim() !== ""
     ? API_BASE_URL
-    : "http://localhost:8080";
+    : "https://cursosonlinejuansantacruz-production.up.railway.app";
 
 const api = axios.create({
   baseURL: BASE_URL,
