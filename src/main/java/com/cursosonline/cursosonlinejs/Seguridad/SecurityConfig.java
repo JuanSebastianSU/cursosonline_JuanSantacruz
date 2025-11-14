@@ -28,48 +28,47 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(Customizer.withDefaults())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(reg -> reg
+SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(Customizer.withDefaults())
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(reg -> reg
             // 1) Recursos estáticos
             .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
             .requestMatchers(
                     "/", "/index.html", "/favicon.ico",
                     "/estilo.css", "/codigo.js",
-                    "/uploads/**",        // ✅ carpeta raíz
-                    "/uploads/cursos/**", // ✅ subcarpeta de imágenes
+                    "/uploads/**",
+                    "/uploads/cursos/**",
                     "/paginas/**"
             ).permitAll()
 
+            // *** 👇 LÍNEA NUEVA: ENDPOINT PÚBLICO PARA RAILWAY ***
+            .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 
-                // 2) Endpoints públicos
-                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
+            // 2) Endpoints públicos existentes
+            .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
 
-                // 3) Swagger y OPTIONS
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            // 3) Swagger y OPTIONS
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 4) Todo lo demás requiere JWT
-                .anyRequest().authenticated()
-            )
+            // 4) Todo lo demás requiere JWT
+            .anyRequest().authenticated()
+        )
 
-            // Desactivar BASIC para que NO salga el popup del navegador
-            .httpBasic(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .userDetailsService(userDetailsService);
 
-            // Usar tu UserDetailsService
-            .userDetailsService(userDetailsService);
+    http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+}
 
-        // Filtro JWT antes del UsernamePasswordAuthenticationFilter
-        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
 
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
