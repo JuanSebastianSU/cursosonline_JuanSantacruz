@@ -34,39 +34,39 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(reg -> reg
-
-                // Recursos estáticos válidos en Spring Security 6
-                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                .requestMatchers(
-                    "/", "/index.html",
-                    "/error",
-                    "/favicon.ico",
+            // 1) Recursos estáticos
+            .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+            .requestMatchers(
+                    "/", "/index.html", "/favicon.ico",
                     "/estilo.css", "/codigo.js",
-                    "/uploads/**"
-                ).permitAll()
+                    "/uploads/**",        // ✅ carpeta raíz
+                    "/uploads/cursos/**", // ✅ subcarpeta de imágenes
+                    "/paginas/**"
+            ).permitAll()
 
-                // Endpoint health público
-                .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 
-                // Endpoints públicos
+                // 2) Endpoints públicos
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tipousuario/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/cursos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/certificados/verificar/**").permitAll()
 
-                // Swagger
+                // 3) Swagger y OPTIONS
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
-                // OPTIONS (CORS)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Todo lo demás requiere JWT
+                // 4) Todo lo demás requiere JWT
                 .anyRequest().authenticated()
             )
+
+            // Desactivar BASIC para que NO salga el popup del navegador
             .httpBasic(AbstractHttpConfigurer::disable)
+
+            // Usar tu UserDetailsService
             .userDetailsService(userDetailsService);
 
+        // Filtro JWT antes del UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

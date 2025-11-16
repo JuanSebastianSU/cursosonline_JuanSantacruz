@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
-
+@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
 public class UsuarioControlador {
 
     private final UsuarioServicio usuarioServicio;

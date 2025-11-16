@@ -23,7 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cursos")
-
+@CrossOrigin(origins = { "http://localhost:3000" }, allowCredentials = "true")
 public class CursoControlador {
 
     private final CursoServicio cursoServicio;

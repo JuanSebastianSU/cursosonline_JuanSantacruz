@@ -66,15 +66,14 @@ public class AuthControlador {
             ));
         }
 
-        // Si es el seed admin
         if (isSeedAdmin(req)) {
             var u = new Usuario();
             u.setNombre(req.nombre().trim());
             u.setEmail(email);
             u.setPassword(passwordEncoder.encode(req.password()));
-            u.setRol("ADMIN");
+            u.setRol("ADMIN");               
             u.setEstado("ACTIVO");
-            u.setEmailVerified(true);
+            u.setEmailVerified(true);       
             u.setFailedLoginAttempts(0);
 
             usuarioRepositorio.save(u);
@@ -122,6 +121,7 @@ public class AuthControlador {
                 .body(resp);
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         final String emailNorm = normalizeEmail(request.getEmail());
@@ -129,7 +129,6 @@ public class AuthControlador {
 
         Usuario u = usuarioRepositorio.findByEmail(emailNorm).orElse(null);
 
-        // bloqueado?
         if (u != null && u.getLockedUntil() != null && u.getLockedUntil().isAfter(now)) {
             long secs = Duration.between(now, u.getLockedUntil()).toSeconds();
             return ResponseEntity.status(HttpStatus.LOCKED)
@@ -140,7 +139,6 @@ public class AuthControlador {
                     ));
         }
 
-        // limpiar bloqueo si ya expiró
         if (u != null && u.getLockedUntil() != null && !u.getLockedUntil().isAfter(now)) {
             u.setLockedUntil(null);
             u.setFailedLoginAttempts(0);
@@ -203,7 +201,7 @@ public class AuthControlador {
         String base = (rolNombre == null || rolNombre.isBlank()) ? "USUARIO" : rolNombre.trim();
         return "ROLE_" + base.toUpperCase().replace(' ', '_');
     }
-
+   
     private boolean isSeedAdmin(RegistroRequest req) {
         if (req == null) return false;
         final String nombre = req.nombre() == null ? "" : req.nombre().trim();

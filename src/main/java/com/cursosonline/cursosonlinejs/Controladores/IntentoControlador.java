@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/evaluaciones/{idEvaluacion}/intentos")
-
+@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
 public class IntentoControlador {
 
     private final IntentoServicio intentoServicio;

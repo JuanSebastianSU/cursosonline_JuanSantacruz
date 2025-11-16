@@ -1,16 +1,19 @@
 // src/services/api.js
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+const RAW_API_BASE_URL = process.env.REACT_APP_API_URL || "";
+const API_BASE_URL = RAW_API_BASE_URL.trim();
 
 const BASE_URL =
-  API_BASE_URL && API_BASE_URL.trim() !== ""
+  API_BASE_URL !== ""
     ? API_BASE_URL
-    : "https://cursosonlinejuansantacruz-production.up.railway.app";
+    : "https://cursosonlinejuansantacruz-production.up.railway.app/api";
+//                                 ^^^^^ aquí también /api
+
+console.log("[API] BASE_URL =", BASE_URL); // 👈 deja este log para ver en la consola qué está usando
 
 const api = axios.create({
   baseURL: BASE_URL,
-  // ❌ ya no necesitamos cookies, solo Authorization header
   withCredentials: false,
   headers: {
     "Content-Type": "application/json",

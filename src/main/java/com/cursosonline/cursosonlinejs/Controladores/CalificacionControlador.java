@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-
+@CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
 public class CalificacionControlador {
 
     private final CalificacionServicio calificacionServicio;
@@ -123,7 +123,6 @@ public class CalificacionControlador {
         @Min(0)
         private Integer puntaje;
         private String feedback;
-
         public Integer getPuntaje() { return puntaje; }
         public void setPuntaje(Integer puntaje) { this.puntaje = puntaje; }
         public String getFeedback() { return feedback; }
@@ -134,7 +133,6 @@ public class CalificacionControlador {
         @Min(0)
         private Integer puntaje;
         private String feedback;
-
         public Integer getPuntaje() { return puntaje; }
         public void setPuntaje(Integer puntaje) { this.puntaje = puntaje; }
         public String getFeedback() { return feedback; }
