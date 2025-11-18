@@ -10,6 +10,14 @@ import {
   eliminarUsuarioAdmin,
 } from "../services/adminUsuarioService";
 
+import Swal from "sweetalert2";
+import {
+  showError,
+  showSuccess,
+  showConfirm,
+  showToast,
+} from "../utils/alerts"; // 👈 helper de alertas
+
 const AdminUsuariosGestion = () => {
   const navigate = useNavigate();
 
@@ -37,6 +45,7 @@ const AdminUsuariosGestion = () => {
         err.response?.data ||
         "No se pudieron cargar los usuarios.";
       setError(msg);
+      showError("Error al cargar usuarios", msg); // 👈 popup de error
     } finally {
       setLoading(false);
     }
@@ -49,89 +58,99 @@ const AdminUsuariosGestion = () => {
   const estadosPosibles = ["ACTIVO", "INACTIVO", "BLOQUEADO"];
 
   const handleCambiarEstado = async (u, nuevoEstado) => {
-    if (!window.confirm(`¿Cambiar estado de ${u.nombre} a ${nuevoEstado}?`)) {
-      return;
-    }
+    const result = await showConfirm(
+      "Cambiar estado",
+      `¿Cambiar estado de ${u.nombre} a ${nuevoEstado}?`
+    );
+    if (!result.isConfirmed) return;
+
     try {
       await cambiarEstadoUsuario(u.id, nuevoEstado);
       await cargarDatos();
+      showToast("success", `Estado actualizado a ${nuevoEstado}.`); // ✅ toast éxito
     } catch (err) {
-      alert(
+      const msg =
         err.response?.data?.message ||
-          err.response?.data ||
-          "Error al cambiar estado."
-      );
+        err.response?.data ||
+        "Error al cambiar estado.";
+      showError("Error al cambiar estado", msg);
     }
   };
 
   const handleCambiarRol = async (u, nuevoRol) => {
     if (!nuevoRol || nuevoRol === u.rol) return;
-    if (
-      !window.confirm(
-        `¿Cambiar el rol de ${u.nombre} de "${u.rol}" a "${nuevoRol}"?`
-      )
-    ) {
-      return;
-    }
+
+    const result = await showConfirm(
+      "Cambiar rol",
+      `¿Cambiar el rol de ${u.nombre} de "${u.rol}" a "${nuevoRol}"?`
+    );
+    if (!result.isConfirmed) return;
+
     try {
       await actualizarRolUsuario(u.id, nuevoRol);
       await cargarDatos();
+      showToast("success", `Rol actualizado a "${nuevoRol}".`);
     } catch (err) {
-      alert(
+      const msg =
         err.response?.data?.message ||
-          err.response?.data ||
-          "Error al actualizar rol."
-      );
+        err.response?.data ||
+        "Error al actualizar rol.";
+      showError("Error al actualizar rol", msg);
     }
   };
 
   const handleResetPassword = async (u) => {
-    const pwd = window.prompt(
-      `Nueva contraseña para ${u.nombre} (${u.email}):`
-    );
-    if (!pwd) return;
+    const { value: pwd, isConfirmed } = await Swal.fire({
+      title: `Nueva contraseña`,
+      text: `para ${u.nombre} (${u.email})`,
+      input: "password",
+      inputPlaceholder: "Escribe la nueva contraseña",
+      showCancelButton: true,
+      confirmButtonText: "Guardar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!isConfirmed || !pwd) return;
+
     try {
       await cambiarPasswordUsuario(u.id, pwd);
-      alert("Contraseña actualizada correctamente.");
-    } catch (err) {
-      alert(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Error al cambiar contraseña."
+      showSuccess(
+        "Contraseña actualizada",
+        "La contraseña se actualizó correctamente."
       );
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        "Error al cambiar contraseña.";
+      showError("Error al cambiar contraseña", msg);
     }
   };
 
   const handleEliminar = async (u) => {
-    if (
-      !window.confirm(
-        `¿Seguro que deseas eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
+    const result = await showConfirm(
+      "Eliminar usuario",
+      `¿Seguro que deseas eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`
+    );
+    if (!result.isConfirmed) return;
+
     try {
       await eliminarUsuarioAdmin(u.id);
       await cargarDatos();
+      showToast("success", "Usuario eliminado correctamente.");
     } catch (err) {
-      alert(
+      const msg =
         err.response?.data?.message ||
-          err.response?.data ||
-          "Error al eliminar usuario."
-      );
+        err.response?.data ||
+        "Error al eliminar usuario.";
+      showError("Error al eliminar usuario", msg);
     }
   };
 
   const usuariosFiltrados = usuarios.filter((u) => {
     if (filtroTexto.trim()) {
       const q = filtroTexto.toLowerCase();
-      const campos = [
-        u.nombre,
-        u.email,
-        u.rol,
-        u.estado,
-        u.id,
-      ]
+      const campos = [u.nombre, u.email, u.rol, u.estado, u.id]
         .filter(Boolean)
         .map(String);
       const coincide = campos.some((c) => c.toLowerCase().includes(q));

@@ -28,9 +28,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+// Swagger / OpenAPI
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/v1/lecciones/{idLeccion}/evaluaciones")
 @CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
+@Tag(
+        name = "Evaluaciones",
+        description = "Gestión de evaluaciones dentro de una lección (creación, publicación, archivo, preguntas, etc.)."
+)
+@SecurityRequirement(name = "bearerAuth")
 public class EvaluacionControlador {
 
     private final EvaluacionServicio evaluacionServicio;
@@ -61,10 +77,31 @@ public class EvaluacionControlador {
     // CRUD BÁSICO DE EVALUACIONES
     // =========================================================
 
+    @Operation(
+            summary = "Crear una evaluación en una lección",
+            description = """
+                    Crea una nueva evaluación (quiz o tarea) asociada a una lección.
+                    Solo el instructor de la lección o un administrador pueden crear evaluaciones.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Evaluación creada correctamente",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos en la petición"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para crear evaluaciones en esta lección")
+    })
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> crear(@PathVariable String idLeccion,
-                                   @Valid @RequestBody CrearEvalRequest body) {
+    public ResponseEntity<?> crear(
+            @Parameter(description = "ID de la lección a la que pertenece la evaluación", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos básicos de la evaluación a crear",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = CrearEvalRequest.class))
+            )
+            @Valid @RequestBody CrearEvalRequest body
+    ) {
         Evaluacion e = new Evaluacion();
         e.setTitulo(body.titulo().trim());
         e.setTipo(parseTipo(body.tipo()));
@@ -76,9 +113,26 @@ public class EvaluacionControlador {
         return ResponseEntity.created(location).body(creada);
     }
 
+    @Operation(
+            summary = "Listar evaluaciones de una lección",
+            description = """
+                    Lista las evaluaciones de una lección.
+                    - Estudiantes ven solo evaluaciones PUBLICADAS y no archivadas.
+                    - Instructores y administradores ven todas las evaluaciones de la lección.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado de evaluaciones",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Evaluacion.class)))),
+            @ApiResponse(responseCode = "403", description = "Contenido archivado o no disponible"),
+            @ApiResponse(responseCode = "404", description = "Lección/curso/módulo no encontrado")
+    })
     @GetMapping(produces = "application/json")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> listar(@PathVariable String idLeccion) {
+    public ResponseEntity<?> listar(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion
+    ) {
         Leccion leccion = leccionRepo.findById(idLeccion).orElse(null);
         if (leccion == null) return ResponseEntity.notFound().build();
         Modulo modulo = moduloRepo.findById(leccion.getIdModulo()).orElse(null);
@@ -101,9 +155,28 @@ public class EvaluacionControlador {
         return ResponseEntity.ok(evaluacionServicio.listarPorLeccion(idLeccion));
     }
 
+    @Operation(
+            summary = "Obtener detalles de una evaluación",
+            description = """
+                    Obtiene una evaluación por ID dentro de una lección.
+                    - Estudiantes solo pueden ver evaluaciones PUBLICADAS y no archivadas.
+                    - Instructores y administradores pueden ver cualquier estado.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evaluación encontrada",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "403", description = "Evaluación/Contenido archivado o no disponible"),
+            @ApiResponse(responseCode = "404", description = "Evaluación, lección, módulo o curso no encontrado")
+    })
     @GetMapping(value = "/{idEval}", produces = "application/json")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> obtener(@PathVariable String idLeccion, @PathVariable String idEval) {
+    public ResponseEntity<?> obtener(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval
+    ) {
         var opt = evaluacionServicio.obtenerPorIdYLeccion(idEval, idLeccion);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Evaluacion e = opt.get();
@@ -132,17 +205,46 @@ public class EvaluacionControlador {
         return ResponseEntity.ok(e);
     }
 
+    @Operation(
+            summary = "Publicar una evaluación",
+            description = "Cambia el estado de la evaluación a PUBLICADA. Solo instructor de la lección o administrador."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evaluación publicada correctamente",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @PatchMapping("/{idEval}/publicar")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> publicar(@PathVariable String idLeccion, @PathVariable String idEval) {
+    public ResponseEntity<?> publicar(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval
+    ) {
         return evaluacionServicio.publicar(idEval, idLeccion)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(
+            summary = "Archivar una evaluación",
+            description = "Cambia el estado de la evaluación a ARCHIVADA. Solo instructor de la lección o administrador."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evaluación archivada correctamente",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada"),
+            @ApiResponse(responseCode = "409", description = "No se puede archivar por restricciones de negocio")
+    })
     @PatchMapping("/{idEval}/archivar")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> archivar(@PathVariable String idLeccion, @PathVariable String idEval) {
+    public ResponseEntity<?> archivar(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval
+    ) {
         try {
             return evaluacionServicio.archivar(idEval, idLeccion)
                     .<ResponseEntity<?>>map(ResponseEntity::ok)
@@ -152,11 +254,29 @@ public class EvaluacionControlador {
         }
     }
 
+    @Operation(
+            summary = "Actualizar completamente una evaluación",
+            description = "Reemplaza título, tipo y puntaje máximo de una evaluación existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evaluación actualizada correctamente",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @PutMapping(value = "/{idEval}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> actualizar(@PathVariable String idLeccion,
-                                        @PathVariable String idEval,
-                                        @Valid @RequestBody ActualizarEvalRequest body) {
+    public ResponseEntity<?> actualizar(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos actualizados de la evaluación",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = ActualizarEvalRequest.class))
+            )
+            @Valid @RequestBody ActualizarEvalRequest body
+    ) {
         return evaluacionServicio
                 .actualizar(
                         idEval,
@@ -169,11 +289,29 @@ public class EvaluacionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(
+            summary = "Actualizar parcialmente una evaluación",
+            description = "Permite actualizar uno o más campos de la evaluación (título, tipo, puntaje máximo)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evaluación actualizada parcialmente",
+                    content = @Content(schema = @Schema(implementation = Evaluacion.class))),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @PatchMapping(value = "/{idEval}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> patch(@PathVariable String idLeccion,
-                                   @PathVariable String idEval,
-                                   @RequestBody PatchEvalRequest body) {
+    public ResponseEntity<?> patch(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Campos parciales a actualizar",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PatchEvalRequest.class))
+            )
+            @RequestBody PatchEvalRequest body
+    ) {
         TipoEvaluacion tipo = body.tipo() == null ? null : parseTipo(body.tipo());
         BigDecimal puntaje = body.puntajeMaximo() == null ? null : BigDecimal.valueOf(body.puntajeMaximo());
 
@@ -188,9 +326,22 @@ public class EvaluacionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(
+            summary = "Eliminar una evaluación",
+            description = "Elimina una evaluación de una lección. Solo instructor de la lección o administrador."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Evaluación eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @DeleteMapping("/{idEval}")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> eliminar(@PathVariable String idLeccion, @PathVariable String idEval) {
+    public ResponseEntity<?> eliminar(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval
+    ) {
         boolean ok = evaluacionServicio.eliminar(idEval, idLeccion);
         return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
@@ -200,10 +351,23 @@ public class EvaluacionControlador {
     // /api/v1/lecciones/{idLeccion}/evaluaciones/{idEval}/preguntas
     // =========================================================
 
+    @Operation(
+            summary = "Listar preguntas de una evaluación",
+            description = "Devuelve todas las preguntas asociadas a una evaluación, solo para instructor o administrador."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado de preguntas",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Pregunta.class)))),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @GetMapping("/{idEval}/preguntas")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> listarPreguntas(@PathVariable String idLeccion,
-                                             @PathVariable String idEval) {
+    public ResponseEntity<?> listarPreguntas(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval
+    ) {
         var opt = evaluacionServicio.obtenerPorIdYLeccion(idEval, idLeccion);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Evaluacion eval = opt.get();
@@ -213,11 +377,33 @@ public class EvaluacionControlador {
         return ResponseEntity.ok(lista);
     }
 
+    @Operation(
+            summary = "Crear una pregunta en una evaluación",
+            description = """
+                    Crea una nueva pregunta (opción múltiple, VF, numérica o abierta) dentro de una evaluación.
+                    Solo instructor de la lección o administrador.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Pregunta creada correctamente",
+                    content = @Content(schema = @Schema(implementation = Pregunta.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos en la pregunta"),
+            @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
+    })
     @PostMapping(value = "/{idEval}/preguntas", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> crearPregunta(@PathVariable String idLeccion,
-                                           @PathVariable String idEval,
-                                           @Valid @RequestBody PreguntaRequest body) {
+    public ResponseEntity<?> crearPregunta(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos de la pregunta a crear",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PreguntaRequest.class))
+            )
+            @Valid @RequestBody PreguntaRequest body
+    ) {
         var opt = evaluacionServicio.obtenerPorIdYLeccion(idEval, idLeccion);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Evaluacion eval = opt.get();
@@ -262,12 +448,31 @@ public class EvaluacionControlador {
         return ResponseEntity.created(location).body(p);
     }
 
+    @Operation(
+            summary = "Actualizar una pregunta de una evaluación",
+            description = "Reemplaza completamente los datos de una pregunta dentro de una evaluación."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pregunta actualizada correctamente",
+                    content = @Content(schema = @Schema(implementation = Pregunta.class))),
+            @ApiResponse(responseCode = "404", description = "Evaluación o pregunta no encontrada")
+    })
     @PutMapping(value = "/{idEval}/preguntas/{idPregunta}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> actualizarPregunta(@PathVariable String idLeccion,
-                                                @PathVariable String idEval,
-                                                @PathVariable String idPregunta,
-                                                @Valid @RequestBody PreguntaRequest body) {
+    public ResponseEntity<?> actualizarPregunta(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval,
+            @Parameter(description = "ID de la pregunta", example = "preg_123456")
+            @PathVariable String idPregunta,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos actualizados de la pregunta",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PreguntaRequest.class))
+            )
+            @Valid @RequestBody PreguntaRequest body
+    ) {
         var opt = evaluacionServicio.obtenerPorIdYLeccion(idEval, idLeccion);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Evaluacion eval = opt.get();
@@ -317,11 +522,24 @@ public class EvaluacionControlador {
         return ResponseEntity.ok(encontrada);
     }
 
+    @Operation(
+            summary = "Eliminar una pregunta de una evaluación",
+            description = "Elimina una pregunta específica de una evaluación."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Pregunta eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Evaluación o pregunta no encontrada")
+    })
     @DeleteMapping("/{idEval}/preguntas/{idPregunta}")
     @PreAuthorize("hasRole('ADMIN') or @evalPermisos.esInstructorDeLeccion(#idLeccion)")
-    public ResponseEntity<?> eliminarPregunta(@PathVariable String idLeccion,
-                                              @PathVariable String idEval,
-                                              @PathVariable String idPregunta) {
+    public ResponseEntity<?> eliminarPregunta(
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String idLeccion,
+            @Parameter(description = "ID de la evaluación", example = "eval_123456")
+            @PathVariable String idEval,
+            @Parameter(description = "ID de la pregunta", example = "preg_123456")
+            @PathVariable String idPregunta
+    ) {
         var opt = evaluacionServicio.obtenerPorIdYLeccion(idEval, idLeccion);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Evaluacion eval = opt.get();
@@ -343,38 +561,78 @@ public class EvaluacionControlador {
     // DTOs / REQUEST RECORDS
     // =========================================================
 
+    @Schema(description = "Datos requeridos para crear una evaluación")
     public static record CrearEvalRequest(
+            @Schema(description = "Título de la evaluación", example = "Quiz de introducción")
             @NotBlank String titulo,
+
+            @Schema(description = "Tipo de evaluación: 'quiz' o 'tarea'", example = "quiz")
             @NotBlank String tipo,
+
+            @Schema(description = "Puntaje máximo de la evaluación", example = "10")
             @Min(1) int puntajeMaximo
     ) {}
 
+    @Schema(description = "Datos para actualizar completamente una evaluación")
     public static record ActualizarEvalRequest(
+            @Schema(description = "Título de la evaluación", example = "Quiz de introducción (actualizado)")
             @NotBlank String titulo,
+
+            @Schema(description = "Tipo de evaluación: 'quiz' o 'tarea'", example = "tarea")
             @NotBlank String tipo,
+
+            @Schema(description = "Puntaje máximo de la evaluación", example = "20")
             @Min(1) int puntajeMaximo
     ) {}
 
+    @Schema(description = "Datos para actualización parcial de una evaluación")
     public static record PatchEvalRequest(
+            @Schema(description = "Nuevo título de la evaluación", example = "Quiz final")
             String titulo,
+
+            @Schema(description = "Nuevo tipo de evaluación", example = "quiz")
             String tipo,
+
+            @Schema(description = "Nuevo puntaje máximo", example = "15")
             Integer puntajeMaximo
     ) {}
 
-    // DTO para crear/editar preguntas
+    @Schema(description = "Datos para crear o actualizar una pregunta dentro de una evaluación")
     public static record PreguntaRequest(
+            @Schema(description = "Enunciado de la pregunta", example = "¿Qué es una variable en programación?")
             @NotBlank String enunciado,
-            @NotBlank String tipo,          // "opcion_unica", "multiple", "vf", "numerica", "abierta"
+
+            @Schema(
+                    description = "Tipo de pregunta: 'opcion_unica', 'multiple', 'vf', 'numerica', 'abierta'",
+                    example = "opcion_unica"
+            )
+            @NotBlank String tipo,
+
+            @Schema(description = "Puntaje de la pregunta", example = "2")
             @Min(0) Integer puntaje,
+
+            @Schema(description = "Indica si la pregunta se califica automáticamente (por defecto true para opción múltiple)", example = "true")
             Boolean autoCalificable,
+
+            @Schema(description = "Opciones de respuesta (aplica para opción múltiple y VF)")
             List<OpcionRequest> opciones,
+
+            @Schema(description = "Respuesta correcta numérica (solo para preguntas numéricas)", example = "3.14")
             Double respuestaNumericaCorrecta,
+
+            @Schema(description = "Texto guía o ejemplo de respuesta (aplica para abiertas)", example = "Explica con tus propias palabras...")
             String respuestaTextoGuia
     ) {}
 
+    @Schema(description = "Datos de una opción dentro de una pregunta de opción múltiple o VF")
     public static record OpcionRequest(
+            @Schema(description = "Texto de la opción", example = "Es un espacio en memoria donde se almacena un valor.")
             @NotBlank String texto,
+
+            @Schema(description = "Indica si la opción es correcta", example = "true")
             Boolean correcta,
+
+            @Schema(description = "Retroalimentación opcional sobre la opción", example = "Recuerda que una variable tiene un tipo de dato asociado.")
             String retroalimentacion
     ) {}
 

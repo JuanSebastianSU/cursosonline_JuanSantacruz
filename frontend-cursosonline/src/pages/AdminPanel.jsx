@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { obtenerResumenPlataforma } from "../services/reporteService";
+import { showError } from "../utils/alerts"; // 👈 nuevo
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ const AdminPanel = () => {
           err?.message ||
           "No se pudo cargar el resumen de la plataforma.";
         setErrorResumen(msg);
+
+        // 👇 popup bonito de error
+        showError("Error al cargar el resumen", msg);
       } finally {
         setLoadingResumen(false);
       }

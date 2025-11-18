@@ -21,9 +21,25 @@ import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+// Swagger / OpenAPI
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/v1/modulos/{idModulo}/lecciones")
 @CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
+@Tag(
+        name = "Lecciones",
+        description = "Gestión de lecciones dentro de un módulo (creación, publicación, orden, etc.)."
+)
+@SecurityRequirement(name = "bearerAuth")
 public class LeccionControlador {
 
     private final LeccionServicio leccionServicio;
@@ -50,10 +66,34 @@ public class LeccionControlador {
     // =========================================================
     // CREAR
     // =========================================================
+    @Operation(
+            summary = "Crear lección en un módulo",
+            description = """
+                    Crea una nueva lección dentro de un módulo.
+                    Solo el INSTRUCTOR del módulo o un ADMIN pueden crear lecciones.
+                    Para tipos VIDEO/ARTICULO es obligatorio 'urlContenido'.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Lección creada correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para crear lecciones en este módulo"),
+            @ApiResponse(responseCode = "409", description = "Conflicto de orden en el módulo")
+    })
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> crearLeccion(@PathVariable String idModulo,
-                                          @Valid @RequestBody Leccion body) {
+    public ResponseEntity<?> crearLeccion(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos de la lección a crear",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = Leccion.class))
+            )
+            @Valid @RequestBody Leccion body
+    ) {
         if (body.getTitulo() == null || body.getTitulo().isBlank()) {
             return ResponseEntity.badRequest().body("El título es obligatorio.");
         }
@@ -87,9 +127,27 @@ public class LeccionControlador {
     // =========================================================
     // LISTAR (ALUMNO + INSTRUCTOR + ADMIN)
     // =========================================================
+    @Operation(
+            summary = "Listar lecciones de un módulo",
+            description = """
+                    Lista las lecciones de un módulo.
+                    - Alumnos: solo ven lecciones PUBLICADAS y no archivadas, si el curso/módulo están activos.
+                    - Instructores y ADMIN: ven todas las lecciones del módulo.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado de lecciones",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Leccion.class)))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "Contenido archivado"),
+            @ApiResponse(responseCode = "404", description = "Curso o módulo no encontrado")
+    })
     @GetMapping(produces = "application/json")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> listarLecciones(@PathVariable String idModulo) {
+    public ResponseEntity<?> listarLecciones(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo
+    ) {
         Modulo modulo = moduloRepo.findById(idModulo).orElse(null);
         if (modulo == null) return ResponseEntity.notFound().build();
         Curso curso = cursoRepo.findById(modulo.getIdCurso()).orElse(null);
@@ -99,7 +157,6 @@ public class LeccionControlador {
         boolean instructor = leccionPermisos.esInstructorDelModulo(idModulo);
 
         if (!admin && !instructor) {
-            // alumno: solo ve curso/módulo activos y lecciones PUBLICADAS
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
@@ -107,16 +164,35 @@ public class LeccionControlador {
             return ResponseEntity.ok(leccionServicio.listarPublicadasPorModulo(idModulo));
         }
 
-        // admin / instructor
         return ResponseEntity.ok(leccionServicio.listarPorModulo(idModulo));
     }
 
     // =========================================================
     // OBTENER (ALUMNO + INSTRUCTOR + ADMIN)
     // =========================================================
+    @Operation(
+            summary = "Obtener detalles de una lección",
+            description = """
+                    Devuelve una lección específica.
+                    - Alumnos: solo pueden ver lecciones PUBLICADAS y no archivadas.
+                    - Instructores/ADMIN: pueden ver cualquier estado.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección encontrada",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "Contenido archivado"),
+            @ApiResponse(responseCode = "404", description = "Lección, módulo o curso no encontrado")
+    })
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> obtenerLeccion(@PathVariable String idModulo, @PathVariable String id) {
+    public ResponseEntity<?> obtenerLeccion(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id
+    ) {
         Leccion l = leccionServicio.obtener(id);
         if (l == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(l.getIdModulo())) {
@@ -147,11 +223,30 @@ public class LeccionControlador {
     // =========================================================
     // RESTO CRUD (solo instructor/admin)
     // =========================================================
+    @Operation(
+            summary = "Actualizar completamente una lección",
+            description = "Actualiza los datos principales de una lección (título, tipo, URL, duración, orden)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección actualizada correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflicto de orden en el módulo")
+    })
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> actualizarLeccion(@PathVariable String idModulo,
-                                               @PathVariable String id,
-                                               @Valid @RequestBody Leccion body) {
+    public ResponseEntity<?> actualizarLeccion(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos a actualizar de la lección",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = Leccion.class))
+            )
+            @Valid @RequestBody Leccion body
+    ) {
         Leccion actual = leccionServicio.obtener(id);
         if (actual == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(actual.getIdModulo())) {
@@ -181,9 +276,23 @@ public class LeccionControlador {
         return ResponseEntity.ok(actualizada);
     }
 
+    @Operation(
+            summary = "Publicar lección",
+            description = "Marca la lección como PUBLICADA para que los estudiantes puedan verla."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección publicada correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado")
+    })
     @PatchMapping("/{id}/publicar")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> publicar(@PathVariable String idModulo, @PathVariable String id) {
+    public ResponseEntity<?> publicar(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id
+    ) {
         var l = leccionServicio.obtener(id);
         if (l == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(l.getIdModulo())) {
@@ -195,9 +304,23 @@ public class LeccionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(
+            summary = "Archivar lección",
+            description = "Marca la lección como ARCHIVADA. No será visible para estudiantes."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección archivada correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado")
+    })
     @PatchMapping("/{id}/archivar")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> archivar(@PathVariable String idModulo, @PathVariable String id) {
+    public ResponseEntity<?> archivar(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id
+    ) {
         var l = leccionServicio.obtener(id);
         if (l == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(l.getIdModulo())) {
@@ -208,9 +331,22 @@ public class LeccionControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(
+            summary = "Eliminar lección",
+            description = "Elimina una lección de un módulo. Solo instructor del módulo o ADMIN."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Lección eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado")
+    })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> eliminarLeccion(@PathVariable String idModulo, @PathVariable String id) {
+    public ResponseEntity<?> eliminarLeccion(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id
+    ) {
         Leccion actual = leccionServicio.obtener(id);
         if (actual == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(actual.getIdModulo())) {
@@ -220,11 +356,31 @@ public class LeccionControlador {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+            summary = "Cambiar orden de una lección",
+            description = "Cambia el número de orden de una lección dentro del módulo."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Orden actualizado correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "400", description = "Petición inválida"),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflicto de orden")
+    })
     @PatchMapping(value = "/{id}/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> cambiarOrden(@PathVariable String idModulo,
-                                          @PathVariable String id,
-                                          @RequestBody CambiarOrdenRequest body) {
+    public ResponseEntity<?> cambiarOrden(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Nuevo orden de la lección",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = CambiarOrdenRequest.class))
+            )
+            @RequestBody CambiarOrdenRequest body
+    ) {
         if (body == null || body.orden() == null || body.orden() < 1) {
             return ResponseEntity.badRequest().body("Debes enviar un 'orden' >= 1.");
         }
@@ -238,11 +394,30 @@ public class LeccionControlador {
         }
     }
 
+    @Operation(
+            summary = "Mover lección en el orden",
+            description = "Mueve una lección hacia arriba o abajo en el orden mediante 'delta' o 'direccion'."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección movida correctamente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "400", description = "Petición inválida"),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado")
+    })
     @PatchMapping(value = "/{id}/mover", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> mover(@PathVariable String idModulo,
-                                   @PathVariable String id,
-                                   @RequestBody MoverRequest body) {
+    public ResponseEntity<?> mover(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Delta (+/-1) o dirección ('up'/'down') para mover la lección",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = MoverRequest.class))
+            )
+            @RequestBody MoverRequest body
+    ) {
         int delta = 0;
         if (body != null) {
             if (body.delta() != null) {
@@ -272,10 +447,27 @@ public class LeccionControlador {
         }
     }
 
+    @Operation(
+            summary = "Reordenar lecciones de un módulo",
+            description = "Reordena todas las lecciones del módulo según la lista de IDs enviada."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lecciones reordenadas correctamente",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Leccion.class)))),
+            @ApiResponse(responseCode = "400", description = "Petición inválida")
+    })
     @PatchMapping(value = "/orden", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> reordenar(@PathVariable String idModulo,
-                                       @RequestBody ReordenarRequest body) {
+    public ResponseEntity<?> reordenar(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Listado de IDs de lecciones en el orden deseado",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = ReordenarRequest.class))
+            )
+            @RequestBody ReordenarRequest body
+    ) {
         if (body == null || body.ids() == null || body.ids().isEmpty()) {
             return ResponseEntity.badRequest().body("Debes enviar 'ids' en el orden deseado.");
         }
@@ -287,11 +479,30 @@ public class LeccionControlador {
         }
     }
 
+    @Operation(
+            summary = "Actualización parcial de lección",
+            description = "Permite actualizar parcialmente título, tipo, URL de contenido y duración."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lección actualizada parcialmente",
+                    content = @Content(schema = @Schema(implementation = Leccion.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Lección o módulo no encontrado")
+    })
     @PatchMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
-    public ResponseEntity<?> patchParcial(@PathVariable String idModulo,
-                                          @PathVariable String id,
-                                          @RequestBody PatchLeccion body) {
+    public ResponseEntity<?> patchParcial(
+            @Parameter(description = "ID del módulo", example = "mod_123456")
+            @PathVariable String idModulo,
+            @Parameter(description = "ID de la lección", example = "lec_123456")
+            @PathVariable String id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos parciales a actualizar en la lección",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PatchLeccion.class))
+            )
+            @RequestBody PatchLeccion body
+    ) {
         Leccion actual = leccionServicio.obtener(id);
         if (actual == null) return ResponseEntity.notFound().build();
         if (!idModulo.equals(actual.getIdModulo()))
@@ -313,8 +524,37 @@ public class LeccionControlador {
         return ResponseEntity.ok(res);
     }
 
-    public static record CambiarOrdenRequest(@Min(1) Integer orden) {}
-    public static record MoverRequest(Integer delta, String direccion) {}
-    public static record ReordenarRequest(List<@NotBlank String> ids) {}
-    public static record PatchLeccion(String titulo, TipoLeccion tipo, String urlContenido, Integer duracion) {}
+    // ================== DTOs ==================
+
+    @Schema(description = "Petición para cambiar el orden de una lección")
+    public static record CambiarOrdenRequest(
+            @Schema(description = "Nuevo número de orden (>=1)", example = "2")
+            @Min(1) Integer orden
+    ) {}
+
+    @Schema(description = "Petición para mover una lección en el orden")
+    public static record MoverRequest(
+            @Schema(description = "Delta de movimiento (+/-1). Se ignora si se especifica 'direccion'.", example = "1")
+            Integer delta,
+            @Schema(description = "Dirección del movimiento: 'up'/'down' o 'arriba'/'abajo'", example = "down")
+            String direccion
+    ) {}
+
+    @Schema(description = "Petición para reordenar las lecciones de un módulo")
+    public static record ReordenarRequest(
+            @Schema(description = "Lista de IDs de lección en el orden deseado")
+            List<@NotBlank String> ids
+    ) {}
+
+    @Schema(description = "Datos parciales para actualizar una lección")
+    public static record PatchLeccion(
+            @Schema(description = "Nuevo título de la lección", example = "Introducción a Java")
+            String titulo,
+            @Schema(description = "Tipo de lección (VIDEO, ARTICULO, QUIZ)", example = "VIDEO")
+            TipoLeccion tipo,
+            @Schema(description = "URL del contenido (video/artículo)", example = "https://youtu.be/xxxx")
+            String urlContenido,
+            @Schema(description = "Duración en minutos", example = "15")
+            Integer duracion
+    ) {}
 }
