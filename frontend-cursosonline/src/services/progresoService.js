@@ -6,8 +6,10 @@ import api from "./api";
  * Backend: GET /api/v1/cursos/{idCurso}/mi-progreso
  */
 export const obtenerMiProgreso = async (idCurso) => {
-  const resp = await api.get(`/cursos/${idCurso}/mi-progreso`);
-  return resp.data;              // 👈 devolvemos SOLO el DTO
+  const url = `/v1/cursos/${idCurso}/mi-progreso`;  // 👈 importante el /v1
+  // console.log("[PROGRESO] GET", url);
+  const resp = await api.get(url);
+  return resp.data; // solo el DTO
 };
 
 /**
@@ -15,8 +17,8 @@ export const obtenerMiProgreso = async (idCurso) => {
  * Backend: GET /api/v1/cursos/{idCurso}/estudiantes/{idEstudiante}/progreso
  */
 export const obtenerProgresoDeEstudiante = async (idCurso, idEstudiante) => {
-  const resp = await api.get(
-    `/cursos/${idCurso}/estudiantes/${idEstudiante}/progreso`
-  );
-  return resp.data;              // 👈 igual, solo data
+  const url = `/v1/cursos/${idCurso}/estudiantes/${idEstudiante}/progreso`; // 👈 /v1
+  // console.log("[PROGRESO] GET", url);
+  const resp = await api.get(url);
+  return resp.data;
 };
