@@ -178,3 +178,92 @@ export const listarIntentosPorEvaluacion = async (idEvaluacion) => {
     throw err;
   }
 };
+
+// ============ PREGUNTAS DE UNA EVALUACIÓN ============
+// CRUD sobre /api/v1/lecciones/{idLeccion}/evaluaciones/{idEval}/preguntas
+
+// Listar preguntas de una evaluación
+export const listarPreguntasEvaluacion = async (idLeccion, idEval) => {
+  try {
+    const res = await api.get(
+      `/v1/lecciones/${idLeccion}/evaluaciones/${idEval}/preguntas`
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "Error al listar preguntas de la evaluación:",
+      err.response?.data || err.message
+    );
+    throw err;
+  }
+};
+
+/**
+ * Crear una pregunta en una evaluación.
+ *
+ * body debe respetar la estructura del backend:
+ * {
+ *   enunciado: string,
+ *   tipo: "opcion_unica" | "multiple" | "vf" | "numerica" | "abierta",
+ *   puntaje: number,
+ *   autoCalificable?: boolean,
+ *   opciones?: [
+ *     { texto: string, correcta?: boolean, retroalimentacion?: string }
+ *   ],
+ *   respuestaNumericaCorrecta?: number,
+ *   respuestaTextoGuia?: string
+ * }
+ */
+export const crearPregunta = async (idLeccion, idEval, body) => {
+  try {
+    const res = await api.post(
+      `/v1/lecciones/${idLeccion}/evaluaciones/${idEval}/preguntas`,
+      body
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "Error al crear pregunta:",
+      err.response?.data || err.message
+    );
+    throw err;
+  }
+};
+
+// Actualizar una pregunta completa (PUT)
+export const actualizarPregunta = async (
+  idLeccion,
+  idEval,
+  idPregunta,
+  body
+) => {
+  try {
+    const res = await api.put(
+      `/v1/lecciones/${idLeccion}/evaluaciones/${idEval}/preguntas/${idPregunta}`,
+      body
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "Error al actualizar pregunta:",
+      err.response?.data || err.message
+    );
+    throw err;
+  }
+};
+
+// Eliminar una pregunta
+export const eliminarPregunta = async (idLeccion, idEval, idPregunta) => {
+  try {
+    await api.delete(
+      `/v1/lecciones/${idLeccion}/evaluaciones/${idEval}/preguntas/${idPregunta}`
+    );
+    return true;
+  } catch (err) {
+    console.error(
+      "Error al eliminar pregunta:",
+      err.response?.data || err.message
+    );
+    return false;
+  }
+};

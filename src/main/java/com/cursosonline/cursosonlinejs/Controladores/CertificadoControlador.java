@@ -26,6 +26,10 @@ public class CertificadoControlador {
         this.certificadoServicio = certificadoServicio;
     }
 
+    /**
+     * Emisión normal (automática) controlada por ADMIN / INSTRUCTOR.
+     * Usa la lógica de elegibilidad (inscripción COMPLETADA / aprobadoFinal).
+     */
     @PostMapping("/cursos/{idCurso}/certificados")
     @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDelCurso(#idCurso)")
     public ResponseEntity<?> emitir(@PathVariable("idCurso") @P("idCurso") String idCurso,
@@ -33,13 +37,35 @@ public class CertificadoControlador {
         try {
             var creado = certificadoServicio.emitir(idCurso, body.idEstudiante());
             if (creado.isEmpty()) {
-                return ResponseEntity.status(409).body(Map.of("message", "Ya existe certificado para este curso y estudiante."));
+                return ResponseEntity.status(409).body(Map.of(
+                        "message", "Ya existe certificado para este curso y estudiante."
+                ));
             }
             var c = creado.get();
             return ResponseEntity.created(URI.create("/api/v1/certificados/" + c.getId())).body(c);
         } catch (IllegalStateException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         }
+    }
+
+    /**
+     * Emisión MANUAL: salta la validación de elegibilidad.
+     * Pensado para casos especiales donde el instructor / admin decide
+     * otorgar el certificado aunque el sistema no marque todavía al alumno
+     * como elegible.
+     */
+    @PostMapping("/cursos/{idCurso}/certificados/manual")
+    @PreAuthorize("hasRole('ADMIN') or @certPermisos.esInstructorDelCurso(#idCurso)")
+    public ResponseEntity<?> emitirManual(@PathVariable("idCurso") @P("idCurso") String idCurso,
+                                          @Valid @RequestBody EmitirCertificadoRequest body) {
+        var creado = certificadoServicio.emitirManual(idCurso, body.idEstudiante());
+        if (creado.isEmpty()) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "message", "Ya existe certificado para este curso y estudiante."
+            ));
+        }
+        var c = creado.get();
+        return ResponseEntity.created(URI.create("/api/v1/certificados/" + c.getId())).body(c);
     }
 
     @GetMapping("/certificados/{id}")

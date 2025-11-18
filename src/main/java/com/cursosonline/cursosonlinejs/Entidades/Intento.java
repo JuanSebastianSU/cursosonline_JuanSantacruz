@@ -49,6 +49,16 @@ public class Intento {
     private EstadoIntento estado = EstadoIntento.EN_PROGRESO;
     public enum EstadoIntento { EN_PROGRESO, ENVIADO, CALIFICADO, EXPIRADO, ANULADO }
 
+    // 👇👇 AÑADE ESTE ENUM AQUÍ
+    public enum EstadoRespuesta {
+        CORRECTA,
+        INCORRECTA,
+        PARCIAL,
+        SIN_RESPONDER,
+        SIN_CORREGIR
+    }
+    // 👆👆
+
     @CreatedDate
     private Instant createdAt;
     private Instant enviadoEn;
@@ -69,18 +79,24 @@ public class Intento {
     @PositiveOrZero
     private BigDecimal puntajeMaximo;
 
+    /**
+     * Respuestas del intento, una por pregunta.
+     */
     private List<Respuesta> respuestas;
 
     @Getter
     @Setter
     public static class Respuesta {
         private String idPregunta;
-        private List<String> opciones;
-        private String textoLibre;
+        private List<String> opciones;   // ids de opciones seleccionadas (cuando aplique)
+        private String textoLibre;       // respuesta abierta o numérica
         @Field(targetType = FieldType.DECIMAL128)
         private BigDecimal puntaje;
         @PositiveOrZero
         private Integer tiempoSegundos;
+
+        // ===== NUEVO: estado de corrección =====
+        private EstadoRespuesta estado;
     }
 
     @Version

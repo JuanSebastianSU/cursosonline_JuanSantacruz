@@ -284,7 +284,20 @@ const LeccionEvaluacionesGestion = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end">
-                      {/* 👇 NUEVO: ir al panel de intentos y calificaciones */}
+                      {/* NUEVO: ir a gestionar preguntas de esta evaluación */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/instructor/lecciones/${idLeccion}/evaluaciones/${ev.id}/preguntas`
+                          )
+                        }
+                        className="inline-flex items-center justify-center rounded-full border border-violet-400/80 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-violet-200 hover:bg-violet-400 hover:text-slate-950 transition-colors"
+                      >
+                        Preguntas
+                      </button>
+
+                      {/* ver intentos / calificaciones */}
                       <button
                         type="button"
                         onClick={() =>

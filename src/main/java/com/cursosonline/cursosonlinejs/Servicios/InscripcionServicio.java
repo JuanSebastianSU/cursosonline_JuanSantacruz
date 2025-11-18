@@ -171,4 +171,26 @@ public class InscripcionServicio {
             inscripcionRepositorio.save(insc);
         });
     }
+
+    /**
+     * Marca o desmarca un módulo como aprobado manualmente dentro de una inscripción.
+     * Si aprobado = true, añade el módulo al set; si false, lo quita.
+     */
+    public void marcarModuloAprobadoManual(String idInscripcion, String idModulo, boolean aprobado) {
+        inscripcionRepositorio.findById(idInscripcion).ifPresent(insc -> {
+            Set<String> set = insc.getModulosAprobadosManualmente();
+            if (set == null) {
+                set = new java.util.HashSet<>();
+            }
+
+            if (aprobado) {
+                set.add(idModulo);
+            } else {
+                set.remove(idModulo);
+            }
+
+            insc.setModulosAprobadosManualmente(set);
+            inscripcionRepositorio.save(insc);
+        });
+    }
 }

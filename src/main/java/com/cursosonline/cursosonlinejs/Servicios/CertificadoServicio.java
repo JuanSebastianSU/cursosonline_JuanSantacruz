@@ -40,6 +40,11 @@ public class CertificadoServicio {
         this.inscripcionServicio = inscripcionServicio;
     }
 
+    /**
+     * Regla actual de elegibilidad:
+     * - Inscripción COMPLETADA o aprobadoFinal = true.
+     * Más adelante aquí podemos enganchar la lógica de módulos/lecciones.
+     */
     public boolean esElegible(String idCurso, String idEstudiante) {
         return inscRepo.findByIdCursoAndIdEstudiante(idCurso, idEstudiante)
                 .map(i -> i.getEstado() == Inscripcion.EstadoInscripcion.COMPLETADA
@@ -47,6 +52,12 @@ public class CertificadoServicio {
                 .orElse(false);
     }
 
+    /**
+     * Emisión normal (automática), con validación de elegibilidad.
+     * Úsalo para:
+     * - Emisión cuando el sistema detecta que el curso está aprobado.
+     * - Emisión cuando el instructor pulsa un botón "Emitir certificado" normal.
+     */
     public Optional<Certificado> emitir(String idCurso, String idEstudiante) {
         if (!esElegible(idCurso, idEstudiante)) {
             throw new IllegalStateException("El estudiante no es elegible para certificado en este curso.");
@@ -55,34 +66,43 @@ public class CertificadoServicio {
             return Optional.empty();
         }
 
-        Certificado c = new Certificado();
-        c.setIdCurso(idCurso);
-        c.setIdEstudiante(idEstudiante);
-        c.setEstado(Certificado.Estado.EMITIDO);
-        c.setEmitidoEn(Instant.now());
-        c.setCodigoVerificacion(generarCodigoUnico());
-
-        cursoRepo.findById(idCurso).ifPresent(cur -> {
-            c.setCursoTitulo(cur.getTitulo());
-            if (cur.getIdInstructor() != null) {
-                usuarioRepo.findById(cur.getIdInstructor())
-                        .ifPresent(instr -> c.setInstructorNombre(obtenerNombreVisible(instr)));
-            }
-        });
-        usuarioRepo.findById(idEstudiante)
-                .ifPresent(est -> c.setEstudianteNombre(obtenerNombreVisible(est)));
-
+        Certificado c = crearCertificadoBasico(idCurso, idEstudiante);
         Certificado guardado = repo.save(c);
+
+        // Vincular en la inscripción
         inscripcionServicio.vincularCertificado(idCurso, idEstudiante, guardado.getId());
+
         return Optional.of(guardado);
     }
 
-    public Optional<Certificado> buscarPorId(String id) { 
-        return repo.findById(id); 
+    /**
+     * Emisión manual (sin comprobar elegibilidad).
+     * Úsalo para:
+     * - Casos especiales donde el ADMIN / INSTRUCTOR decide otorgar el certificado
+     *   aunque el sistema no marque al estudiante como elegible.
+     */
+    public Optional<Certificado> emitirManual(String idCurso, String idEstudiante) {
+        if (repo.existsByIdCursoAndIdEstudiante(idCurso, idEstudiante)) {
+            return Optional.empty();
+        }
+
+        Certificado c = crearCertificadoBasico(idCurso, idEstudiante);
+        Certificado guardado = repo.save(c);
+
+        // También lo vinculamos a la inscripción para mantener coherencia
+        inscripcionServicio.vincularCertificado(idCurso, idEstudiante, guardado.getId());
+
+        return Optional.of(guardado);
     }
 
-    public Optional<Certificado> buscarPorCodigo(String codigo) { 
-        return repo.findByCodigoVerificacion(codigo); 
+    // ----------------- CONSULTAS / GESTIÓN -----------------
+
+    public Optional<Certificado> buscarPorId(String id) {
+        return repo.findById(id);
+    }
+
+    public Optional<Certificado> buscarPorCodigo(String codigo) {
+        return repo.findByCodigoVerificacion(codigo);
     }
 
     public List<Certificado> listarPorCurso(String idCurso) {
@@ -101,8 +121,32 @@ public class CertificadoServicio {
         });
     }
 
-    public void eliminar(String id) { 
-        repo.deleteById(id); 
+    public void eliminar(String id) {
+        repo.deleteById(id);
+    }
+
+    // ----------------- HELPERS PRIVADOS -----------------
+
+    private Certificado crearCertificadoBasico(String idCurso, String idEstudiante) {
+        Certificado c = new Certificado();
+        c.setIdCurso(idCurso);
+        c.setIdEstudiante(idEstudiante);
+        c.setEstado(Certificado.Estado.EMITIDO);
+        c.setEmitidoEn(Instant.now());
+        c.setCodigoVerificacion(generarCodigoUnico());
+
+        cursoRepo.findById(idCurso).ifPresent(cur -> {
+            c.setCursoTitulo(cur.getTitulo());
+            if (cur.getIdInstructor() != null) {
+                usuarioRepo.findById(cur.getIdInstructor())
+                        .ifPresent(instr -> c.setInstructorNombre(obtenerNombreVisible(instr)));
+            }
+        });
+
+        usuarioRepo.findById(idEstudiante)
+                .ifPresent(est -> c.setEstudianteNombre(obtenerNombreVisible(est)));
+
+        return c;
     }
 
     private String generarCodigoUnico() {

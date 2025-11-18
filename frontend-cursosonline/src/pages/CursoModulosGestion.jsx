@@ -29,6 +29,7 @@ const CursoModulosGestion = () => {
     titulo: "",
     descripcion: "",
     orden: "",
+    notaMinimaAprobacion: "",
   });
   const [creando, setCreando] = useState(false);
 
@@ -38,6 +39,7 @@ const CursoModulosGestion = () => {
     titulo: "",
     descripcion: "",
     orden: "",
+    notaMinimaAprobacion: "",
   });
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
@@ -56,6 +58,13 @@ const CursoModulosGestion = () => {
         (a, b) =>
           (a.orden || 0) - (b.orden || 0) || a.titulo.localeCompare(b.titulo)
       );
+
+  const validarNotaMinima = (valor) => {
+    if (valor === "" || valor === null || valor === undefined) return true;
+    const num = Number(valor);
+    if (Number.isNaN(num)) return false;
+    return num >= 0 && num <= 100;
+  };
 
   // ---------- cargar curso ----------
   useEffect(() => {
@@ -109,6 +118,11 @@ const CursoModulosGestion = () => {
       return;
     }
 
+    if (!validarNotaMinima(nuevo.notaMinimaAprobacion)) {
+      alert("La nota mínima debe estar entre 0 y 100.");
+      return;
+    }
+
     setCreando(true);
     try {
       const payload = {
@@ -120,8 +134,22 @@ const CursoModulosGestion = () => {
         payload.orden = Number(nuevo.orden);
       }
 
+      if (
+        nuevo.notaMinimaAprobacion !== "" &&
+        nuevo.notaMinimaAprobacion !== null
+      ) {
+        payload.notaMinimaAprobacion = Number(nuevo.notaMinimaAprobacion);
+      } else {
+        payload.notaMinimaAprobacion = null;
+      }
+
       await crearModulo(id, payload);
-      setNuevo({ titulo: "", descripcion: "", orden: "" });
+      setNuevo({
+        titulo: "",
+        descripcion: "",
+        orden: "",
+        notaMinimaAprobacion: "",
+      });
       await fetchModulos();
     } catch (err) {
       console.error(err);
@@ -142,12 +170,22 @@ const CursoModulosGestion = () => {
       titulo: mod.titulo || "",
       descripcion: mod.descripcion || "",
       orden: mod.orden || "",
+      notaMinimaAprobacion:
+        mod.notaMinimaAprobacion !== undefined &&
+        mod.notaMinimaAprobacion !== null
+          ? mod.notaMinimaAprobacion
+          : "",
     });
   };
 
   const cancelarEdicion = () => {
     setEditandoId(null);
-    setFormEdicion({ titulo: "", descripcion: "", orden: "" });
+    setFormEdicion({
+      titulo: "",
+      descripcion: "",
+      orden: "",
+      notaMinimaAprobacion: "",
+    });
   };
 
   const handleGuardarEdicion = async (idModulo) => {
@@ -155,6 +193,12 @@ const CursoModulosGestion = () => {
       alert("El título no puede estar vacío.");
       return;
     }
+
+    if (!validarNotaMinima(formEdicion.notaMinimaAprobacion)) {
+      alert("La nota mínima debe estar entre 0 y 100.");
+      return;
+    }
+
     setGuardandoEdicion(true);
     try {
       const payload = {
@@ -164,6 +208,18 @@ const CursoModulosGestion = () => {
       if (formEdicion.orden) {
         payload.orden = Number(formEdicion.orden);
       }
+
+      if (
+        formEdicion.notaMinimaAprobacion !== "" &&
+        formEdicion.notaMinimaAprobacion !== null
+      ) {
+        payload.notaMinimaAprobacion = Number(
+          formEdicion.notaMinimaAprobacion
+        );
+      } else {
+        payload.notaMinimaAprobacion = null;
+      }
+
       await actualizarModulo(id, idModulo, payload);
       cancelarEdicion();
       await fetchModulos();
@@ -294,7 +350,7 @@ const CursoModulosGestion = () => {
 
         <form
           onSubmit={handleCrearModulo}
-          className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_minmax(0,1fr)] items-start"
+          className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_minmax(0,1.4fr)] items-start"
         >
           <div className="space-y-1.5">
             <label className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -340,6 +396,29 @@ const CursoModulosGestion = () => {
               />
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Nota mínima aprobatoria (%)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={nuevo.notaMinimaAprobacion}
+                onChange={(e) =>
+                  setNuevo((prev) => ({
+                    ...prev,
+                    notaMinimaAprobacion: e.target.value,
+                  }))
+                }
+                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs md:text-sm text-slate-50 shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
+              />
+              <p className="text-[0.65rem] text-slate-500">
+                Deja vacío si este módulo no requiere nota mínima específica.
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={creando}
@@ -382,6 +461,8 @@ const CursoModulosGestion = () => {
               const esPrimero = index === 0;
               const esUltimo = index === listaOrdenada.length - 1;
 
+              const notaMin = mod.notaMinimaAprobacion;
+
               return (
                 <div
                   key={mod.id}
@@ -400,6 +481,16 @@ const CursoModulosGestion = () => {
                         {mod.descripcion && !esEditando && (
                           <p className="text-[0.75rem] md:text-xs text-slate-300/90 line-clamp-2">
                             {mod.descripcion}
+                          </p>
+                        )}
+
+                        {/* Nota mínima visible en modo lectura */}
+                        {!esEditando && (
+                          <p className="text-[0.7rem] md:text-xs text-slate-400 mt-0.5">
+                            Nota mínima aprobatoria:{" "}
+                            {notaMin !== null && notaMin !== undefined
+                              ? `${notaMin}%`
+                              : "—"}
                           </p>
                         )}
                       </div>
@@ -472,7 +563,7 @@ const CursoModulosGestion = () => {
 
                   {/* Zona de edición inline */}
                   {esEditando && (
-                    <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_minmax(0,1.2fr)] items-start">
+                    <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_minmax(0,1.4fr)] items-start">
                       <div className="space-y-1.5">
                         <label className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
                           Título
@@ -525,6 +616,27 @@ const CursoModulosGestion = () => {
                             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs md:text-sm text-slate-50 shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
                           />
                         </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                            Nota mínima aprobatoria (%)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={formEdicion.notaMinimaAprobacion}
+                            onChange={(e) =>
+                              setFormEdicion((prev) => ({
+                                ...prev,
+                                notaMinimaAprobacion: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs md:text-sm text-slate-50 shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
+                          />
+                        </div>
+
                         <button
                           type="button"
                           disabled={guardandoEdicion}

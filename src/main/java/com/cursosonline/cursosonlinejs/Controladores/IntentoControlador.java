@@ -26,10 +26,11 @@ public class IntentoControlador {
         this.intentoServicio = intentoServicio;
     }
 
+    // ============================
+    // INICIAR INTENTO
+    // ============================
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') " +
-            "or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion) " +
-            "or @intPermisos.estudiantePuedeInteractuar(#idEvaluacion)")
+    @PreAuthorize("isAuthenticated()") // *** CAMBIO ***
     public ResponseEntity<?> iniciar(@PathVariable String idEvaluacion,
                                      @RequestBody(required = false) IniciarIntentoRequest body) {
         String idEstudiante = intentoServicio.obtenerIdEstudianteActual().orElse(null);
@@ -48,6 +49,9 @@ public class IntentoControlador {
         return ResponseEntity.created(location).body(creado);
     }
 
+    // ============================
+    // ENTREGAR
+    // ============================
     @PostMapping(value = "/{idIntento}/entregar", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeIntento(#idIntento) " +
@@ -67,6 +71,9 @@ public class IntentoControlador {
         return ResponseEntity.ok(entregado);
     }
 
+    // ============================
+    // LISTAR TODOS (ADMIN/INSTRUCTOR)
+    // ============================
     @GetMapping(value = "/todos", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion)")
     public ResponseEntity<?> listarTodos(@PathVariable String idEvaluacion,
@@ -76,10 +83,11 @@ public class IntentoControlador {
         return ResponseEntity.ok(lista);
     }
 
+    // ============================
+    // LISTAR MIS INTENTOS
+    // ============================
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') " +
-            "or @intPermisos.esInstructorDeEvaluacion(#idEvaluacion) " +
-            "or @intPermisos.estudiantePuedeInteractuar(#idEvaluacion)")
+    @PreAuthorize("isAuthenticated()") // *** CAMBIO ***
     public ResponseEntity<?> listar(@PathVariable String idEvaluacion) {
         String idEstudiante = intentoServicio.obtenerIdEstudianteActual().orElse(null);
         if (idEstudiante == null) return ResponseEntity.status(401).body("No autenticado.");
@@ -87,6 +95,9 @@ public class IntentoControlador {
         return ResponseEntity.ok(intentos);
     }
 
+    // ============================
+    // OBTENER UN INTENTO
+    // ============================
     @GetMapping(value = "/{idIntento}", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') " +
             "or @intPermisos.esInstructorDeIntento(#idIntento) " +
@@ -103,8 +114,11 @@ public class IntentoControlador {
         return ResponseEntity.ok(intento);
     }
 
+    // ============================
+    // ACTUALIZAR COMPLETO
+    // ============================
     @PutMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> actualizar(@PathVariable String idEvaluacion,
                                         @PathVariable String idIntento,
                                         @Valid @RequestBody ActualizarIntentoRequest body) {
@@ -122,8 +136,11 @@ public class IntentoControlador {
         return ResponseEntity.ok(resp);
     }
 
+    // ============================
+    // PATCH PARCIAL
+    // ============================
     @PatchMapping(value = "/{idIntento}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> patch(@PathVariable String idEvaluacion,
                                    @PathVariable String idIntento,
                                    @RequestBody PatchIntentoRequest body) {
@@ -143,8 +160,11 @@ public class IntentoControlador {
         return ResponseEntity.ok(resp);
     }
 
+    // ============================
+    // ELIMINAR INTENTO PROPIO
+    // ============================
     @DeleteMapping("/{idIntento}")
-    @PreAuthorize("hasRole('ADMIN') " + " or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
+    @PreAuthorize("hasRole('ADMIN') or @intPermisos.esDuenoDeIntentoConVisibilidad(#idIntento)")
     public ResponseEntity<?> eliminar(@PathVariable String idEvaluacion,
                                       @PathVariable String idIntento) {
         String idEstudiante = intentoServicio.obtenerIdEstudianteActual().orElse(null);
@@ -163,6 +183,9 @@ public class IntentoControlador {
         }
     }
 
+    // ============================
+    // DTOs
+    // ============================
     public static record IniciarIntentoRequest(
             @PositiveOrZero Integer timeLimitSeconds,
             BigDecimal puntajeMaximo

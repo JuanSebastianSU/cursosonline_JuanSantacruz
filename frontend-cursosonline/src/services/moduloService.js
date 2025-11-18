@@ -6,6 +6,13 @@ import api from "./api";
  * Consumir /v1/cursos/{idCurso}/modulos
  */
 
+const normalizarNotaMinima = (valor) => {
+  if (valor === undefined || valor === null || valor === "") return null;
+  const num = Number(valor);
+  if (Number.isNaN(num)) return null;
+  return num;
+};
+
 // =============== LISTAR MÓDULOS (vista alumno / instructor / admin) ===============
 export const listarModulos = async (idCurso) => {
   try {
@@ -31,7 +38,12 @@ export const obtenerModulo = async (idCurso, idModulo) => {
 // =============== CREAR MÓDULO ===============
 export const crearModulo = async (idCurso, data) => {
   try {
-    const res = await api.post(`/v1/cursos/${idCurso}/modulos`, data);
+    const payload = {
+      ...data,
+      notaMinimaAprobacion: normalizarNotaMinima(data.notaMinimaAprobacion),
+    };
+
+    const res = await api.post(`/v1/cursos/${idCurso}/modulos`, payload);
     return res.data;
   } catch (err) {
     console.error("Error al crear módulo:", err.response?.data || err.message);
@@ -42,9 +54,14 @@ export const crearModulo = async (idCurso, data) => {
 // =============== ACTUALIZAR MÓDULO ===============
 export const actualizarModulo = async (idCurso, idModulo, data) => {
   try {
+    const payload = {
+      ...data,
+      notaMinimaAprobacion: normalizarNotaMinima(data.notaMinimaAprobacion),
+    };
+
     const res = await api.put(
       `/v1/cursos/${idCurso}/modulos/${idModulo}`,
-      data
+      payload
     );
     return res.data;
   } catch (err) {

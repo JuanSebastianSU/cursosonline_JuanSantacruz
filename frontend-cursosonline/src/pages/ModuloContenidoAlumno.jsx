@@ -1,15 +1,17 @@
 // src/pages/ModuloContenidoAlumno.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { obtenerCurso } from "../services/cursoService";
 import { listarModulos } from "../services/moduloService";
 import { listarLecciones } from "../services/leccionService";
 import { listarEvaluacionesPorLeccion } from "../services/evaluacionService";
 import { obtenerMiInscripcionEnCurso } from "../services/inscripcionService";
+import { obtenerMiProgreso } from "../services/progresoService";
 
 const ModuloContenidoAlumno = () => {
   const { idCurso, idModulo } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [curso, setCurso] = useState(null);
   const [modulo, setModulo] = useState(null);
@@ -19,18 +21,18 @@ const ModuloContenidoAlumno = () => {
 
   const [leccionActivaId, setLeccionActivaId] = useState(null);
 
+  const [progreso, setProgreso] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // -------- helpers de lecciones / contenido --------
-  // En tu backend el enum es Leccion.TipoLeccion { VIDEO, ARTICULO, QUIZ }
   const getTipoLeccion = (lec) =>
     (lec?.tipo || lec?.tipoContenido || "").toUpperCase();
 
-  // IMPORTANTE: aquí usamos el nombre real del campo: urlContenido
   const getUrlLeccion = (lec) =>
-    lec?.urlContenido || // campo real en Leccion
-    lec?.contenidoUrl || // por compatibilidad con versiones viejas
+    lec?.urlContenido ||
+    lec?.contenidoUrl ||
     lec?.url ||
     lec?.recursoUrl ||
     "";
@@ -41,7 +43,6 @@ const ModuloContenidoAlumno = () => {
       const u = new URL(url);
       if (u.hostname.includes("youtube.com") || u.hostname.includes("youtu.be")) {
         if (u.hostname === "youtu.be") {
-          // youtu.be/ID -> https://www.youtube.com/embed/ID
           return `https://www.youtube.com/embed${u.pathname}`;
         }
         const v = u.searchParams.get("v");
@@ -82,7 +83,7 @@ const ModuloContenidoAlumno = () => {
         setLecciones(lecs || []);
 
         if (lecs && lecs.length > 0) {
-          setLeccionActivaId(lecs[0].id); // primera como seleccionada
+          setLeccionActivaId(lecs[0].id);
         }
 
         const mapa = {};
@@ -91,7 +92,7 @@ const ModuloContenidoAlumno = () => {
             try {
               const evals = await listarEvaluacionesPorLeccion(lec.id);
               if (Array.isArray(evals) && evals.length > 0) {
-                mapa[lec.id] = evals[0];
+                mapa[lec.id] = evals;
               }
             } catch (e) {
               console.error(
@@ -103,6 +104,15 @@ const ModuloContenidoAlumno = () => {
           })
         );
         setEvalPorLeccion(mapa);
+
+        // Progreso del curso
+        try {
+          const prog = await obtenerMiProgreso(idCurso);
+          setProgreso(prog);
+        } catch (e) {
+          console.warn("No se pudo cargar el progreso del curso:", e);
+          setProgreso(null);
+        }
       } catch (err) {
         console.error("Error cargando contenido del módulo:", err);
         setError("No se pudo cargar el contenido del módulo.");
@@ -112,7 +122,11 @@ const ModuloContenidoAlumno = () => {
     };
 
     load();
-  }, [idCurso, idModulo]);
+  }, [idCurso, idModulo, location.key]);
+
+  // Debug (puedes quitar estos console.log en producción)
+  console.log("DEBUG progreso curso:", progreso);
+  console.log("DEBUG inscripcion curso:", inscripcion);
 
   const estadoIns = (inscripcion?.estado || "").toLowerCase();
   const tieneAcceso = estadoIns === "activa" || estadoIns === "completada";
@@ -120,6 +134,22 @@ const ModuloContenidoAlumno = () => {
   const leccionesOrdenadas = lecciones
     .slice()
     .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+
+  // progreso del módulo actual y map rápido de lecciones -> info
+  const progresoModuloActual = useMemo(() => {
+    if (!progreso?.modulos) return null;
+    return progreso.modulos.find((m) => m.idModulo === idModulo) || null;
+  }, [progreso, idModulo]);
+
+  const mapLeccionProgreso = useMemo(() => {
+    const map = {};
+    if (progresoModuloActual?.lecciones) {
+      progresoModuloActual.lecciones.forEach((lp) => {
+        map[lp.idLeccion] = lp;
+      });
+    }
+    return map;
+  }, [progresoModuloActual]);
 
   // -------- estados de carga / error / acceso --------
   if (loading) {
@@ -147,6 +177,23 @@ const ModuloContenidoAlumno = () => {
     );
   }
 
+  // Nota final del curso (buscamos en varios campos posibles)
+  const notaFinalCurso =
+    progreso?.notaFinal ??
+    progreso?.notaFinalCurso ??
+    inscripcion?.notaFinal ??
+    inscripcion?.notaFinalCurso ??
+    null;
+
+  const cursoAprobado =
+    progreso?.aprobadoFinal === true ||
+    progreso?.aprobado === true ||
+    inscripcion?.aprobadoFinal === true ||
+    inscripcion?.aprobado === true;
+
+  const notaModuloActual = progresoModuloActual?.nota;
+  const moduloAprobado = progresoModuloActual?.aprobado === true;
+
   // -------- render principal --------
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-6">
@@ -160,7 +207,7 @@ const ModuloContenidoAlumno = () => {
       </button>
 
       {/* header módulo */}
-      <section className="rounded-[2.5rem] border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 md:px-8 py-6 md:py-7 shadow-[0_24px_90px_rgba(0,0,0,0.95)] space-y-2">
+      <section className="rounded-[2.5rem] border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 md:px-8 py-6 md:py-7 shadow-[0_24px_90px_rgba(0,0,0,0.95)] space-y-3">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
           Curso {curso?.titulo ? `· ${curso.titulo}` : ""}
         </p>
@@ -172,6 +219,43 @@ const ModuloContenidoAlumno = () => {
             {modulo.descripcion}
           </p>
         )}
+
+        {/* resumen de progreso del curso y del módulo actual */}
+        <div className="mt-2 flex flex-col md:flex-row gap-2 text-[0.7rem] md:text-xs text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400/80" />
+            <span>
+              Nota final del curso:{" "}
+              {notaFinalCurso !== null && notaFinalCurso !== undefined
+                ? typeof notaFinalCurso === "number"
+                  ? `${notaFinalCurso.toFixed(1)}%`
+                  : notaFinalCurso
+                : "—"}
+              {cursoAprobado && (
+                <span className="ml-2 rounded-full border border-emerald-500/70 bg-emerald-500/10 px-2 py-[2px] text-[0.65rem] font-semibold text-emerald-200 uppercase tracking-wide">
+                  Aprobado
+                </span>
+              )}
+            </span>
+          </div>
+
+          {progresoModuloActual && (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-2 w-2 rounded-full bg-sky-400/80" />
+              <span>
+                Módulo:{" "}
+                {typeof notaModuloActual === "number"
+                  ? `${notaModuloActual.toFixed(1)}%`
+                  : "—"}
+                {moduloAprobado && (
+                  <span className="ml-2 rounded-full border border-sky-500/70 bg-sky-500/10 px-2 py-[2px] text-[0.65rem] font-semibold text-sky-200 uppercase tracking-wide">
+                    Aprobado
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* listado de lecciones */}
@@ -183,7 +267,7 @@ const ModuloContenidoAlumno = () => {
         ) : (
           <ul className="space-y-3">
             {leccionesOrdenadas.map((lec, index) => {
-              const evaluacion = evalPorLeccion[lec.id];
+              const evaluaciones = evalPorLeccion[lec.id] || [];
               const tipoLower = (lec.tipo || "").toLowerCase();
               const tipoLabel =
                 tipoLower === "video"
@@ -195,7 +279,11 @@ const ModuloContenidoAlumno = () => {
                   : "Lección";
 
               const esActiva = leccionActivaId === lec.id;
-              const duracionMin = lec.duracion ?? lec.duracionMinutos; // compat
+              const duracionMin = lec.duracion ?? lec.duracionMinutos;
+
+              const infoProg = mapLeccionProgreso[lec.id];
+              const notaLeccion = infoProg?.nota;
+              const leccionAprobada = infoProg?.aprobada === true;
 
               return (
                 <li key={lec.id}>
@@ -220,24 +308,43 @@ const ModuloContenidoAlumno = () => {
                           {tipoLabel}
                           {duracionMin ? ` · ${duracionMin} min` : ""}
                         </p>
+
+                        {(typeof notaLeccion === "number" ||
+                          notaLeccion !== undefined) && (
+                          <p className="mt-1 text-[0.7rem] md:text-xs text-slate-300">
+                            Nota lección:{" "}
+                            {typeof notaLeccion === "number"
+                              ? `${notaLeccion.toFixed(1)}%`
+                              : "—"}
+                            {leccionAprobada && (
+                              <span className="ml-2 rounded-full border border-emerald-400/70 bg-emerald-500/10 px-2 py-[2px] text-[0.65rem] font-semibold text-emerald-200 uppercase tracking-wide">
+                                Aprobada
+                              </span>
+                            )}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex gap-2 md:justify-end">
-                      {evaluacion && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation(); // que no cambie la lección activa
-                            navigate(
-                              `/lecciones/${lec.id}/evaluaciones/${evaluacion.id}/tomar`
-                            );
-                          }}
-                          className="inline-flex items-center justify-center rounded-full bg-emerald-500/10 px-4 py-2 text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 border border-emerald-400/80 hover:bg-emerald-500/20 active:translate-y-px transition"
-                        >
-                          Tomar evaluación
-                        </button>
-                      )}
+                    <div className="flex flex-col md:flex-row gap-2 md:justify-end">
+                      {evaluaciones.length > 0 &&
+                        evaluaciones.map((ev) => (
+                          <button
+                            key={ev.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(
+                                `/lecciones/${lec.id}/evaluaciones/${ev.id}/tomar`
+                              );
+                            }}
+                            className="inline-flex items-center justify-center rounded-full bg-emerald-500/10 px-4 py-2 text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 border border-emerald-400/80 hover:bg-emerald-500/20 active:translate-y-px transition"
+                          >
+                            {evaluaciones.length > 1
+                              ? `Tomar: ${ev.titulo}`
+                              : "Tomar evaluación"}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 </li>
@@ -262,7 +369,7 @@ const ModuloContenidoAlumno = () => {
                 );
               }
 
-              const tipo = getTipoLeccion(activa); // VIDEO | ARTICULO | QUIZ
+              const tipo = getTipoLeccion(activa);
               const url = getUrlLeccion(activa);
               const embedUrl = normalizarYoutube(url);
 
@@ -282,7 +389,6 @@ const ModuloContenidoAlumno = () => {
                     )}
                   </div>
 
-                  {/* contenido según tipo */}
                   {tipo === "VIDEO" && url ? (
                     <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-700/70 bg-black">
                       <iframe

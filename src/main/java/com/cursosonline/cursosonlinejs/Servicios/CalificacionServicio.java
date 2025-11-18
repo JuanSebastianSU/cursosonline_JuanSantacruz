@@ -26,19 +26,22 @@ public class CalificacionServicio {
     private final LeccionRepositorio leccionRepositorio;
     private final ModuloRepositorio moduloRepositorio;
     private final CursoRepositorio cursoRepositorio;
+    private final ProgresoCursoServicio progresoCursoServicio;
 
     public CalificacionServicio(CalificacionRepositorio calificacionRepositorio,
                                 IntentoRepositorio intentoRepositorio,
                                 EvaluacionRepositorio evaluacionRepositorio,
                                 LeccionRepositorio leccionRepositorio,
                                 ModuloRepositorio moduloRepositorio,
-                                CursoRepositorio cursoRepositorio) {
+                                CursoRepositorio cursoRepositorio,
+                                ProgresoCursoServicio progresoCursoServicio) {
         this.calificacionRepositorio = calificacionRepositorio;
         this.intentoRepositorio = intentoRepositorio;
         this.evaluacionRepositorio = evaluacionRepositorio;
         this.leccionRepositorio = leccionRepositorio;
         this.moduloRepositorio = moduloRepositorio;
         this.cursoRepositorio = cursoRepositorio;
+        this.progresoCursoServicio = progresoCursoServicio;
     }
 
     public Optional<Calificacion> calificar(String idIntento,
@@ -79,6 +82,8 @@ public class CalificacionServicio {
         intento.setPuntaje(puntaje);
         intento.setEstado(EstadoIntento.CALIFICADO);
         intento.setCalificadoAt(Instant.now());
+        // 👉 NUEVO
+        intento.setIdCalificacion(creada.getId());
         intentoRepositorio.save(intento);
 
         return Optional.of(creada);
@@ -115,13 +120,19 @@ public class CalificacionServicio {
         });
     }
 
-    public Optional<Calificacion> publicar(String id) {
+        public Optional<Calificacion> publicar(String id) {
         return calificacionRepositorio.findById(id).map(c -> {
             c.setEstado(Calificacion.EstadoCalificacion.PUBLICADA);
             c.setCalificadoAt(Instant.now());
-            return calificacionRepositorio.save(c);
+            Calificacion guardada = calificacionRepositorio.save(c);
+
+            // 👉 Aquí recalculamos progreso del curso y certificado
+            progresoCursoServicio.recalcularProgresoPorCalificacion(guardada);
+
+            return guardada;
         });
     }
+
 
     public boolean eliminar(String id) {
         return calificacionRepositorio.findById(id).map(c -> {

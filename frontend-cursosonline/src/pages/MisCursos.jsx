@@ -1,8 +1,8 @@
-// src/pages/MisCursos.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { listarMisInscripciones } from "../services/inscripcionService";
 import { obtenerCurso } from "../services/cursoService";
+import { obtenerCertificado } from "../services/certificadoService"; // 👈 NUEVO
 
 const MisCursos = () => {
   const navigate = useNavigate();
@@ -60,7 +60,6 @@ const MisCursos = () => {
     });
   };
 
-  // pequeño helper para obtener el id del curso desde la inscripción
   const getCursoIdFromInscripcion = (ins) =>
     ins.idCurso || ins.cursoId || ins.curso?.id || null;
 
@@ -79,7 +78,6 @@ const MisCursos = () => {
           return;
         }
 
-        // ids de curso únicos
         const cursoIds = [
           ...new Set(
             inscripciones
@@ -120,6 +118,41 @@ const MisCursos = () => {
 
     fetchMisCursos();
   }, [filtro]);
+
+  // ver certificado
+  const handleVerCertificado = async (idCertificado) => {
+    if (!idCertificado) return;
+    try {
+      const cert = await obtenerCertificado(idCertificado);
+
+      // Si ya tuvieras PDF o URL pública configurada:
+      if (cert?.pdfUrl) {
+        window.open(cert.pdfUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      if (cert?.publicUrl) {
+        window.open(cert.publicUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      // Si aún no generas PDF/URL, mostramos los datos básicos
+      alert(
+        `Certificado emitido.\n\nCurso: ${
+          cert?.cursoTitulo || "N/D"
+        }\nAlumno: ${cert?.estudianteNombre || "N/D"}\nCódigo de verificación: ${
+          cert?.codigoVerificacion || "N/D"
+        }`
+      );
+    } catch (err) {
+      console.error("Error al obtener certificado:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        err?.message ||
+        "No se pudo obtener el certificado.";
+      alert(msg);
+    }
+  };
 
   // ---------- UI filtros ----------
   const pillBase =
@@ -215,13 +248,13 @@ const MisCursos = () => {
                 inscripcion.updatedAt;
               const esPendientePago =
                 (inscripcion.estado || "").toLowerCase() === "pendiente_pago";
+              const tieneCertificado = !!inscripcion.certificadoId;
 
               return (
                 <article
                   key={inscripcion.id}
                   className="group relative overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-950/95 shadow-[0_20px_70px_rgba(0,0,0,0.9)]"
                 >
-                  {/* halo */}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-50/0 via-amber-500/2 to-slate-900/40 opacity-80" />
 
                   <div className="relative flex flex-col h-full">
@@ -262,40 +295,57 @@ const MisCursos = () => {
                         Inscrito el {formatFecha(fechaBase)}
                       </p>
 
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="text-xs md:text-sm text-amber-300 font-semibold">
-                          {curso?.precio != null ? `${curso.precio} USD` : ""}
+                      <div className="mt-2 flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs md:text-sm text-amber-300 font-semibold">
+                            {curso?.precio != null ? `${curso.precio} USD` : ""}
+                          </div>
+
+                          <div className="flex gap-2">
+                            {esPendientePago && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(
+                                    `/inscripciones/${inscripcion.id}/pago`,
+                                    {
+                                      state: { idCurso: cursoId },
+                                    }
+                                  )
+                                }
+                                className="inline-flex items-center justify-center rounded-full bg-emerald-500/10 px-4 py-2 text-xs md:text-sm font-semibold text-emerald-200 border border-emerald-400/80 hover:bg-emerald-500/20 active:translate-y-px transition"
+                              >
+                                Pagar curso
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              disabled={!cursoId}
+                              onClick={() =>
+                                cursoId && navigate(`/cursos/${cursoId}`)
+                              }
+                              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs md:text-sm font-semibold text-amber-200 border border-slate-600/80 hover:bg-slate-800 active:translate-y-px disabled:opacity-60 disabled:cursor-not-allowed transition"
+                            >
+                              Ir al curso
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex gap-2">
-                          {esPendientePago && (
+                        {/* Botón de certificado si existe */}
+                        {tieneCertificado && (
+                          <div className="flex justify-end">
                             <button
                               type="button"
                               onClick={() =>
-                                navigate(
-                                  `/inscripciones/${inscripcion.id}/pago`,
-                                  {
-                                    state: { idCurso: cursoId },
-                                  }
-                                )
+                                handleVerCertificado(inscripcion.certificadoId)
                               }
-                              className="inline-flex items-center justify-center rounded-full bg-emerald-500/10 px-4 py-2 text-xs md:text-sm font-semibold text-emerald-200 border border-emerald-400/80 hover:bg-emerald-500/20 active:translate-y-px transition"
+                              className="inline-flex items-center justify-center rounded-full bg-amber-400 px-4 py-1.5 text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.22em] text-slate-950 border border-amber-300 shadow-[0_0_25px_rgba(251,191,36,0.9)] hover:bg-amber-300 active:translate-y-px transition"
                             >
-                              Pagar curso
+                              🎓 Ver certificado
                             </button>
-                          )}
-
-                          <button
-                            type="button"
-                            disabled={!cursoId}
-                            onClick={() =>
-                              cursoId && navigate(`/cursos/${cursoId}`)
-                            }
-                            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs md:text-sm font-semibold text-amber-200 border border-slate-600/80 hover:bg-slate-800 active:translate-y-px disabled:opacity-60 disabled:cursor-not-allowed transition"
-                          >
-                            Ir al curso
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

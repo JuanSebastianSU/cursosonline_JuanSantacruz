@@ -2,6 +2,8 @@ package com.cursosonline.cursosonlinejs.Entidades;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -83,9 +85,12 @@ public class Evaluacion {
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal penalizacionTardiaPct;
 
+    // Opcional: si algún día usas bancos globales
     private String bancoPreguntasId;
+
     @PositiveOrZero
     private Integer totalPreguntas;
+
     private Boolean barajarPreguntas;
     private Boolean barajarOpciones;
 
@@ -98,8 +103,22 @@ public class Evaluacion {
         DESPUES_DE_CIERRE
     }
 
+    /**
+     * Si todas las preguntas son autoCalificable=true y de tipo soportado
+     * (OPCION_UNICA, OPCION_MULTIPLE, VERDADERO_FALSO, NUMERICA),
+     * entonces esta evaluación se puede calificar totalmente sola.
+     */
     private Boolean autoCalificable;
+
+    /**
+     * true si hay al menos una pregunta ABIERTA o marcada como no autoCalificable.
+     */
     private Boolean requiereRevisionManual;
+
+    /**
+     * NUEVO: lista de preguntas embebidas en la evaluación.
+     */
+    private List<Pregunta> preguntas = new ArrayList<>();
 
     @CreatedDate
     private Instant createdAt;

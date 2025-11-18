@@ -86,7 +86,7 @@ public class Inscripcion {
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal notaFinal;
     private Boolean aprobadoFinal;
-
+    private Set<String> modulosAprobadosManualmente;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

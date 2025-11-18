@@ -18,6 +18,15 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import java.math.BigDecimal;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import jakarta.validation.constraints.PositiveOrZero;
+
+
 @Document(collection = "modulos")
 @Getter
 @Setter
@@ -56,6 +65,11 @@ public class Modulo {
     private List<String> lecciones;
 
     private boolean preview;
+
+    // 👉 NUEVO: nota mínima para aprobar este módulo (0–100)
+    @Field(targetType = FieldType.DECIMAL128)
+    @PositiveOrZero
+    private BigDecimal notaMinimaAprobacion;
 
     @CreatedDate
     private Instant createdAt;

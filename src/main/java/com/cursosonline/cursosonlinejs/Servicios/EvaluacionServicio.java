@@ -2,6 +2,7 @@ package com.cursosonline.cursosonlinejs.Servicios;
 
 import com.cursosonline.cursosonlinejs.Entidades.Evaluacion;
 import com.cursosonline.cursosonlinejs.Entidades.Leccion;
+import com.cursosonline.cursosonlinejs.Entidades.Pregunta;
 import com.cursosonline.cursosonlinejs.Repositorios.EvaluacionRepositorio;
 import com.cursosonline.cursosonlinejs.Repositorios.LeccionRepositorio;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,9 @@ public class EvaluacionServicio {
             e.setIdModulo(actual.getIdModulo());
             e.setIdCurso(actual.getIdCurso());
         }
+
+        // 👇 Solo toca metadatos si hay preguntas
+        recalcularMetadatosPreguntas(e);
 
         Evaluacion saved = evaluacionRepositorio.save(e);
         syncEvaluacionesPublicadasEnLeccion(saved.getIdLeccion());
@@ -115,6 +119,48 @@ public class EvaluacionServicio {
                     return true;
                 })
                 .orElse(false);
+    }
+
+    /**
+     * Recalcula:
+     *  - totalPreguntas
+     *  - puntajeMaximo (solo si estaba vacío o <= 0)
+     *  - autoCalificable
+     *  - requiereRevisionManual
+     * usando SOLO campos que tu entidad Evaluacion ya tiene.
+     */
+    private void recalcularMetadatosPreguntas(Evaluacion e) {
+        if (e.getPreguntas() == null || e.getPreguntas().isEmpty()) {
+            // si no hay preguntas, no tocamos nada
+            return;
+        }
+
+        // totalPreguntas
+        e.setTotalPreguntas(e.getPreguntas().size());
+
+        // suma de puntajes de las preguntas
+        int suma = e.getPreguntas().stream()
+                .map(Pregunta::getPuntaje)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        // Solo calculamos puntajeMaximo si no está definido o es <= 0
+        if (e.getPuntajeMaximo() == null || e.getPuntajeMaximo().signum() <= 0) {
+            e.setPuntajeMaximo(BigDecimal.valueOf(suma));
+        }
+
+        boolean hayAuto = e.getPreguntas().stream().anyMatch(Pregunta::isAutoCalificable);
+        boolean hayManual = e.getPreguntas().stream().anyMatch(p -> !p.isAutoCalificable());
+
+        // autoCalificable = true si TODAS se pueden autocorregir
+        if (e.getAutoCalificable() == null) {
+            e.setAutoCalificable(hayAuto && !hayManual);
+        }
+        // requiereRevisionManual = true si hay al menos una manual
+        if (e.getRequiereRevisionManual() == null) {
+            e.setRequiereRevisionManual(hayManual);
+        }
     }
 
     public Optional<Evaluacion> publicar(String idEval, String idLeccion) {

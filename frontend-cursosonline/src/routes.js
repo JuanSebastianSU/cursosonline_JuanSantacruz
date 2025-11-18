@@ -41,6 +41,9 @@ import CalificacionesAdmin from "./pages/CalificacionesAdmin";
 import AdminPanel from "./pages/AdminPanel";
 import AdminUsuariosGestion from "./pages/AdminUsuariosGestion";
 
+// 👇 NUEVO: gestión de preguntas de una evaluación
+import EvaluacionPreguntasGestion from "./pages/EvaluacionPreguntasGestion";
+
 function AppRoutes() {
   return (
     <Routes>
@@ -105,6 +108,12 @@ function AppRoutes() {
         <Route
           path="/instructor/lecciones/:idLeccion/evaluaciones"
           element={<LeccionEvaluacionesGestion />}
+        />
+
+        {/* NUEVO: gestión de preguntas de una evaluación */}
+        <Route
+          path="/instructor/lecciones/:idLeccion/evaluaciones/:idEvaluacion/preguntas"
+          element={<EvaluacionPreguntasGestion />}
         />
 
         {/* ver intentos de una evaluación concreta */}

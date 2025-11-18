@@ -8,6 +8,10 @@ import { listarLecciones } from "../services/leccionService";
 import { listarEvaluacionesPorLeccion } from "../services/evaluacionService";
 import { listarIntentosEvaluacionInstructor } from "../services/intentoService";
 import { listarCalificacionesPorEvaluacion } from "../services/calificacionService";
+import {
+  emitirCertificado,
+  emitirCertificadoManual,
+} from "../services/certificadoService"; // 👈 NUEVO
 
 const CalificacionesInstructor = () => {
   const navigate = useNavigate();
@@ -16,6 +20,8 @@ const CalificacionesInstructor = () => {
   const [loading, setLoading] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("TODOS");
+
+  const [certLoading, setCertLoading] = useState(null); // idIntento que está procesando
 
   // helper seguro: SIEMPRE atrapa error y no rompe el panel
   const safe = async (fn, label) => {
@@ -166,6 +172,36 @@ const CalificacionesInstructor = () => {
     return true;
   });
 
+  // -------- handlers certificados (instructor/admin) --------
+  const handleEmitirCertificado = async (row, manual = false) => {
+    if (!row.idCurso || !row.idEstudiante) {
+      alert("No se puede emitir certificado: falta idCurso o idEstudiante.");
+      return;
+    }
+
+    try {
+      setCertLoading(`${row.idIntento}-${manual ? "M" : "N"}`);
+
+      if (manual) {
+        await emitirCertificadoManual(row.idCurso, row.idEstudiante);
+        alert("Certificado emitido MANUALMENTE para este estudiante.");
+      } else {
+        await emitirCertificado(row.idCurso, row.idEstudiante);
+        alert("Certificado emitido correctamente (validando elegibilidad).");
+      }
+    } catch (err) {
+      console.error("Error al emitir certificado:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        err?.message ||
+        "No se pudo emitir el certificado.";
+      alert(msg);
+    } finally {
+      setCertLoading(null);
+    }
+  };
+
   return (
     <main className="flex-1 bg-slate-950/90 text-slate-50">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-7">
@@ -191,8 +227,8 @@ const CalificacionesInstructor = () => {
               Calificaciones de mis evaluaciones
             </h1>
             <p className="max-w-2xl text-xs md:text-sm text-slate-300/90">
-              Aquí ves los intentos de tus estudiantes: quién rindió cada
-              evaluación, en qué curso/lección y qué puntaje obtuvo.
+              Aquí ves los intentos de tus estudiantes y puedes emitir
+              certificados cuando corresponda.
             </p>
           </div>
         </section>
@@ -283,91 +319,130 @@ const CalificacionesInstructor = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {rowsFiltradas.map((r) => (
-                    <tr
-                      key={r.idIntento}
-                      className="border-t border-slate-800/70 hover:bg-slate-900/70 transition-colors"
-                    >
-                      {/* Alumno */}
-                      <td className="px-4 py-3 align-middle">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-slate-50 font-semibold line-clamp-1">
-                            {r.nombreEstudiante || r.idEstudiante || "—"}
-                          </span>
-                          {r.idEstudiante && (
-                            <span className="text-[0.7rem] text-slate-500">
-                              ID alumno: {r.idEstudiante}
+                  {rowsFiltradas.map((r) => {
+                    const loadingNormal =
+                      certLoading === `${r.idIntento}-N`;
+                    const loadingManual =
+                      certLoading === `${r.idIntento}-M`;
+
+                    return (
+                      <tr
+                        key={r.idIntento}
+                        className="border-t border-slate-800/70 hover:bg-slate-900/70 transition-colors"
+                      >
+                        {/* Alumno */}
+                        <td className="px-4 py-3 align-middle">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-slate-50 font-semibold line-clamp-1">
+                              {r.nombreEstudiante || r.idEstudiante || "—"}
                             </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Curso / Lección / Evaluación */}
-                      <td className="px-4 py-3 align-middle text-slate-200">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[0.75rem] text-slate-100">
-                            {r.tituloCurso || "Curso sin título"}
-                          </span>
-                          <span className="text-[0.7rem] text-slate-400">
-                            {r.tituloLeccion || "Lección"} · Intento #
-                            {r.idIntento?.toString().slice(0, 6)}…
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Estado intento */}
-                      <td className="px-4 py-3 align-middle text-slate-200">
-                        {r.estadoIntento || "N/D"}
-                      </td>
-
-                      {/* Estado calificación */}
-                      <td className="px-4 py-3 align-middle text-slate-200">
-                        {r.estadoCalificacion || "—"}
-                        {r.aprobado != null && (
-                          <span className="ml-1 text-[0.7rem]">
-                            {r.aprobado ? "✅" : "❌"}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Puntaje */}
-                      <td className="px-4 py-3 align-middle text-right text-slate-100">
-                        {r.puntaje != null ? (
-                          <>
-                            {Number(r.puntaje)}{" "}
-                            {r.puntajeMaximo != null && (
-                              <span className="text-[0.75rem] text-slate-400">
-                                / {Number(r.puntajeMaximo)}
+                            {r.idEstudiante && (
+                              <span className="text-[0.7rem] text-slate-500">
+                                ID alumno: {r.idEstudiante}
                               </span>
                             )}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
+                          </div>
+                        </td>
 
-                      {/* Acciones */}
-                      <td className="px-4 py-3 align-middle text-right">
-                        {r.estadoIntento === "EN_PROGRESO" ? (
-                          <span className="text-[0.7rem] text-slate-500">
-                            Intento en progreso
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/instructor/evaluaciones/${r.idEvaluacion}/intentos/${r.idIntento}/calificar`
-                              )
-                            }
-                            className="inline-flex items-center justify-center rounded-full border border-sky-400/80 bg-slate-900 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-sky-200 hover:bg-sky-500/15 hover:border-sky-300 active:translate-y-px transition"
-                          >
-                            Ver / calificar
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        {/* Curso / Lección / Evaluación */}
+                        <td className="px-4 py-3 align-middle text-slate-200">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[0.75rem] text-slate-100">
+                              {r.tituloCurso || "Curso sin título"}
+                            </span>
+                            <span className="text-[0.7rem] text-slate-400">
+                              {r.tituloLeccion || "Lección"} · Intento #
+                              {r.idIntento?.toString().slice(0, 6)}…
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Estado intento */}
+                        <td className="px-4 py-3 align-middle text-slate-200">
+                          {r.estadoIntento || "N/D"}
+                        </td>
+
+                        {/* Estado calificación */}
+                        <td className="px-4 py-3 align-middle text-slate-200">
+                          {r.estadoCalificacion || "—"}
+                          {r.aprobado != null && (
+                            <span className="ml-1 text-[0.7rem]">
+                              {r.aprobado ? "✅" : "❌"}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Puntaje */}
+                        <td className="px-4 py-3 align-middle text-right text-slate-100">
+                          {r.puntaje != null ? (
+                            <>
+                              {Number(r.puntaje)}{" "}
+                              {r.puntajeMaximo != null && (
+                                <span className="text-[0.75rem] text-slate-400">
+                                  / {Number(r.puntajeMaximo)}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+
+                        {/* Acciones */}
+                        <td className="px-4 py-3 align-middle text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            {r.estadoIntento === "EN_PROGRESO" ? (
+                              <span className="text-[0.7rem] text-slate-500">
+                                Intento en progreso
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(
+                                    `/instructor/evaluaciones/${r.idEvaluacion}/intentos/${r.idIntento}/calificar`
+                                  )
+                                }
+                                className="inline-flex items-center justify-center rounded-full border border-sky-400/80 bg-slate-900 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-sky-200 hover:bg-sky-500/15 hover:border-sky-300 active:translate-y-px transition"
+                              >
+                                Ver / calificar
+                              </button>
+                            )}
+
+                            {/* Botones de certificado (si hay alumno & curso) */}
+                            {r.idEstudiante && r.idCurso && (
+                              <div className="flex flex-wrap gap-1 justify-end">
+                                <button
+                                  type="button"
+                                  disabled={loadingNormal}
+                                  onClick={() =>
+                                    handleEmitirCertificado(r, false)
+                                  }
+                                  className="inline-flex items-center justify-center rounded-full border border-emerald-400/80 bg-emerald-500/10 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {loadingNormal
+                                    ? "Emitiendo..."
+                                    : "🎓 Emitir cert."}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={loadingManual}
+                                  onClick={() =>
+                                    handleEmitirCertificado(r, true)
+                                  }
+                                  className="inline-flex items-center justify-center rounded-full border border-amber-400/80 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {loadingManual
+                                    ? "Manual..."
+                                    : "⚠ Manual"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -377,8 +452,8 @@ const CalificacionesInstructor = () => {
         <section className="pt-1">
           <p className="text-[0.7rem] text-slate-500 max-w-md">
             Tip: usa el buscador para filtrar por nombre de alumno, curso,
-            lección o evaluación. Si más adelante el backend envía más campos,
-            se pueden mostrar aquí sin tocar nada de la lógica.
+            lección o evaluación. Desde aquí también puedes emitir certificados
+            normales o manuales.
           </p>
         </section>
       </div>

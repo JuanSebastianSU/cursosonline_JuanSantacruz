@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -51,12 +52,27 @@ public class ModuloControlador {
         return curso != null && userOpt.get().getId().equals(curso.getIdInstructor());
     }
 
+    // --- helper para validar nota mínima ---
+    private ResponseEntity<String> validarNotaMinima(BigDecimal nota) {
+        if (nota == null) return null; // permitido null (sin nota configurada)
+        if (nota.compareTo(BigDecimal.ZERO) < 0 || nota.compareTo(BigDecimal.valueOf(100)) > 0) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("La nota mínima debe estar entre 0 y 100.");
+        }
+        return null;
+    }
+
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @cursoPermisos.esDueno(#idCurso)")
     public ResponseEntity<?> crearModulo(@PathVariable String idCurso, @Valid @RequestBody Modulo body) {
         if (body.getTitulo() == null || body.getTitulo().isBlank()) {
             return ResponseEntity.badRequest().body("El título es obligatorio.");
         }
+
+        // validar nota mínima (0–100, opcional)
+        var errorNota = validarNotaMinima(body.getNotaMinimaAprobacion());
+        if (errorNota != null) return errorNota;
 
         body.setId(null);
         body.setIdCurso(idCurso);
@@ -144,6 +160,13 @@ public class ModuloControlador {
         }
         if (body.getDescripcion() != null) {
             actual.setDescripcion(body.getDescripcion());
+        }
+
+        // 👇 actualizar nota mínima si viene en el body
+        if (body.getNotaMinimaAprobacion() != null) {
+            var errorNota = validarNotaMinima(body.getNotaMinimaAprobacion());
+            if (errorNota != null) return errorNota;
+            actual.setNotaMinimaAprobacion(body.getNotaMinimaAprobacion());
         }
 
         Modulo actualizado = moduloServicio.guardar(actual);

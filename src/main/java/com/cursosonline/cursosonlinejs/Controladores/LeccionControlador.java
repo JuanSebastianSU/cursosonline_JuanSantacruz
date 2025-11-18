@@ -13,9 +13,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
 
 import java.net.URI;
 import java.util.List;
@@ -47,6 +47,9 @@ public class LeccionControlador {
         return a.getAuthorities().stream().anyMatch(ga -> "ROLE_ADMIN".equals(ga.getAuthority()));
     }
 
+    // =========================================================
+    // CREAR
+    // =========================================================
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> crearLeccion(@PathVariable String idModulo,
@@ -81,10 +84,11 @@ public class LeccionControlador {
         return ResponseEntity.created(location).body(creada);
     }
 
+    // =========================================================
+    // LISTAR (ALUMNO + INSTRUCTOR + ADMIN)
+    // =========================================================
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN')"
-            + " or @leccionPermisos.esInstructorDelModulo(#idModulo)"
-            + " or @leccionPermisos.estaInscritoEnCursoDelModulo(#idModulo)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> listarLecciones(@PathVariable String idModulo) {
         Modulo modulo = moduloRepo.findById(idModulo).orElse(null);
         if (modulo == null) return ResponseEntity.notFound().build();
@@ -95,6 +99,7 @@ public class LeccionControlador {
         boolean instructor = leccionPermisos.esInstructorDelModulo(idModulo);
 
         if (!admin && !instructor) {
+            // alumno: solo ve curso/módulo activos y lecciones PUBLICADAS
             if (curso.getEstado() == Curso.EstadoCurso.ARCHIVADO
                     || modulo.getEstado() == Modulo.EstadoModulo.ARCHIVADO) {
                 return ResponseEntity.status(403).body("Contenido archivado.");
@@ -102,13 +107,15 @@ public class LeccionControlador {
             return ResponseEntity.ok(leccionServicio.listarPublicadasPorModulo(idModulo));
         }
 
+        // admin / instructor
         return ResponseEntity.ok(leccionServicio.listarPorModulo(idModulo));
     }
 
+    // =========================================================
+    // OBTENER (ALUMNO + INSTRUCTOR + ADMIN)
+    // =========================================================
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasRole('ADMIN')"
-            + " or @leccionPermisos.esInstructorDelModulo(#idModulo)"
-            + " or @leccionPermisos.estaInscritoEnCursoDelModulo(#idModulo)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> obtenerLeccion(@PathVariable String idModulo, @PathVariable String id) {
         Leccion l = leccionServicio.obtener(id);
         if (l == null) return ResponseEntity.notFound().build();
@@ -137,6 +144,9 @@ public class LeccionControlador {
         return ResponseEntity.ok(l);
     }
 
+    // =========================================================
+    // RESTO CRUD (solo instructor/admin)
+    // =========================================================
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN') or @leccionPermisos.esInstructorDelModulo(#idModulo)")
     public ResponseEntity<?> actualizarLeccion(@PathVariable String idModulo,
@@ -239,8 +249,14 @@ public class LeccionControlador {
                 delta = body.delta();
             } else if (body.direccion() != null) {
                 switch (body.direccion().toLowerCase()) {
-                    case "up": case "arriba": delta = -1; break;
-                    case "down": case "abajo": delta = +1; break;
+                    case "up":
+                    case "arriba":
+                        delta = -1;
+                        break;
+                    case "down":
+                    case "abajo":
+                        delta = +1;
+                        break;
                 }
             }
         }
