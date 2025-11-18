@@ -11,14 +11,7 @@ import { listarCalificacionesPorEvaluacion } from "../services/calificacionServi
 import {
   emitirCertificado,
   emitirCertificadoManual,
-} from "../services/certificadoService";
-
-// 👇 helper de alertas con SweetAlert2
-import {
-  showError,
-  showSuccess,
-  showConfirm,
-} from "../utils/alerts";
+} from "../services/certificadoService"; // 👈 NUEVO
 
 const CalificacionesAdmin = () => {
   const navigate = useNavigate();
@@ -181,20 +174,8 @@ const CalificacionesAdmin = () => {
 
   const handleEmitirCertificado = async (row, manual = false) => {
     if (!row.idCurso || !row.idEstudiante) {
-      showError(
-        "No se puede emitir certificado",
-        "Falta el id del curso o del estudiante para este registro."
-      );
+      alert("No se puede emitir certificado: falta idCurso o idEstudiante.");
       return;
-    }
-
-    // Confirmación especial para emisión manual
-    if (manual) {
-      const res = await showConfirm(
-        "Emitir certificado manual",
-        "Este certificado se emitirá de forma manual, omitiendo validaciones de elegibilidad. ¿Quieres continuar?"
-      );
-      if (!res.isConfirmed) return;
     }
 
     try {
@@ -202,16 +183,10 @@ const CalificacionesAdmin = () => {
 
       if (manual) {
         await emitirCertificadoManual(row.idCurso, row.idEstudiante);
-        showSuccess(
-          "Certificado emitido manualmente",
-          "Se emitió el certificado manual para este estudiante."
-        );
+        alert("Certificado emitido MANUALMENTE para este estudiante.");
       } else {
         await emitirCertificado(row.idCurso, row.idEstudiante);
-        showSuccess(
-          "Certificado emitido",
-          "El certificado se emitió correctamente validando la elegibilidad."
-        );
+        alert("Certificado emitido correctamente (validando elegibilidad).");
       }
     } catch (err) {
       console.error("Error al emitir certificado:", err);
@@ -220,7 +195,7 @@ const CalificacionesAdmin = () => {
         err?.response?.data ||
         err?.message ||
         "No se pudo emitir el certificado.";
-      showError("Error al emitir certificado", msg);
+      alert(msg);
     } finally {
       setCertLoading(null);
     }
@@ -456,7 +431,9 @@ const CalificacionesAdmin = () => {
                                   }
                                   className="inline-flex items-center justify-center rounded-full border border-amber-400/80 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] md:text-xs font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                  {loadingManual ? "Manual..." : "⚠ Manual"}
+                                  {loadingManual
+                                    ? "Manual..."
+                                    : "⚠ Manual"}
                                 </button>
                               </div>
                             )}
