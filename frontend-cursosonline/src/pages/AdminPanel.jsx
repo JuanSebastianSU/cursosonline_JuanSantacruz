@@ -1,9 +1,37 @@
 // src/pages/AdminPanel.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { obtenerResumenPlataforma } from "../services/reporteService";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
+
+  const [resumen, setResumen] = useState(null);
+  const [loadingResumen, setLoadingResumen] = useState(true);
+  const [errorResumen, setErrorResumen] = useState("");
+
+  useEffect(() => {
+    const cargarResumen = async () => {
+      setLoadingResumen(true);
+      setErrorResumen("");
+      try {
+        const data = await obtenerResumenPlataforma();
+        setResumen(data);
+      } catch (err) {
+        console.error("Error obteniendo resumen plataforma:", err);
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data ||
+          err?.message ||
+          "No se pudo cargar el resumen de la plataforma.";
+        setErrorResumen(msg);
+      } finally {
+        setLoadingResumen(false);
+      }
+    };
+
+    cargarResumen();
+  }, []);
 
   return (
     <main className="flex-1 bg-slate-950/90 text-slate-50">
@@ -22,6 +50,81 @@ const AdminPanel = () => {
             toda la plataforma.
           </p>
         </header>
+
+        {/* RESUMEN DE LA PLATAFORMA (MICROSERVICIO) */}
+        <section className="space-y-3">
+          <h2 className="text-sm md:text-base font-semibold text-slate-200">
+            Resumen general de la plataforma
+          </h2>
+
+          {loadingResumen ? (
+            <p className="text-xs md:text-sm text-slate-400">
+              Cargando resumen...
+            </p>
+          ) : errorResumen ? (
+            <p className="text-xs md:text-sm text-rose-300 bg-rose-900/40 border border-rose-700/70 rounded-2xl px-3 py-2 inline-block">
+              {errorResumen}
+            </p>
+          ) : resumen ? (
+            <div className="grid gap-3 md:grid-cols-4">
+              {/* Usuarios */}
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-4 shadow-[0_18px_55px_rgba(15,23,42,0.95)]">
+                <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400 mb-1">
+                  Usuarios
+                </p>
+                <p className="text-2xl font-semibold text-emerald-300">
+                  {resumen.totalUsuarios ?? 0}
+                </p>
+                <p className="text-[0.7rem] text-slate-500 mt-1">
+                  Cuentas registradas en la plataforma.
+                </p>
+              </div>
+
+              {/* Cursos */}
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-4 shadow-[0_18px_55px_rgba(15,23,42,0.95)]">
+                <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400 mb-1">
+                  Cursos
+                </p>
+                <p className="text-2xl font-semibold text-sky-300">
+                  {resumen.totalCursos ?? 0}
+                </p>
+                <p className="text-[0.7rem] text-slate-500 mt-1">
+                  Cursos creados por instructores.
+                </p>
+              </div>
+
+              {/* Inscripciones */}
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-4 shadow-[0_18px_55px_rgba(15,23,42,0.95)]">
+                <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400 mb-1">
+                  Inscripciones
+                </p>
+                <p className="text-2xl font-semibold text-amber-300">
+                  {resumen.totalInscripciones ?? 0}
+                </p>
+                <p className="text-[0.7rem] text-slate-500 mt-1">
+                  Inscripciones a cursos realizadas.
+                </p>
+              </div>
+
+              {/* Certificados */}
+              <div className="rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-4 shadow-[0_18px_55px_rgba(15,23,42,0.95)]">
+                <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400 mb-1">
+                  Certificados
+                </p>
+                <p className="text-2xl font-semibold text-purple-300">
+                  {resumen.totalCertificados ?? 0}
+                </p>
+                <p className="text-[0.7rem] text-slate-500 mt-1">
+                  Certificados emitidos por la plataforma.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs md:text-sm text-slate-400">
+              No se pudo obtener el resumen.
+            </p>
+          )}
+        </section>
 
         {/* TARJETAS DE NAVEGACIÓN */}
         <section className="grid gap-4 md:grid-cols-3">
@@ -74,8 +177,8 @@ const AdminPanel = () => {
 
         <section className="pt-1">
           <p className="text-[0.7rem] text-slate-500 max-w-md">
-            Consejo: usa este panel como “hub” y desde aquí entra a cada
-            sección específica. Así el navbar se mantiene limpio.
+            Consejo: usa este panel como “hub” y desde aquí entra a cada sección
+            específica. Así el navbar se mantiene limpio.
           </p>
         </section>
       </div>

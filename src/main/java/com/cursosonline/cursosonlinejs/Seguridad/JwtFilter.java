@@ -33,7 +33,17 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String p = request.getServletPath();
-        return p.startsWith("/api/auth/") || "OPTIONS".equalsIgnoreCase(request.getMethod());
+        return
+                // 🔓 Endpoints de autenticación
+                p.startsWith("/api/auth/") ||
+
+                // 🔓 Swagger / OpenAPI
+                p.startsWith("/v3/api-docs") ||
+                p.startsWith("/swagger-ui") ||
+                "/swagger-ui.html".equals(p) ||
+
+                // 🔓 Preflight CORS
+                "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
     @Override
@@ -42,6 +52,8 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
 
         final String auth = req.getHeader("Authorization");
+
+        // Si no hay token Bearer, dejar seguir y que Spring Security decida
         if (!StringUtils.hasText(auth) || !auth.startsWith("Bearer ")) {
             chain.doFilter(req, res);
             return;
@@ -60,7 +72,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (io.jsonwebtoken.JwtException e) {
+            // puedes loguear si quieres
         } catch (UsernameNotFoundException e) {
+            // idem
         }
 
         chain.doFilter(req, res);

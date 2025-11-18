@@ -27,8 +27,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+// 🔽 Swagger / OpenAPI
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 @RestController
 @RequestMapping("/api/auth")
+@Tag(
+        name = "Autenticación",
+        description = "Endpoints para registrar usuarios y autenticarse en la plataforma CursosOnlineJS."
+)
 public class AuthControlador {
 
     private final AuthenticationManager authenticationManager;
@@ -56,6 +66,15 @@ public class AuthControlador {
     private long lockMinutes;
 
     @PostMapping("/register")
+    @Operation(
+            summary = "Registrar un nuevo usuario",
+            description = "Crea un nuevo usuario en la plataforma. Si los datos coinciden con el usuario semilla, se crea un administrador; en caso contrario, se asigna el rol por defecto."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuario creado correctamente"),
+            @ApiResponse(responseCode = "409", description = "Ya existe un usuario con ese correo"),
+            @ApiResponse(responseCode = "400", description = "Datos de registro inválidos")
+    })
     public ResponseEntity<?> register(@RequestBody @Valid RegistroRequest req) {
         String email = normalizeEmail(req.email());
 
@@ -71,9 +90,9 @@ public class AuthControlador {
             u.setNombre(req.nombre().trim());
             u.setEmail(email);
             u.setPassword(passwordEncoder.encode(req.password()));
-            u.setRol("ADMIN");               
+            u.setRol("ADMIN");
             u.setEstado("ACTIVO");
-            u.setEmailVerified(true);       
+            u.setEmailVerified(true);
             u.setFailedLoginAttempts(0);
 
             usuarioRepositorio.save(u);
@@ -121,8 +140,17 @@ public class AuthControlador {
                 .body(resp);
     }
 
-
     @PostMapping("/login")
+    @Operation(
+            summary = "Iniciar sesión",
+            description = "Valida las credenciales del usuario. Si son correctas y la cuenta está activa, devuelve un token JWT y los datos básicos del usuario."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
+            @ApiResponse(responseCode = "401", description = "Credenciales inválidas o error de autenticación"),
+            @ApiResponse(responseCode = "403", description = "Cuenta inactiva"),
+            @ApiResponse(responseCode = "423", description = "Cuenta bloqueada temporalmente por intentos fallidos")
+    })
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         final String emailNorm = normalizeEmail(request.getEmail());
         final Instant now = Instant.now();
@@ -193,6 +221,8 @@ public class AuthControlador {
         }
     }
 
+    // ================== MÉTODOS PRIVADOS ==================
+
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
@@ -201,7 +231,7 @@ public class AuthControlador {
         String base = (rolNombre == null || rolNombre.isBlank()) ? "USUARIO" : rolNombre.trim();
         return "ROLE_" + base.toUpperCase().replace(' ', '_');
     }
-   
+
     private boolean isSeedAdmin(RegistroRequest req) {
         if (req == null) return false;
         final String nombre = req.nombre() == null ? "" : req.nombre().trim();
