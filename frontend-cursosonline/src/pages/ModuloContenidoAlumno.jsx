@@ -7,6 +7,7 @@ import { listarLecciones } from "../services/leccionService";
 import { listarEvaluacionesPorLeccion } from "../services/evaluacionService";
 import { obtenerMiInscripcionEnCurso } from "../services/inscripcionService";
 import { obtenerMiProgreso } from "../services/progresoService";
+import { solicitarMiCertificado } from "../services/certificadoService";
 
 const ModuloContenidoAlumno = () => {
   const { idCurso, idModulo } = useParams();
@@ -22,6 +23,7 @@ const ModuloContenidoAlumno = () => {
   const [leccionActivaId, setLeccionActivaId] = useState(null);
 
   const [progreso, setProgreso] = useState(null);
+  const [certLoading, setCertLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,10 +107,10 @@ const ModuloContenidoAlumno = () => {
         );
         setEvalPorLeccion(mapa);
 
-        // Progreso del curso
+        // Progreso del curso (ahora obtenerMiProgreso YA devuelve resp.data)
         try {
-          const prog = await obtenerMiProgreso(idCurso);
-          setProgreso(prog);
+          const progDto = await obtenerMiProgreso(idCurso);
+          setProgreso(progDto);
         } catch (e) {
           console.warn("No se pudo cargar el progreso del curso:", e);
           setProgreso(null);
@@ -124,8 +126,8 @@ const ModuloContenidoAlumno = () => {
     load();
   }, [idCurso, idModulo, location.key]);
 
-  // Debug (puedes quitar estos console.log en producción)
-  console.log("DEBUG progreso curso:", progreso);
+  // Debug
+  console.log("DEBUG progreso curso DTO:", progreso);
   console.log("DEBUG inscripcion curso:", inscripcion);
 
   const estadoIns = (inscripcion?.estado || "").toLowerCase();
@@ -137,8 +139,14 @@ const ModuloContenidoAlumno = () => {
 
   // progreso del módulo actual y map rápido de lecciones -> info
   const progresoModuloActual = useMemo(() => {
-    if (!progreso?.modulos) return null;
-    return progreso.modulos.find((m) => m.idModulo === idModulo) || null;
+    if (!progreso?.modulos || !Array.isArray(progreso.modulos)) return null;
+
+    // Intentamos varias claves posibles
+    return (
+      progreso.modulos.find((m) => m.idModulo === idModulo) ||
+      progreso.modulos.find((m) => m.moduloId === idModulo) ||
+      null
+    );
   }, [progreso, idModulo]);
 
   const mapLeccionProgreso = useMemo(() => {
@@ -193,6 +201,54 @@ const ModuloContenidoAlumno = () => {
 
   const notaModuloActual = progresoModuloActual?.nota;
   const moduloAprobado = progresoModuloActual?.aprobado === true;
+
+  const notaMinModulo = modulo?.notaMinimaAprobacion ?? null;
+
+  // 👇 módulo reprobado según nota mínima configurada
+  const moduloReprobadoPorNota =
+    notaMinModulo != null &&
+    typeof notaModuloActual === "number" &&
+    !Number.isNaN(notaModuloActual) &&
+    !moduloAprobado &&
+    notaModuloActual < Number(notaMinModulo);
+
+  // -------- lógica certificado --------
+  const estadoInsUpper = (inscripcion?.estado || "").toUpperCase();
+  const puedeSolicitarCertificado =
+    cursoAprobado ||
+    progreso?.aprobadoFinal === true ||
+    inscripcion?.aprobadoFinal === true ||
+    estadoInsUpper === "COMPLETADA";
+
+  const handleSolicitarCertificado = async () => {
+    if (!idCurso) return;
+    try {
+      setCertLoading(true);
+      const cert = await solicitarMiCertificado(idCurso);
+      alert(
+        `Certificado emitido correctamente.\nCódigo de verificación: ${
+          cert?.codigoVerificacion || "—"
+        }`
+      );
+    } catch (err) {
+      console.error("Error al solicitar certificado:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        err?.message ||
+        "No se pudo emitir el certificado.";
+      alert(msg);
+    } finally {
+      setCertLoading(false);
+    }
+  };
+
+  const handleSolicitarNuevoIntento = () => {
+    // Aquí luego puedes llamar a un endpoint real.
+    alert(
+      "Solicitud de nuevo intento registrada (pendiente de implementar en el backend)."
+    );
+  };
 
   // -------- render principal --------
   return (
@@ -256,6 +312,53 @@ const ModuloContenidoAlumno = () => {
             </div>
           )}
         </div>
+
+        {/* nota mínima del módulo */}
+        {notaMinModulo != null && (
+          <p className="mt-1 text-[0.7rem] md:text-xs text-slate-300/90">
+            Nota mínima de aprobación de este módulo:{" "}
+            <span className="font-semibold text-amber-300">
+              {Number(notaMinModulo).toFixed(0)}%
+            </span>
+          </p>
+        )}
+
+        {/* botón certificado (curso aprobado) */}
+        {puedeSolicitarCertificado && (
+          <div className="mt-3 flex flex-col md:flex-row items-start md:items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSolicitarCertificado}
+              disabled={certLoading}
+              className="inline-flex items-center justify-center rounded-full border border-amber-400/90 bg-amber-400 px-4 py-2 text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.22em] text-slate-950 shadow-[0_0_30px_rgba(251,191,36,0.9)] hover:bg-amber-300 active:translate-y-px disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {certLoading
+                ? "Generando certificado..."
+                : "🎓 Solicitar certificado"}
+            </button>
+            <p className="text-[0.7rem] md:text-xs text-slate-400 max-w-sm">
+              Podrás descargar o consultar tu certificado digital una vez
+              emitido. Si ya tienes uno, el sistema te avisará.
+            </p>
+          </div>
+        )}
+
+        {/* botón para solicitar nuevo intento si el módulo está reprobado */}
+        {moduloReprobadoPorNota && (
+          <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-2 border-t border-slate-800 pt-3">
+            <p className="text-[0.7rem] md:text-xs text-rose-300/90 max-w-sm">
+              Has reprobado este módulo (tu nota está por debajo de la mínima
+              requerida). Puedes solicitar un nuevo intento al instructor.
+            </p>
+            <button
+              type="button"
+              onClick={handleSolicitarNuevoIntento}
+              className="inline-flex items-center justify-center rounded-full border border-rose-400/90 bg-rose-500 px-4 py-2 text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.22em] text-slate-950 shadow-[0_0_30px_rgba(248,113,113,0.9)] hover:bg-rose-400 active:translate-y-px"
+            >
+              🔁 Solicitar nuevo intento
+            </button>
+          </div>
+        )}
       </section>
 
       {/* listado de lecciones */}

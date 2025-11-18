@@ -44,6 +44,9 @@ import AdminUsuariosGestion from "./pages/AdminUsuariosGestion";
 // 👇 NUEVO: gestión de preguntas de una evaluación
 import EvaluacionPreguntasGestion from "./pages/EvaluacionPreguntasGestion";
 
+// 👇 NUEVO: ver / calificar un intento concreto
+import EvaluacionIntentoCalificar from "./pages/EvaluacionIntentoCalificar";
+
 function AppRoutes() {
   return (
     <Routes>
@@ -120,6 +123,12 @@ function AppRoutes() {
         <Route
           path="/instructor/evaluaciones/:idEvaluacion/intentos"
           element={<EvaluacionIntentosGestion />}
+        />
+
+        {/* 👇 NUEVO: ver / calificar UN intento */}
+        <Route
+          path="/instructor/evaluaciones/:idEvaluacion/intentos/:idIntento/calificar"
+          element={<EvaluacionIntentoCalificar />}
         />
 
         {/* panel global de calificaciones del instructor */}

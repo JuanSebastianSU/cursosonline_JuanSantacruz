@@ -5,6 +5,8 @@ import com.cursosonline.cursosonlinejs.Entidades.Modulo;
 import com.cursosonline.cursosonlinejs.Repositorios.CursoRepositorio;
 import com.cursosonline.cursosonlinejs.Repositorios.UsuarioRepositorio;
 import com.cursosonline.cursosonlinejs.Servicios.ModuloServicio;
+import com.cursosonline.cursosonlinejs.Servicios.InscripcionServicio;
+import com.cursosonline.cursosonlinejs.Servicios.SolicitudReintentoModuloServicio;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -28,13 +31,19 @@ public class ModuloControlador {
     private final ModuloServicio moduloServicio;
     private final CursoRepositorio cursoRepo;
     private final UsuarioRepositorio usuarioRepo;
+    private final InscripcionServicio inscripcionServicio;
+    private final SolicitudReintentoModuloServicio solicitudReintentoModuloServicio;
 
     public ModuloControlador(ModuloServicio moduloServicio,
                              CursoRepositorio cursoRepo,
-                             UsuarioRepositorio usuarioRepo) {
+                             UsuarioRepositorio usuarioRepo,
+                             InscripcionServicio inscripcionServicio,
+                             SolicitudReintentoModuloServicio solicitudReintentoModuloServicio) {
         this.moduloServicio = moduloServicio;
         this.cursoRepo = cursoRepo;
         this.usuarioRepo = usuarioRepo;
+        this.inscripcionServicio = inscripcionServicio;
+        this.solicitudReintentoModuloServicio = solicitudReintentoModuloServicio;
     }
 
     private static boolean isAdmin() {
@@ -162,7 +171,7 @@ public class ModuloControlador {
             actual.setDescripcion(body.getDescripcion());
         }
 
-        // 👇 actualizar nota mínima si viene en el body
+        // actualizar nota mínima si viene en el body
         if (body.getNotaMinimaAprobacion() != null) {
             var errorNota = validarNotaMinima(body.getNotaMinimaAprobacion());
             if (errorNota != null) return errorNota;
@@ -214,8 +223,14 @@ public class ModuloControlador {
                 delta = body.delta();
             } else if (body.direccion() != null) {
                 switch (body.direccion().toLowerCase()) {
-                    case "up": case "arriba": delta = -1; break;
-                    case "down": case "abajo": delta = +1; break;
+                    case "up":
+                    case "arriba":
+                        delta = -1;
+                        break;
+                    case "down":
+                    case "abajo":
+                        delta = +1;
+                        break;
                 }
             }
         }
@@ -272,7 +287,68 @@ public class ModuloControlador {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * NUEVO: el alumno autenticado solicita reintento de este módulo.
+     */
+    @PostMapping("/{id}/solicitar-reintento-mio")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> solicitarReintentoMio(@PathVariable String idCurso,
+                                                   @PathVariable("id") String idModulo,
+                                                   @RequestBody(required = false) SolicitarReintentoRequest body) {
+
+        // 1) Verificar que el módulo existe y pertenece al curso
+        var modulo = moduloServicio.obtener(idModulo);
+        if (modulo == null || !idCurso.equals(modulo.getIdCurso())) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "message", "Módulo no encontrado para este curso."
+            ));
+        }
+
+        // 2) Obtener id del estudiante actual
+        var idEstOpt = inscripcionServicio.obtenerIdEstudianteActual();
+        if (idEstOpt.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "message", "No autenticado."
+            ));
+        }
+        String idEstudiante = idEstOpt.get();
+
+        // 3) Verificar que está inscrito en el curso
+        var inscOpt = inscripcionServicio.obtenerPorCursoYEstudiante(idCurso, idEstudiante);
+        if (inscOpt.isEmpty()) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "message", "No estás inscrito en este curso."
+            ));
+        }
+
+        String motivo = null;
+        if (body != null && body.motivo() != null && !body.motivo().isBlank()) {
+            motivo = body.motivo().trim();
+        }
+
+        try {
+            var sol = solicitudReintentoModuloServicio.crearSolicitud(
+                    idCurso,
+                    idModulo,
+                    idEstudiante,
+                    motivo
+            );
+
+            return ResponseEntity
+                    .created(URI.create("/api/v1/reintentos-modulo/" + sol.getId()))
+                    .body(sol);
+
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "message", ex.getMessage()
+            ));
+        }
+    }
+
     public static record CambiarOrdenRequest(@Min(1) Integer orden) {}
     public static record MoverRequest(Integer delta, String direccion) {}
     public static record ReordenarRequest(List<@NotBlank String> ids) {}
+
+    // body opcional para que el alumno envíe un motivo
+    public static record SolicitarReintentoRequest(String motivo) {}
 }
