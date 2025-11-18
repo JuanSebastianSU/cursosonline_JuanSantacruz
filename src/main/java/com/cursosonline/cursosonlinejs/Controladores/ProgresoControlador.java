@@ -1,13 +1,11 @@
 package com.cursosonline.cursosonlinejs.Controladores;
 
 import com.cursosonline.cursosonlinejs.DTO.CursoProgresoDTO;
-import com.cursosonline.cursosonlinejs.Repositorios.UsuarioRepositorio;
-import com.cursosonline.cursosonlinejs.Servicios.ProgresoCursoServicio;
 import com.cursosonline.cursosonlinejs.Servicios.InscripcionServicio;
+import com.cursosonline.cursosonlinejs.Servicios.ProgresoCursoServicio;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 // Swagger / OpenAPI
@@ -20,6 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "http://localhost:9090", allowCredentials = "true")
@@ -31,23 +31,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class ProgresoControlador {
 
     private final ProgresoCursoServicio progresoCursoServicio;
-    private final UsuarioRepositorio usuarioRepositorio;
     private final InscripcionServicio inscripcionServicio;
 
     public ProgresoControlador(ProgresoCursoServicio progresoCursoServicio,
-                               UsuarioRepositorio usuarioRepositorio,
                                InscripcionServicio inscripcionServicio) {
         this.progresoCursoServicio = progresoCursoServicio;
-        this.usuarioRepositorio = usuarioRepositorio;
         this.inscripcionServicio = inscripcionServicio;
-    }
-
-    private String currentUserId() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) return null;
-        return usuarioRepositorio.findByEmail(auth.getName())
-                .map(u -> u.getId())
-                .orElse(null);
     }
 
     /**
@@ -73,15 +62,21 @@ public class ProgresoControlador {
             @Parameter(description = "ID del curso", example = "c_123456")
             @PathVariable String idCurso
     ) {
-        String userId = currentUserId();
-        if (userId == null) {
-            return ResponseEntity.status(401).body("No autenticado.");
+        // Usar el mismo helper que en MisInscripcionesControlador
+        var idEstOpt = inscripcionServicio.obtenerIdEstudianteActual();
+        if (idEstOpt.isEmpty()) {
+            return ResponseEntity.status(401).body(
+                    Map.of("message", "No autenticado.")
+            );
         }
+        String userId = idEstOpt.get();
 
-        // Validamos que tenga inscripción en ese curso
+        // Validar que tenga inscripción en ese curso
         var inscOpt = inscripcionServicio.obtenerPorCursoYEstudiante(idCurso, userId);
         if (inscOpt.isEmpty()) {
-            return ResponseEntity.status(403).body("No estás inscrito en este curso.");
+            return ResponseEntity.status(403).body(
+                    Map.of("message", "No estás inscrito en este curso.")
+            );
         }
 
         CursoProgresoDTO dto = progresoCursoServicio
